@@ -1,0 +1,4 @@
+#VS Code / Copilot interne Dateien
+.vs/
+.vscode/
+*.vsidx
