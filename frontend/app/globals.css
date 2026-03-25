@@ -1,0 +1,8 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  background-color: #f0fdf4; /* Sehr helles Grün bg-green-50 */
+  color: #166534;
+}
