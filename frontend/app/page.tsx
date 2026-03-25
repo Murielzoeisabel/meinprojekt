@@ -1,4 +1,5 @@
-﻿// Keine "use client" Direktive ganz oben -> Dies ist eine Server Component!
+﻿import WeightForm from './components/WeightForm';
+// Keine "use client" Direktive ganz oben -> Dies ist eine Server Component!
 
 async function getCats() {
   // fetch läuft auf dem Server, 'no-store' sorgt für stets aktuelle Daten
@@ -58,9 +59,9 @@ export default async function DashboardPage() {
             </div>
           </div>
 
-          <div className="text-center p-4 bg-gray-50 rounded-xl text-gray-500 border border-gray-200">
-            {/* Hier ist der Platzhalter für das Diagramm und die Eingabe */}
-            [Hier kommen später das interaktive Diagramm und das Eingabefeld (Client Components) hin!]
+                    <div className="mt-8 border-t border-green-100 pt-6">
+            <h3 className="text-xl font-semibold mb-4 text-green-800">Neues Gewicht eintragen</h3>
+            <WeightForm catId={initialCat.id} />
           </div>
         </div>
       </div>
