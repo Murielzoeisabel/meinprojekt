@@ -10,7 +10,7 @@ app.use(express.json());
 // Unsere Datenbank (im Arbeitsspeicher)
 let cats = [
   { id: 1, name: 'Luna', age: 3, currentWeight: 5.0, idealWeight: 5.0, photo: 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=400' },
-  { id: 2, name: 'Milo', age: 2, currentWeight: 4.8, idealWeight: 4.5, photo: 'https://images.unsplash.com/photo-1573865526739-10c1dd6aa5e0?w=400' }
+ { id: 2, name: 'Milo', age: 2, currentWeight: 4.8, idealWeight: 4.5, photo: 'https://images.unsplash.com/photo-1543852786-1cf6624b9987?w=400' }
 ];
 
 let weightHistory = {
