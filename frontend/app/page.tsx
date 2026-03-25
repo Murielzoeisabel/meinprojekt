@@ -1,82 +1,69 @@
-import { revalidatePath } from 'next/cache';
-import CatSelector from './components/CatSelector';
-import WeightChart from './components/WeightChart';
+﻿// Keine "use client" Direktive ganz oben -> Dies ist eine Server Component!
 
-// Server-Side Data Fetching! (Ersetzt den alten useEffect)
 async function getCats() {
+  // fetch läuft auf dem Server, 'no-store' sorgt für stets aktuelle Daten
   const res = await fetch('http://localhost:3000/api/cats', { cache: 'no-store' });
+  if (!res.ok) throw new Error('Fehler beim Laden der Katzen');
   return res.json();
 }
 
-async function getCatData(id: string) {
+async function getCatWeightData(id: number) {
   const res = await fetch(`http://localhost:3000/api/cats/${id}/weight`, { cache: 'no-store' });
-  if (!res.ok) return null;
+  if (!res.ok) throw new Error('Fehler beim Laden der Gewichtsdaten');
   return res.json();
 }
 
-export default async function Page({ searchParams }: { searchParams: { catId?: string } }) {
-  // W�hle Katze anhand der URL (?catId=...) oder nutze die Erste als Standard
+export default async function DashboardPage() {
+  // 1. Daten werden SOFORT beim Page-Load geholt (kein useEffect, kein Spinner)
   const cats = await getCats();
-  const selectedCatId = searchParams.catId || (cats.length > 0 ? cats[0].id.toString() : '1');
-  const catData = await getCatData(selectedCatId);
-
-  // Server Action: Wird direkt als HTML-Form abgeschickt und ruft das Backend auf
-  async function addWeight(formData: FormData) {
-    "use server";
-    const weight = formData.get('weight');
-    if (!weight) return;
-
-    await fetch(`http://localhost:3000/api/cats/${selectedCatId}/weight`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ weight: parseFloat(weight.toString()) })
-    });
-
-    // Seite serverseitig aktualisieren, um neue Daten sofort anzuzeigen
-    revalidatePath('/');
+  
+  // Wir nehmen für die Initiale Ansicht einfach mal die erste Katze
+  const initialCat = cats.length > 0 ? cats[0] : null;
+  
+  let weightData = null;
+  if (initialCat) {
+    weightData = await getCatWeightData(initialCat.id);
   }
 
-  if (!catData) return <div className="text-center mt-20 text-red-500 text-xl">Backend auf Port 3000 l�uft nicht.</div>;
-
-  const currentWeight = catData.history.length > 0 
-    ? catData.history[catData.history.length - 1].weight 
-    : catData.cat.currentWeight;
+  if (!initialCat) {
+    return <main className="p-8 text-center">Keine Katzen gefunden.</main>;
+  }
 
   return (
-    <main className="max-w-4xl mx-auto py-10 px-4">
-      <div className="flex justify-between items-center bg-white p-6 rounded-xl shadow-sm border border-green-100 mb-6">
-        <div>
-          <h1 className="text-3xl font-bold text-green-700 mb-2">Gewichts-Tracker</h1>
-          <CatSelector cats={cats} selectedId={parseInt(selectedCatId)} />
-        </div>
-        <img src={catData.cat.photo} alt={catData.cat.name} className="w-24 h-24 rounded-full object-cover shadow-md" />
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-green-100 text-center">
-          <h3 className="text-green-600 font-semibold uppercase tracking-wider mb-2">Aktuelles Gewicht</h3>
-          <p className="text-5xl font-bold text-green-800">{currentWeight} kg</p>
-        </div>
-
-        <form action={addWeight} className="bg-white p-6 rounded-xl shadow-sm border border-green-100 flex flex-col justify-center gap-3 text-center">
-          <h3 className="text-green-600 font-semibold uppercase tracking-wider">Heutiges Gewicht</h3>
-          <div className="flex gap-2">
-            <input 
-              type="number" 
-              name="weight" 
-              step="0.01" 
-              placeholder="z.B. 5.1" 
-              required
-              className="flex-1 p-3 border-2 border-green-100 rounded-lg text-lg focus:outline-none focus:border-green-500"
+    <main className="min-h-screen bg-green-50 p-8 font-sans text-green-950">
+      <div className="max-w-4xl mx-auto">
+        <h1 className="text-3xl font-bold mb-8 text-green-700">🐱 Katzen Gewichts-Tracker</h1>
+        
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-green-200">
+          <div className="flex items-center gap-4 mb-6 relative">
+            <img 
+              src={initialCat.photo} 
+              alt={initialCat.name} 
+              className="w-16 h-16 rounded-full object-cover border-2 border-green-500"
             />
-            <button type="submit" className="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg transition-colors">
-              Speichern
-            </button>
+            <div>
+              <h2 className="text-2xl font-semibold">{initialCat.name}</h2>
+              <p className="text-green-600">{initialCat.age} Jahre alt</p>
+            </div>
           </div>
-        </form>
-      </div>
 
-      <WeightChart history={catData.history} idealWeight={catData.cat.idealWeight} />
+          <div className="grid grid-cols-2 gap-4 mb-8">
+            <div className="bg-green-50 p-4 rounded-xl text-center">
+              <p className="text-sm font-medium text-green-600 uppercase">Aktuelles Gewicht</p>
+              <p className="text-3xl font-bold text-green-800">{initialCat.currentWeight} kg</p>
+            </div>
+            <div className="bg-green-50 p-4 rounded-xl text-center">
+              <p className="text-sm font-medium text-green-600 uppercase">Idealgewicht</p>
+              <p className="text-3xl font-bold text-green-800">{initialCat.idealWeight} kg</p>
+            </div>
+          </div>
+
+          <div className="text-center p-4 bg-gray-50 rounded-xl text-gray-500 border border-gray-200">
+            {/* Hier ist der Platzhalter für das Diagramm und die Eingabe */}
+            [Hier kommen später das interaktive Diagramm und das Eingabefeld (Client Components) hin!]
+          </div>
+        </div>
+      </div>
     </main>
   );
 }
