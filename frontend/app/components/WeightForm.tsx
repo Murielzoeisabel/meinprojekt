@@ -1,6 +1,7 @@
-"use client"; // Dies markiert die Datei als Client Component für Interaktivität
+"use client"; // Client Component
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation'; // Wichtig: next/navigation im App Router!
 
 export default function WeightForm({ catId }: { catId: number }) {
   const [weight, setWeight] = useState('');

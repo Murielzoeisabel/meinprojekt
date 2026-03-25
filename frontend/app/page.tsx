@@ -1,8 +1,6 @@
 ﻿import WeightForm from './components/WeightForm';
-// Keine "use client" Direktive ganz oben -> Dies ist eine Server Component!
 
 async function getCats() {
-  // fetch läuft auf dem Server, 'no-store' sorgt für stets aktuelle Daten
   const res = await fetch('http://localhost:3000/api/cats', { cache: 'no-store' });
   if (!res.ok) throw new Error('Fehler beim Laden der Katzen');
   return res.json();
@@ -15,20 +13,15 @@ async function getCatWeightData(id: number) {
 }
 
 export default async function DashboardPage() {
-  // 1. Daten werden SOFORT beim Page-Load geholt (kein useEffect, kein Spinner)
   const cats = await getCats();
-  
-  // Wir nehmen für die Initiale Ansicht einfach mal die erste Katze
   const initialCat = cats.length > 0 ? cats[0] : null;
   
-  let weightData = null;
-  if (initialCat) {
-    weightData = await getCatWeightData(initialCat.id);
+  if (!initialCat) {
+    return <main className="p-8 text-center text-black">Keine Katzen gefunden.</main>;
   }
 
-  if (!initialCat) {
-    return <main className="p-8 text-center">Keine Katzen gefunden.</main>;
-  }
+  // Für diese Übung laden wir einfach die Gewichtsdaten zur Sicherheit mit
+  await getCatWeightData(initialCat.id);
 
   return (
     <main className="min-h-screen bg-green-50 p-8 font-sans text-green-950">
@@ -36,7 +29,7 @@ export default async function DashboardPage() {
         <h1 className="text-3xl font-bold mb-8 text-green-700">🐱 Katzen Gewichts-Tracker</h1>
         
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-green-200">
-          <div className="flex items-center gap-4 mb-6 relative">
+          <div className="flex items-center gap-4 mb-6">
             <img 
               src={initialCat.photo} 
               alt={initialCat.name} 
@@ -59,7 +52,7 @@ export default async function DashboardPage() {
             </div>
           </div>
 
-                    <div className="mt-8 border-t border-green-100 pt-6">
+          <div className="mt-8 border-t border-green-100 pt-6">
             <h3 className="text-xl font-semibold mb-4 text-green-800">Neues Gewicht eintragen</h3>
             <WeightForm catId={initialCat.id} />
           </div>
