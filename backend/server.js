@@ -1,4 +1,4 @@
-const express = require('express');
+﻿const express = require('express');
 const cors = require('cors');
 
 const app = express();
@@ -7,30 +7,44 @@ const PORT = 3000;
 app.use(cors());
 app.use(express.json());
 
-// Mock weight data for the cat (aiming for 5.0 kg)
-const weightData = [
-  { date: '2025-10-01', weight: 6.5 },
-  { date: '2025-10-15', weight: 6.3 },
-  { date: '2025-11-01', weight: 6.1 },
-  { date: '2025-11-15', weight: 5.9 },
-  { date: '2025-12-01', weight: 5.8 },
-  { date: '2025-12-15', weight: 5.6 },
-  { date: '2026-01-01', weight: 5.5 },
-  { date: '2026-01-15', weight: 5.4 },
-  { date: '2026-02-01', weight: 5.3 },
-  { date: '2026-02-15', weight: 5.2 },
-  { date: '2026-03-01', weight: 5.1 },
-  { date: '2026-03-15', weight: 5.05 },
+// Unsere Datenbank (im Arbeitsspeicher)
+let cats = [
+  { id: 1, name: 'Luna', age: 3, currentWeight: 5.0, idealWeight: 5.0, photo: 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=400' },
+  { id: 2, name: 'Milo', age: 2, currentWeight: 4.8, idealWeight: 4.5, photo: 'https://images.unsplash.com/photo-1573865526739-10c1dd6aa5e0?w=400' }
 ];
 
-app.get('/api/weight', (req, res) => {
-  res.json({
-    catName: 'Luna',
-    idealWeight: 5.0,
-    history: weightData
-  });
+let weightHistory = {
+  1: [
+    { date: '2026-03-01', weight: 5.3 },
+    { date: '2026-03-10', weight: 5.1 },
+    { date: '2026-03-25', weight: 5.0 }
+  ],
+  2: [
+    { date: '2026-03-01', weight: 5.0 },
+    { date: '2026-03-25', weight: 4.8 }
+  ]
+};
+
+// --- API ROUTEN ---
+app.get('/api/cats', (req, res) => res.json(cats));
+
+app.get('/api/cats/:id/weight', (req, res) => {
+  const catId = parseInt(req.params.id);
+  res.json({ cat: cats.find(c => c.id === catId), history: weightHistory[catId] || [] });
 });
 
-app.listen(PORT, () => {
-  console.log(`Backend server is running on http://localhost:${PORT}`);
+app.post('/api/cats/:id/weight', (req, res) => {
+  const catId = parseInt(req.params.id);
+  const { weight } = req.body;
+  const today = new Date().toISOString().split('T')[0];
+  
+  if (!weightHistory[catId]) weightHistory[catId] = [];
+  weightHistory[catId].push({ date: today, weight: parseFloat(weight) });
+  
+  const cat = cats.find(c => c.id === catId);
+  if (cat) cat.currentWeight = parseFloat(weight);
+  
+  res.json({ success: true, history: weightHistory[catId] });
 });
+
+app.listen(PORT, () => console.log(`✓ Backend läuft auf http://localhost:${PORT}`));

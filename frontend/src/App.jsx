@@ -1,114 +1,133 @@
 import React, { useState, useEffect } from 'react';
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  ReferenceLine
-} from 'recharts';
-import './index.css';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
+import './App.css';
 
 function App() {
-  const [data, setData] = useState(null);
+  const [activePage, setActivePage] = useState('dashboard'); // 'dashboard' oder 'management'
+  const [cats, setCats] = useState([]);
+  const [selectedCatId, setSelectedCatId] = useState(1);
+  const [catData, setCatData] = useState(null);
+  const [newWeight, setNewWeight] = useState('');
   const [loading, setLoading] = useState(true);
 
+  // Lade alle Katzen beim Start
   useEffect(() => {
-    fetch('http://localhost:3000/api/weight')
+    fetch('http://localhost:3000/api/cats')
       .then(res => res.json())
-      .then(json => {
-        setData(json);
+      .then(data => {
+        setCats(data);
         setLoading(false);
       })
       .catch(err => {
-        console.error('Error fetching data:', err);
+        console.error('Fehler:', err);
         setLoading(false);
       });
   }, []);
 
-  if (loading) {
-    return <div className="loading" style={{textAlign: 'center', marginTop: '20vh'}}>Lade Gewichtsdaten...</div>;
-  }
+  // Lade Gewichtsdaten, wenn sich die Katze ändert
+  useEffect(() => {
+    if (selectedCatId) {
+      fetch(`http://localhost:3000/api/cats/${selectedCatId}/weight`)
+        .then(res => res.json())
+        .then(data => setCatData(data));
+    }
+  }, [selectedCatId]);
 
-  if (!data) {
-    return <div style={{color: '#ef4444', textAlign: 'center', marginTop: '20vh'}}>Fehler beim Laden der Daten. Bitte überprüfe, ob das Backend auf Port 3000 läuft.</div>;
-  }
+  const handleGewichtSpeichern = (e) => {
+    e.preventDefault();
+    if (!newWeight) return;
 
-  const currentWeight = data.history[data.history.length - 1].weight;
+    fetch(`http://localhost:3000/api/cats/${selectedCatId}/weight`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ weight: newWeight })
+    })
+      .then(res => res.json())
+      .then(data => {
+        setCatData({ ...catData, history: data.history });
+        setNewWeight('');
+        alert('Gewicht gespeichert!');
+      });
+  };
+
+  if (loading || !catData) return <div className="loading">Lade Daten vom Backend... Bitte warten.</div>;
 
   return (
-    <div className="dashboard-container">
-      <h1>Gewichtsverlauf: {data.catName}</h1>
-      <p style={{ color: '#94a3b8', fontSize: '1.2rem', marginBottom: '2rem' }}>
-        Auf dem Weg zum Idealgewicht
-      </p>
+    <div className="app-container">
+      {/* Navigation */}
+      <nav className="navbar">
+        <h1>🐱 Katzen Gewichts-Tracker</h1>
+        <div>
+          <button className={activePage === 'dashboard' ? 'nav-btn active' : 'nav-btn'} onClick={() => setActivePage('dashboard')}>Dashboard</button>
+          <button className={activePage === 'management' ? 'nav-btn active' : 'nav-btn'} onClick={() => setActivePage('management')}>Katzen verwalten</button>
+        </div>
+      </nav>
 
-      <div className="info-cards">
-        <div className="info-card">
-          <h3>Aktuelles Gewicht</h3>
-          <p>{currentWeight} kg</p>
-        </div>
-        <div className="info-card">
-          <h3>Idealgewicht</h3>
-          <p>{data.idealWeight} kg</p>
-        </div>
-      </div>
+      {/* SEITE 1: DASHBOARD */}
+      {activePage === 'dashboard' && (
+        <div className="main-content">
+          <div className="card picker-card">
+            <label>Katze auswählen: </label>
+            <select value={selectedCatId} onChange={(e) => setSelectedCatId(parseInt(e.target.value))}>
+              {cats.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+          </div>
 
-      <div className="glass-card">
-        <div className="chart-container">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart
-              data={data.history}
-              margin={{ top: 20, right: 30, left: 0, bottom: 0 }}
-            >
-              <defs>
-                <linearGradient id="colorWeight" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#38bdf8" stopOpacity={0.3}/>
-                  <stop offset="95%" stopColor="#38bdf8" stopOpacity={0}/>
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" vertical={false} />
-              <XAxis 
-                dataKey="date" 
-                stroke="#94a3b8" 
-                tick={{fill: '#94a3b8'}}
-                tickMargin={10}
-              />
-              <YAxis 
-                domain={['dataMin - 0.2', 'dataMax + 0.2']}
-                stroke="#94a3b8" 
-                tick={{fill: '#94a3b8'}}
-                tickFormatter={(value) => `${value} kg`}
-              />
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: 'rgba(30, 41, 59, 0.9)', 
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  borderRadius: '12px',
-                  color: '#f8fafc'
-                }}
-                itemStyle={{ color: '#38bdf8' }}
-              />
-              <ReferenceLine 
-                y={data.idealWeight} 
-                label={{ position: 'top', value: 'Idealgewicht', fill: '#10b981', fontSize: 12 }} 
-                stroke="#10b981" 
-                strokeDasharray="3 3" 
-              />
-              <Line 
-                type="monotone" 
-                dataKey="weight" 
-                stroke="#38bdf8" 
-                strokeWidth={3}
-                dot={{ r: 4, fill: '#0f172a', stroke: '#38bdf8', strokeWidth: 2 }}
-                activeDot={{ r: 6, fill: '#38bdf8' }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
+          <div className="card">
+            <h2>Heutiges Gewicht eingeben</h2>
+            <form onSubmit={handleGewichtSpeichern} className="weight-form">
+              <input type="number" step="0.01" value={newWeight} onChange={(e) => setNewWeight(e.target.value)} placeholder="z.B. 4.5" required />
+              <button type="submit" className="primary-btn">Speichern</button>
+            </form>
+          </div>
+
+          <div className="stats-grid">
+            <div className="card stat-card">
+              <h3>Aktuelles Gewicht</h3>
+              <p>{catData.history.length > 0 ? catData.history[catData.history.length-1].weight : catData.cat.currentWeight} kg</p>
+            </div>
+            <div className="card stat-card">
+              <h3>Idealgewicht</h3>
+              <p>{catData.cat.idealWeight} kg</p>
+            </div>
+          </div>
+
+          <div className="card chart-card">
+            <h2>Gewichtsverlauf</h2>
+            <div style={{ height: 350, width: '100%' }}>
+              <ResponsiveContainer>
+                <LineChart data={catData.history} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#bbf7d0" />
+                  <XAxis dataKey="date" stroke="#166534" />
+                  <YAxis domain={['dataMin - 0.2', 'dataMax + 0.2']} stroke="#166534" />
+                  <Tooltip />
+                  <ReferenceLine y={catData.cat.idealWeight} label="Idealgewicht" stroke="#ea580c" strokeDasharray="3 3" />
+                  <Line type="monotone" dataKey="weight" stroke="#22c55e" strokeWidth={3} dot={{r: 5, fill: '#166534'}} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* SEITE 2: VERWALTUNG */}
+      {activePage === 'management' && (
+        <div className="main-content">
+          <h2>Alle Katzen</h2>
+          <div className="cat-grid">
+            {cats.map(cat => (
+              <div key={cat.id} className="card cat-profile">
+                <img src={cat.photo} alt={cat.name} />
+                <h3>{cat.name}</h3>
+                <p>Alter: {cat.age} Jahre</p>
+                <p>Gewicht: {cat.currentWeight} kg</p>
+                <p>Ziel: {cat.idealWeight} kg</p>
+                <button className="primary-btn" onClick={() => alert('Bearbeiten-Funktion folgt!')}>Bearbeiten</button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
