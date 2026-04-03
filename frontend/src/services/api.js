@@ -15,4 +15,13 @@ export const addWeight = (weightData) => api.post('/weights', weightData).then(r
 export const getCalories = (catId) => api.get(`/calories/${catId}`).then(res => res.data);
 export const addCalories = (calorieData) => api.post('/calories', calorieData).then(res => res.data);
 
+export const getCommunityPosts = () => api.get('/community/posts').then(res => res.data);
+export const addCommunityPost = (payload) => api.post('/community/posts', payload).then(res => res.data);
+export const deleteCommunityPost = (postId) => api.delete(`/community/posts/${postId}`).then(res => res.data);
+export const reactToCommunityPost = (postId, type) =>
+  api.post(`/community/posts/${postId}/reactions`, { type }).then(res => res.data);
+
+export const getCommunityMessages = () => api.get('/community/messages').then(res => res.data);
+export const addCommunityMessage = (payload) => api.post('/community/messages', payload).then(res => res.data);
+
 export default api;

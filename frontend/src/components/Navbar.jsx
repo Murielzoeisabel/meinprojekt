@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { Home, Cat, Activity, Settings as SettingsIcon, HeartPulse, ChefHat, Flame, BookOpen, User, Shield, FileText, Camera, Moon, Sun, Utensils } from 'lucide-react';
+import { Home, Cat, Activity, Settings as SettingsIcon, HeartPulse, User, Shield, Moon, Sun, Utensils, MessageCircle } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import './Navbar.css';
 
@@ -10,6 +10,7 @@ const navItems = [
   { path: '/fitness', label: 'Fitness', icon: <HeartPulse size={20} /> },
   { path: '/nutrition', label: 'Ernährung', icon: <Utensils size={20} /> },
   { path: '/health', label: 'Gesundheits-Check', icon: <Activity size={20} /> },
+  { path: '/community', label: 'Community', icon: <MessageCircle size={20} /> },
   { path: '/profile', label: 'Profil', icon: <User size={20} /> },
   { path: '/legal', label: 'Rechtliches', icon: <Shield size={20} /> },
   { path: '/settings', label: 'Einstellungen', icon: <SettingsIcon size={20} /> },

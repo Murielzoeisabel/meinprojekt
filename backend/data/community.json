@@ -1,0 +1,120 @@
+{
+  "posts": [
+    {
+      "id": 1,
+      "author": "Mia & Muffin",
+      "beforeWeight": 6.4,
+      "nowWeight": 5.7,
+      "text": "🎉 Woche 6 geschafft! Muffin wiegt jetzt 700g weniger. Mehr Spielzeit am Abend hat bei uns super geholfen. Sie sprintet wieder wie früher!",
+      "photo": "https://cataas.com/cat?width=600&height=400&fit=cover",
+      "likes": 24,
+      "hearts": 19,
+      "createdAt": "2026-03-28T09:15:00.000Z"
+    },
+    {
+      "id": 2,
+      "author": "Luca & Nala",
+      "beforeWeight": 5.9,
+      "nowWeight": 5.2,
+      "text": "Wir nutzen den Kalorientracker jeden Tag. Kleine Schritte, großer Effekt. 700g weniger in 4 Wochen! Nala ist viel verspielter geworden.",
+      "photo": "https://placecats.com/301/300",
+      "likes": 21,
+      "hearts": 22,
+      "createdAt": "2026-03-29T14:20:00.000Z"
+    },
+    {
+      "id": 3,
+      "author": "Sara & Oskar",
+      "beforeWeight": 7.1,
+      "nowWeight": 6.3,
+      "text": "💪 Laser-Workout und neuer Futterplan - Oskar hat 800g abgenommen! Er springt wieder aufs Sofa und spielt mit den anderen Katzen.",
+      "photo": "https://placecats.com/302/300",
+      "likes": 27,
+      "hearts": 25,
+      "createdAt": "2026-03-30T17:30:00.000Z"
+    },
+    {
+      "id": 4,
+      "author": "Tom & Milo",
+      "beforeWeight": 6.8,
+      "nowWeight": 5.9,
+      "text": "Milo ist jetzt 900g leichter! Der Ernährungsplan war das Wichtigste. Weniger Treats, mehr richtige Mahlzeiten. Sein Fell ist auch viel glänzender.",
+      "photo": "https://placecats.com/303/300",
+      "likes": 19,
+      "hearts": 20,
+      "createdAt": "2026-03-31T11:45:00.000Z"
+    },
+    {
+      "id": 5,
+      "author": "Julia & Whisky",
+      "beforeWeight": 6.2,
+      "nowWeight": 5.4,
+      "text": "🏃‍♀️ Whisky hat 800g verloren! Tägliche Spielsessions (20 Min) + Treppenlaufen haben super geholfen. Sie ist wieder viel aktiver.",
+      "photo": "https://placecats.com/304/300",
+      "likes": 16,
+      "hearts": 18,
+      "createdAt": "2026-04-01T13:20:00.000Z"
+    },
+    {
+      "id": 6,
+      "author": "Marco & Felix",
+      "beforeWeight": 7.3,
+      "nowWeight": 6.2,
+      "text": "Felix hat jetzt 1.1kg abgenommen! Unglaublich - vor 2 Monaten konnte er kaum springen. Jetzt wieder top fit! Futterumstellung + Workouts wirken.",
+      "photo": "https://placecats.com/305/300",
+      "likes": 31,
+      "hearts": 28,
+      "createdAt": "2026-04-02T10:15:00.000Z"
+    }
+  ],
+  "messages": [
+    {
+      "id": 1,
+      "user": "Mia",
+      "text": "Hat jemand gute Indoor-Ideen für Regentage?",
+      "createdAt": "2026-03-31T08:00:00.000Z"
+    },
+    {
+      "id": 2,
+      "user": "Luca",
+      "text": "Wir machen 3x 10 Minuten Jagdspiele, klappt top.",
+      "createdAt": "2026-03-31T08:04:00.000Z"
+    },
+    {
+      "id": 3,
+      "user": "Sara",
+      "text": "Snack-Ball ist auch super fürs langsamere Fressen.",
+      "createdAt": "2026-03-31T08:08:00.000Z"
+    },
+    {
+      "id": 4,
+      "user": "Julia",
+      "text": "Wie oft sollte man Workouts machen? Täglich oder mit Pausen?",
+      "createdAt": "2026-04-01T09:30:00.000Z"
+    },
+    {
+      "id": 5,
+      "user": "Tom",
+      "text": "Wir machen 3-4x pro Woche je 20 Minuten - mit 1-2 freien Tagen dazwischen. Unsere Katzen brauchen auch Ruhe!",
+      "createdAt": "2026-04-01T09:45:00.000Z"
+    },
+    {
+      "id": 6,
+      "user": "Marco",
+      "text": "Bei uns klappt es am besten nach dem Füttern - Felix ist motivierter, wenn der Bauch nicht voll ist.",
+      "createdAt": "2026-04-01T10:00:00.000Z"
+    },
+    {
+      "id": 7,
+      "user": "Mia",
+      "text": "Welche Kalorienreduktion habt ihr vorgenommen? Müssen wir langsam anheben?",
+      "createdAt": "2026-04-02T11:15:00.000Z"
+    },
+    {
+      "id": 8,
+      "user": "Luca",
+      "text": "Bei uns waren es -100 kcal pro Woche. So langsam, dass Nala es nicht gemerkt hat. Der Tierarzt empfahl max 10% weniger.",
+      "createdAt": "2026-04-02T11:30:00.000Z"
+    }
+  ]
+}

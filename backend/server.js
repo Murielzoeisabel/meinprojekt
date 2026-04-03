@@ -1,11 +1,93 @@
 const express = require('express');
 const cors = require('cors');
+const fs = require('fs');
+const path = require('path');
 
 const app = express();
 const PORT = 3000;
 
 app.use(cors());
 app.use(express.json());
+
+const COMMUNITY_DATA_PATH = path.join(__dirname, 'data', 'community.json');
+
+const DEFAULT_COMMUNITY_DATA = {
+  posts: [
+    {
+      id: 1,
+      author: 'Mia & Muffin',
+      beforeWeight: 6.4,
+      nowWeight: 5.7,
+      text: 'Woche 6 geschafft. Mehr Spielzeit am Abend hat bei uns super geholfen.',
+      photo: 'https://images.unsplash.com/photo-1548802673-380ab8ebc7b7?auto=format&fit=crop&w=1200&q=80',
+      likes: 14,
+      hearts: 9,
+      createdAt: '2026-03-28T09:15:00.000Z'
+    },
+    {
+      id: 2,
+      author: 'Luca & Nala',
+      beforeWeight: 5.9,
+      nowWeight: 5.2,
+      text: 'Wir nutzen den Kalorientracker jeden Tag. Kleine Schritte, großer Effekt.',
+      photo: 'https://images.unsplash.com/photo-1519052537078-e6302a4968d4?auto=format&fit=crop&w=1200&q=80',
+      likes: 11,
+      hearts: 12,
+      createdAt: '2026-03-29T14:20:00.000Z'
+    },
+    {
+      id: 3,
+      author: 'Sara & Oskar',
+      beforeWeight: 7.0,
+      nowWeight: 6.3,
+      text: 'Laser-Workout und Futterplan haben Oskar richtig mobil gemacht.',
+      photo: 'https://images.unsplash.com/photo-1573865526739-10659fec78a5?auto=format&fit=crop&w=1200&q=80',
+      likes: 17,
+      hearts: 15,
+      createdAt: '2026-03-30T17:30:00.000Z'
+    }
+  ],
+  messages: [
+    { id: 1, user: 'Mia', text: 'Hat jemand gute Indoor-Ideen für Regentage?', createdAt: '2026-03-31T08:00:00.000Z' },
+    { id: 2, user: 'Luca', text: 'Wir machen 3x 10 Minuten Jagdspiele, klappt top.', createdAt: '2026-03-31T08:04:00.000Z' },
+    { id: 3, user: 'Sara', text: 'Snack-Ball ist auch super fürs langsamere Fressen.', createdAt: '2026-03-31T08:08:00.000Z' }
+  ]
+};
+
+const ensureCommunityDataDir = () => {
+  fs.mkdirSync(path.dirname(COMMUNITY_DATA_PATH), { recursive: true });
+};
+
+const writeCommunityData = (data) => {
+  ensureCommunityDataDir();
+  fs.writeFileSync(COMMUNITY_DATA_PATH, JSON.stringify(data, null, 2), 'utf8');
+};
+
+const readCommunityData = () => {
+  try {
+    if (!fs.existsSync(COMMUNITY_DATA_PATH)) {
+      writeCommunityData(DEFAULT_COMMUNITY_DATA);
+      return { ...DEFAULT_COMMUNITY_DATA };
+    }
+
+    const raw = fs.readFileSync(COMMUNITY_DATA_PATH, 'utf8');
+    const parsed = JSON.parse(raw);
+    if (!parsed || !Array.isArray(parsed.posts) || !Array.isArray(parsed.messages)) {
+      writeCommunityData(DEFAULT_COMMUNITY_DATA);
+      return { ...DEFAULT_COMMUNITY_DATA };
+    }
+    return parsed;
+  } catch (error) {
+    console.error('Fehler beim Lesen der Community-Daten:', error);
+    writeCommunityData(DEFAULT_COMMUNITY_DATA);
+    return { ...DEFAULT_COMMUNITY_DATA };
+  }
+};
+
+const getNextId = (collection) => {
+  if (!collection.length) return 1;
+  return Math.max(...collection.map(item => Number(item.id) || 0)) + 1;
+};
 
 const BREED_BASE_WEIGHTS = {
   'Europäisch Kurzhaar': 4.2,
@@ -56,6 +138,10 @@ let calorieHistory = {
     { date: '2026-03-26', consumed: 200, burned: 45, basalBurned: 172 }
   ]
 };
+
+const communityData = readCommunityData();
+let communityPosts = [...communityData.posts];
+let communityMessages = [...communityData.messages];
 
 // --- API ROUTES: CATS ---
 app.get('/api/cats', (req, res) => {
@@ -175,6 +261,106 @@ app.post('/api/calories', (req, res) => {
   
   calorieHistory[id].sort((a, b) => new Date(a.date) - new Date(b.date));
   res.status(201).json(calorieHistory[id]);
+});
+
+// --- API ROUTES: COMMUNITY ---
+app.get('/api/community/posts', (req, res) => {
+  const sortedPosts = [...communityPosts].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  res.json(sortedPosts);
+});
+
+app.post('/api/community/posts', (req, res) => {
+  const { author, text, photo, beforeWeight, nowWeight } = req.body;
+
+  if (!author || !String(author).trim() || !text || !String(text).trim()) {
+    return res.status(400).json({ error: 'Autor und Text sind erforderlich.' });
+  }
+
+  const parsedBeforeWeight = Number.parseFloat(beforeWeight);
+  const parsedNowWeight = Number.parseFloat(nowWeight);
+
+  const post = {
+    id: getNextId(communityPosts),
+    author: String(author).trim(),
+    text: String(text).trim(),
+    photo: photo && String(photo).trim()
+      ? String(photo).trim()
+      : 'https://images.unsplash.com/photo-1573865526739-10659fec78a5?auto=format&fit=crop&w=1200&q=80',
+    beforeWeight: Number.isNaN(parsedBeforeWeight) ? null : parsedBeforeWeight,
+    nowWeight: Number.isNaN(parsedNowWeight) ? null : parsedNowWeight,
+    likes: 0,
+    hearts: 0,
+    createdAt: new Date().toISOString()
+  };
+
+  communityPosts.push(post);
+  writeCommunityData({ posts: communityPosts, messages: communityMessages });
+
+  res.status(201).json(post);
+});
+
+app.delete('/api/community/posts/:id', (req, res) => {
+  const id = Number.parseInt(req.params.id, 10);
+  const beforeCount = communityPosts.length;
+  communityPosts = communityPosts.filter(post => post.id !== id);
+
+  if (communityPosts.length === beforeCount) {
+    return res.status(404).json({ error: 'Post nicht gefunden.' });
+  }
+
+  writeCommunityData({ posts: communityPosts, messages: communityMessages });
+  res.json({ success: true });
+});
+
+app.post('/api/community/posts/:id/reactions', (req, res) => {
+  const id = Number.parseInt(req.params.id, 10);
+  const { type } = req.body;
+
+  if (type !== 'like' && type !== 'heart') {
+    return res.status(400).json({ error: 'Ungültiger Reaktionstyp.' });
+  }
+
+  const post = communityPosts.find(item => item.id === id);
+  if (!post) {
+    return res.status(404).json({ error: 'Post nicht gefunden.' });
+  }
+
+  if (type === 'like') {
+    post.likes += 1;
+  } else {
+    post.hearts += 1;
+  }
+
+  writeCommunityData({ posts: communityPosts, messages: communityMessages });
+  res.json(post);
+});
+
+app.get('/api/community/messages', (req, res) => {
+  const sortedMessages = [...communityMessages].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+  res.json(sortedMessages);
+});
+
+app.post('/api/community/messages', (req, res) => {
+  const { user, text } = req.body;
+
+  if (!text || !String(text).trim()) {
+    return res.status(400).json({ error: 'Nachrichtentext ist erforderlich.' });
+  }
+
+  const message = {
+    id: getNextId(communityMessages),
+    user: user && String(user).trim() ? String(user).trim() : 'Du',
+    text: String(text).trim(),
+    createdAt: new Date().toISOString()
+  };
+
+  communityMessages.push(message);
+  if (communityMessages.length > 500) {
+    communityMessages = communityMessages.slice(-500);
+  }
+
+  writeCommunityData({ posts: communityPosts, messages: communityMessages });
+  res.status(201).json(message);
 });
 
 app.listen(PORT, () => console.log(`✓ Backend läuft auf http://localhost:${PORT}`));
