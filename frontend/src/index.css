@@ -166,6 +166,79 @@ button {
   animation: float 4s ease-in-out infinite;
 }
 
+.animated-page > h1,
+.animated-page > div:first-child:has(h1) {
+  margin: 0 0 1.25rem;
+  padding: 1rem 1.3rem;
+  width: 100%;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.52);
+  background:
+    linear-gradient(130deg, rgba(255, 255, 255, 0.34) 0%, rgba(255, 255, 255, 0.08) 40%, rgba(214, 236, 170, 0.18) 100%),
+    linear-gradient(135deg, rgba(251, 253, 246, 0.62) 0%, rgba(214, 236, 170, 0.34) 100%);
+  box-shadow:
+    0 14px 34px rgba(90, 120, 30, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.58),
+    inset 0 -1px 0 rgba(159, 203, 69, 0.2);
+  backdrop-filter: blur(14px) saturate(150%);
+  -webkit-backdrop-filter: blur(14px) saturate(150%);
+  transition: box-shadow 0.25s ease, transform 0.25s ease, border-color 0.25s ease;
+}
+
+.animated-page > h1 {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.animated-page > div:first-child:has(h1) {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.animated-page > div:first-child:has(h1) > h1,
+.animated-page > div:first-child:has(h1) h1 {
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+}
+
+.animated-page > h1:hover,
+.animated-page > div:first-child:has(h1):hover {
+  transform: translateY(-1px);
+  border-color: rgba(159, 203, 69, 0.55);
+  box-shadow:
+    0 18px 38px rgba(90, 120, 30, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.65),
+    inset 0 -1px 0 rgba(159, 203, 69, 0.24);
+}
+
+[data-theme='dark'] .animated-page > h1,
+[data-theme='dark'] .animated-page > div:first-child:has(h1) {
+  border-color: rgba(191, 220, 121, 0.34);
+  background:
+    linear-gradient(130deg, rgba(220, 240, 170, 0.16) 0%, rgba(220, 240, 170, 0.04) 42%, rgba(67, 91, 35, 0.24) 100%),
+    linear-gradient(135deg, rgba(30, 42, 20, 0.64) 0%, rgba(67, 91, 35, 0.4) 100%);
+  box-shadow:
+    0 14px 34px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(220, 240, 170, 0.24),
+    inset 0 -1px 0 rgba(159, 203, 69, 0.18);
+}
+
+[data-theme='dark'] .animated-page > h1:hover,
+[data-theme='dark'] .animated-page > div:first-child:has(h1):hover {
+  border-color: rgba(191, 220, 121, 0.55);
+  box-shadow:
+    0 18px 38px rgba(0, 0, 0, 0.48),
+    inset 0 1px 0 rgba(220, 240, 170, 0.3),
+    inset 0 -1px 0 rgba(159, 203, 69, 0.26);
+}
+
 @keyframes tail-wagging {
   0% { transform: rotate(0deg); transform-origin: bottom right; }
   25% { transform: rotate(15deg); transform-origin: bottom right; }
@@ -188,4 +261,28 @@ button {
   content: "😸";
   animation: winking-cat 5s infinite;
   display: inline-block;
+}
+
+@media (max-width: 768px) {
+  .animated-page > h1,
+  .animated-page > div:first-child:has(h1) {
+    width: 100%;
+    font-size: 1.5rem;
+    padding: 0.88rem 1rem;
+    border-radius: 16px;
+  }
+
+  .animated-page > h1 {
+    justify-content: center;
+  }
+
+  .animated-page > div:first-child:has(h1) {
+    justify-content: center;
+  }
+
+  .animated-page > div:first-child:has(h1) > h1,
+  .animated-page > div:first-child:has(h1) h1 {
+    width: 100%;
+    text-align: center;
+  }
 }

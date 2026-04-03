@@ -4,9 +4,31 @@ const Legal = () => {
   return (
     <AnimatedPage>
       <h1>Rechtliches & Guidelines</h1>
-      <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>Wichtige Informationen und Community Regeln.</p>
+      <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>Wichtige Informationen, Impressum und Community-Regeln.</p>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', maxWidth: '800px' }}>
+        <div className="card">
+          <h3 style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>Impressum</h3>
+          <div style={{ marginTop: '1rem', color: 'var(--text-secondary)', lineHeight: '1.7' }}>
+            <p style={{ marginTop: 0 }}><strong>Angaben gemäß § 5 TMG</strong></p>
+            <p>
+              Cat Slim Down<br />
+             Kitty Cat<br />
+              Catville 22<br />
+              00000 Cat-City
+            </p>
+            <p>
+              <strong>Kontakt</strong><br />
+              Telefon: +49 0000 000000<br />
+              E-Mail: info@catslimdown.de
+            </p>
+            <p>
+              <strong>Verantwortlich für den Inhalt nach § 55 Abs. 2 RStV</strong><br />
+               Kitty Cat, Anschrift wie oben
+            </p>
+          </div>
+        </div>
+
         <div className="card">
           <h3 style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>Datenschutzbestimmungen</h3>
           <p style={{ marginTop: '1rem', color: 'var(--text-secondary)', lineHeight: '1.6' }}>

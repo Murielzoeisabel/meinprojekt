@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import AnimatedPage from '../components/AnimatedPage';
-import { getCats, addCat, updateCat, deleteCat } from '../services/api';
+import { getCats, addCat, updateCat, deleteCat, addWeight } from '../services/api';
 import { motion } from 'framer-motion';
 import { Trash2, Plus, Camera } from 'lucide-react';
 
@@ -69,6 +69,16 @@ const CatList = () => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingPhotoCatId, setEditingPhotoCatId] = useState(null);
   const [editingPhotoValue, setEditingPhotoValue] = useState('');
+  const [editingCatId, setEditingCatId] = useState(null);
+  const [saveRewardCatId, setSaveRewardCatId] = useState(null);
+  const [editingCatDraft, setEditingCatDraft] = useState({
+    name: '',
+    age: '',
+    breed: 'Mischling',
+    size: 'mittel',
+    idealWeight: '',
+    currentWeight: ''
+  });
   const [newCat, setNewCat] = useState({
     name: '',
     age: '',
@@ -143,6 +153,67 @@ const CatList = () => {
     await updateCat(cat.id, { photo: editingPhotoValue });
     setCats(prevCats => prevCats.map(existingCat => existingCat.id === cat.id ? { ...existingCat, photo: editingPhotoValue } : existingCat));
     cancelPhotoEditor();
+  };
+
+  const openCatEditor = (cat) => {
+    setEditingCatId(cat.id);
+    setEditingCatDraft({
+      name: cat.name ?? '',
+      age: String(cat.age ?? ''),
+      breed: cat.breed ?? 'Mischling',
+      size: cat.size ?? 'mittel',
+      idealWeight: String(cat.idealWeight ?? ''),
+      currentWeight: cat.currentWeight !== null && cat.currentWeight !== undefined ? String(parseFloat(cat.currentWeight).toFixed(2)) : ''
+    });
+  };
+
+  const cancelCatEditor = () => {
+    setEditingCatId(null);
+    setEditingCatDraft({ name: '', age: '', breed: 'Mischling', size: 'mittel', idealWeight: '', currentWeight: '' });
+  };
+
+  const saveCatEditor = async (cat) => {
+    const nextAge = parseInt(editingCatDraft.age, 10);
+    const nextIdealWeight = parseFloat(editingCatDraft.idealWeight);
+    const nextCurrentWeight = parseFloat(editingCatDraft.currentWeight);
+
+    if (!editingCatDraft.name.trim()) return;
+    if (Number.isNaN(nextAge) || nextAge < 0) return;
+    if (Number.isNaN(nextIdealWeight) || nextIdealWeight <= 0) return;
+
+    await updateCat(cat.id, {
+      name: editingCatDraft.name.trim(),
+      age: nextAge,
+      breed: editingCatDraft.breed,
+      size: editingCatDraft.size,
+      idealWeight: nextIdealWeight
+    });
+
+    let updatedCurrentWeight = cat.currentWeight;
+    if (!Number.isNaN(nextCurrentWeight) && nextCurrentWeight > 0) {
+      const oldWeight = cat.currentWeight !== null && cat.currentWeight !== undefined ? parseFloat(cat.currentWeight) : null;
+      if (oldWeight === null || Math.abs(oldWeight - nextCurrentWeight) > 0.0001) {
+        await addWeight({ catId: cat.id, weight: nextCurrentWeight });
+      }
+      updatedCurrentWeight = nextCurrentWeight;
+    }
+
+    setCats(prevCats => prevCats.map(existingCat => (
+      existingCat.id === cat.id
+        ? {
+            ...existingCat,
+            name: editingCatDraft.name.trim(),
+            age: nextAge,
+            breed: editingCatDraft.breed,
+            size: editingCatDraft.size,
+            idealWeight: nextIdealWeight,
+            currentWeight: updatedCurrentWeight
+          }
+        : existingCat
+    )));
+      setSaveRewardCatId(cat.id);
+      setTimeout(() => setSaveRewardCatId(null), 2200);
+    cancelCatEditor();
   };
 
   const handleDelete = async (id) => {
@@ -271,8 +342,9 @@ const CatList = () => {
             className="card"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
+            whileHover={{ y: -10, scale: 1.015, boxShadow: '0 18px 36px rgba(90, 120, 30, 0.18)' }}
             transition={{ delay: index * 0.1 }}
-            style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}
+            style={{ display: 'flex', flexDirection: 'column', gap: '1rem', transition: 'box-shadow 0.2s ease' }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <div>
@@ -292,8 +364,99 @@ const CatList = () => {
             <div>
               <h2 style={{ margin: 0 }}>{cat.name}</h2>
               <p style={{ color: 'var(--text-secondary)' }}>
-                {cat.age} Jahre • {cat.breed || 'Mischling'} • {sizeLabel[cat.size] || cat.size || 'mittel'} • Ziel: {cat.idealWeight} kg
+                {cat.breed || 'Mischling'} • {sizeLabel[cat.size] || cat.size || 'mittel'} • Ziel: {cat.idealWeight} kg
               </p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+                <span style={{ color: 'var(--text-secondary)', fontSize: '0.92rem' }}>Alter: <strong style={{ color: 'var(--text-primary)' }}>{cat.age} Jahre</strong></span>
+                {editingCatId !== cat.id && (
+                  <button
+                    type="button"
+                    onClick={() => openCatEditor(cat)}
+                    style={{ background: 'rgba(16, 185, 129, 0.1)', color: 'var(--accent-primary)', padding: '0.35rem 0.65rem', borderRadius: '999px', fontWeight: 600, fontSize: '0.82rem' }}
+                  >
+                    Profil bearbeiten
+                  </button>
+                )}
+              </div>
+
+              {editingCatId === cat.id && (
+                <div style={{ marginTop: '0.8rem', border: '1px solid var(--border-color)', borderRadius: '12px', background: 'var(--bg-color)', padding: '0.8rem' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(120px, 1fr))', gap: '0.55rem' }}>
+                    <input
+                      type="text"
+                      className="input-field"
+                      value={editingCatDraft.name}
+                      onChange={(e) => setEditingCatDraft(prev => ({ ...prev, name: e.target.value }))}
+                      placeholder="Name"
+                      style={{ marginBottom: 0 }}
+                    />
+                    <input
+                      type="number"
+                      min="0"
+                      className="input-field"
+                      value={editingCatDraft.age}
+                      onChange={(e) => setEditingCatDraft(prev => ({ ...prev, age: e.target.value }))}
+                      placeholder="Alter"
+                      style={{ marginBottom: 0 }}
+                    />
+                    <select
+                      className="input-field"
+                      value={editingCatDraft.breed}
+                      onChange={(e) => setEditingCatDraft(prev => ({ ...prev, breed: e.target.value }))}
+                      style={{ marginBottom: 0 }}
+                    >
+                      {Object.keys(BREED_BASE_WEIGHTS).map((breed) => (
+                        <option key={breed} value={breed}>{breed}</option>
+                      ))}
+                    </select>
+                    <select
+                      className="input-field"
+                      value={editingCatDraft.size}
+                      onChange={(e) => setEditingCatDraft(prev => ({ ...prev, size: e.target.value }))}
+                      style={{ marginBottom: 0 }}
+                    >
+                      <option value="klein">Klein</option>
+                      <option value="mittel">Mittel</option>
+                      <option value="gross">Groß</option>
+                    </select>
+                    <div>
+                      <label style={{ display: 'block', marginBottom: '0.35rem', color: 'var(--text-secondary)', fontSize: '0.82rem' }}>Zielgewicht (kg)</label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        className="input-field"
+                        value={editingCatDraft.idealWeight}
+                        onChange={(e) => setEditingCatDraft(prev => ({ ...prev, idealWeight: e.target.value }))}
+                        style={{ marginBottom: 0 }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', marginBottom: '0.35rem', color: 'var(--text-secondary)', fontSize: '0.82rem' }}>Letztes Gewicht (kg)</label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        className="input-field"
+                        value={editingCatDraft.currentWeight}
+                        onChange={(e) => setEditingCatDraft(prev => ({ ...prev, currentWeight: e.target.value }))}
+                        style={{ marginBottom: 0 }}
+                      />
+                    </div>
+                  </div>
+                  <div style={{ marginTop: '0.6rem', display: 'flex', gap: '0.5rem' }}>
+                    <button type="button" className="btn-primary" onClick={() => saveCatEditor(cat)} style={{ flex: 1 }}>
+                      Speichern
+                    </button>
+                    <button type="button" onClick={cancelCatEditor} style={{ flex: 1, background: 'var(--border-color)', color: 'var(--text-primary)', borderRadius: '10px', fontWeight: 600 }}>
+                      Abbrechen
+                    </button>
+                  </div>
+                  {saveRewardCatId === cat.id && (
+                    <p style={{ marginTop: '0.6rem', marginBottom: 0, color: 'var(--accent-primary)', fontWeight: 700, textAlign: 'center' }}>
+                      Gespeichert! 😺
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
             <div style={{ background: 'var(--bg-color)', padding: '1rem', borderRadius: '12px', marginTop: 'auto' }}>
               <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Letztes Gewicht:</span>
