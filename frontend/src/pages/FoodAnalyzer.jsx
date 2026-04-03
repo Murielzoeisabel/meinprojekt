@@ -2,8 +2,11 @@ import { useState } from 'react';
 import AnimatedPage from '../components/AnimatedPage';
 import { Camera, UploadCloud, AlertTriangle, CheckCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react';
 
 const FoodAnalyzer = () => {
+  const navigate = useNavigate();
   const [analyzing, setAnalyzing] = useState(false);
   const [result, setResult] = useState(null);
 
@@ -24,6 +27,14 @@ const FoodAnalyzer = () => {
 
   return (
     <AnimatedPage>
+      <button
+        type="button"
+        onClick={() => navigate('/nutrition')}
+        style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.5rem', background: 'transparent', color: 'var(--text-secondary)', fontWeight: 700 }}
+      >
+        <ArrowLeft size={18} /> Zurück zur Ernährungsauswahl
+      </button>
+
       <h1>Futter-Scanner</h1>
       <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>Fotografiere die Inhaltsstoffe einer Dose und lass sie von der KI analysieren.</p>
 

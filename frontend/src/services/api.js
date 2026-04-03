@@ -6,6 +6,7 @@ const api = axios.create({
 
 export const getCats = () => api.get('/cats').then(res => res.data);
 export const addCat = (catData) => api.post('/cats', catData).then(res => res.data);
+export const updateCat = (id, catData) => api.put(`/cats/${id}`, catData).then(res => res.data);
 export const deleteCat = (id) => api.delete(`/cats/${id}`).then(res => res.data);
 
 export const getWeights = (catId) => api.get(`/weights/${catId}`).then(res => res.data);

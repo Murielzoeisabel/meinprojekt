@@ -33,6 +33,106 @@ const Stats = () => {
   };
 
   const trend = calculateTrend();
+  const selectedCat = cats.find(cat => cat.id.toString() === selectedCatId);
+  const latestWeight = weights.length > 0 ? weights[weights.length - 1].weight : null;
+
+  const getLongestDailyStreak = () => {
+    if (weights.length === 0) return 0;
+
+    const uniqueSortedDates = [...new Set(weights.map(entry => entry.date))]
+      .map(date => new Date(date))
+      .sort((a, b) => a - b);
+
+    let longest = 1;
+    let current = 1;
+
+    for (let i = 1; i < uniqueSortedDates.length; i += 1) {
+      const prev = uniqueSortedDates[i - 1];
+      const curr = uniqueSortedDates[i];
+      const diffInDays = Math.round((curr - prev) / (1000 * 60 * 60 * 24));
+
+      if (diffInDays === 1) {
+        current += 1;
+        longest = Math.max(longest, current);
+      } else {
+        current = 1;
+      }
+    }
+
+    return longest;
+  };
+
+  const getGoalStreakFromLatest = () => {
+    if (!selectedCat?.idealWeight || weights.length === 0) return 0;
+
+    let streak = 0;
+    for (let i = weights.length - 1; i >= 0; i -= 1) {
+      if (weights[i].weight <= selectedCat.idealWeight + 0.1) {
+        streak += 1;
+      } else {
+        break;
+      }
+    }
+
+    return streak;
+  };
+
+  const longestDailyStreak = getLongestDailyStreak();
+  const goalStreakFromLatest = getGoalStreakFromLatest();
+
+  const badges = [
+    {
+      id: 'first-entry',
+      icon: '🥉',
+      title: 'Erste Messung',
+      description: 'Mindestens 1 Gewichtseintrag erfasst.',
+      unlocked: weights.length >= 1
+    },
+    {
+      id: 'consistent',
+      icon: '📅',
+      title: 'Dranbleiber',
+      description: 'Mindestens 5 Gewichtseinträge erfasst.',
+      unlocked: weights.length >= 5
+    },
+    {
+      id: 'weight-loss',
+      icon: '📉',
+      title: 'Auf Zielkurs',
+      description: 'Der Trend zeigt eine Gewichtsabnahme.',
+      unlocked: trend.status === 'fallend'
+    },
+    {
+      id: 'near-goal',
+      icon: '🎯',
+      title: 'Fast am Ziel',
+      description: 'Aktuelles Gewicht liegt maximal 0.2 kg über dem Zielgewicht.',
+      unlocked: latestWeight !== null && selectedCat?.idealWeight !== undefined && latestWeight <= selectedCat.idealWeight + 0.2
+    },
+    {
+      id: 'goal-hit',
+      icon: '🏆',
+      title: 'Ziel erreicht',
+      description: 'Aktuelles Gewicht ist kleiner/gleich Zielgewicht.',
+      unlocked: latestWeight !== null && selectedCat?.idealWeight !== undefined && latestWeight <= selectedCat.idealWeight
+    },
+    {
+      id: 'week-streak',
+      icon: '💎',
+      title: 'Selten: 7-Tage-Serie',
+      description: '7 Tage in Folge dokumentiert.',
+      unlocked: longestDailyStreak >= 7,
+      rare: true
+    },
+    {
+      id: 'goal-keeper',
+      icon: '👑',
+      title: 'Selten: Zielwächter',
+      description: '3 Einträge in Folge im Zielbereich (<= Ziel + 0.1 kg).',
+      unlocked: goalStreakFromLatest >= 3,
+      rare: true
+    }
+  ];
 
   return (
     <AnimatedPage>
@@ -87,6 +187,41 @@ const Stats = () => {
             <h4 style={{ color: 'var(--text-secondary)' }}>Einträge gesamt</h4>
             <h2 style={{ margin: 0 }}>{weights.length}</h2>
           </div>
+        </div>
+      </div>
+
+      <div className="card" style={{ marginTop: '2rem' }}>
+        <h3 style={{ marginTop: 0 }}>Abzeichen</h3>
+        <p style={{ color: 'var(--text-secondary)', marginTop: 0 }}>
+          Schalte Abzeichen frei, indem du regelmäßig Einträge machst und das Zielgewicht erreichst.
+        </p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
+          {badges.map((badge) => (
+            <div
+              key={badge.id}
+              style={{
+                border: `1px solid ${badge.rare ? '#f59e0b' : (badge.unlocked ? 'var(--accent-primary)' : 'var(--border-color)')}`,
+                background: badge.unlocked
+                  ? (badge.rare ? 'rgba(245, 158, 11, 0.12)' : 'rgba(16, 185, 129, 0.08)')
+                  : 'var(--surface-color)',
+                borderRadius: '12px',
+                padding: '1rem',
+                opacity: badge.unlocked ? 1 : 0.65
+              }}
+            >
+              {badge.rare && (
+                <p style={{ margin: '0 0 0.4rem 0', fontSize: '0.75rem', fontWeight: 700, color: '#b45309' }}>
+                  SELTEN
+                </p>
+              )}
+              <div style={{ fontSize: '1.5rem' }}>{badge.icon}</div>
+              <h4 style={{ margin: '0.5rem 0 0.3rem 0' }}>{badge.title}</h4>
+              <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.9rem' }}>{badge.description}</p>
+              <p style={{ margin: '0.6rem 0 0 0', fontWeight: 700, color: badge.unlocked ? 'var(--accent-primary)' : 'var(--text-secondary)' }}>
+                {badge.unlocked ? 'Freigeschaltet' : 'Noch gesperrt'}
+              </p>
+            </div>
+          ))}
         </div>
       </div>
     </AnimatedPage>

@@ -1,7 +1,11 @@
 import AnimatedPage from '../components/AnimatedPage';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { ArrowLeft } from 'lucide-react';
 
 const Recipes = () => {
+  const navigate = useNavigate();
+
   const recipes = [
     { 
       title: 'Hühnchen-Gemüse-Mix', 
@@ -77,6 +81,14 @@ const Recipes = () => {
 
   return (
     <AnimatedPage>
+      <button
+        type="button"
+        onClick={() => navigate('/nutrition')}
+        style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.5rem', background: 'transparent', color: 'var(--text-secondary)', fontWeight: 700 }}
+      >
+        <ArrowLeft size={18} /> Zurück zur Ernährungsauswahl
+      </button>
+
       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', justifyItems: 'center' }}>
         <h1>Gesunde Rezepte</h1>
         <span className="wink-cat" style={{ fontSize: '2.5rem' }}></span>
