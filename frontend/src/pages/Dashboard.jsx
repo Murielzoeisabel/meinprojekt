@@ -55,9 +55,18 @@ const Dashboard = () => {
 
   return (
     <AnimatedPage>
-      <div style={{ marginBottom: '2rem' }}>
-        <h1>Cat Slim Down Tracker</h1>
-        <p style={{ color: 'var(--text-secondary)' }}>Willkommen zurück! Wie geht es deinen Katzen heute?</p>
+      <div style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'var(--surface-color)', padding: '1.5rem', borderRadius: '20px', boxShadow: 'var(--card-shadow)' }}>
+        <div>
+          <h1 style={{ fontSize: '2.5rem', color: 'var(--text-secondary)' }}>
+            Cat Slim Down <span className="floating-comic">👋</span>
+          </h1>
+          <p style={{ color: 'var(--text-primary)', fontWeight: 500 }}>Willkommen zurück! Bereit für ein bisschen Training?</p>
+        </div>
+        <img 
+          src="https://lh3.googleusercontent.com/aida-public/AB6AXuDuQd-aht8EtwjXD7PeWoAA3SfxVRPlfoxcmKYhQD440rF9OrXKUR38CuLaVJCX7jY3jy45YX86ZWuIl0NVpSilY-Mrn94WV4Hu1xRbotlDxcPES3tHhzoQiSq0yZENWvhx1YM38EwcgABiwO9oSPeFW9XZHQMChDFhWlW3iz4CDUPBBSqpNRoH7zxWD-nN7A4nWV-48KGoKXNRN337e8V08YepVQTmDmJkMoL9hFTMfQZggAxBPlBlMq2zRDIj9LC_aZhHI-uAMxU" 
+          alt="Playful Comic Cat" 
+          style={{ width: '120px', transform: 'rotate(5deg)' }} 
+        />
       </div>
 
       <div className="card" style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>

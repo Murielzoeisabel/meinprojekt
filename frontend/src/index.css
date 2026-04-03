@@ -1,26 +1,26 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
-  --bg-color: #f7f9fa;
+  --bg-color: #FBF9F8;
   --surface-color: #ffffff;
-  --text-primary: #1a1f24;
-  --text-secondary: #6e7a85;
-  --accent-primary: #10b981; /* Emerald Green */
-  --accent-secondary: #059669;
-  --border-color: #e5e7eb;
-  --card-shadow: 0 4px 20px rgba(0,0,0,0.05);
-  --danger: #ef4444;
+  --text-primary: #1b1c1c;
+  --text-secondary: #506300;
+  --accent-primary: #8AB300; /* Darker vibrant green for contrast in light mode */
+  --accent-secondary: #BBD200;
+  --border-color: #E4E2E2;
+  --card-shadow: 0 12px 32px rgba(82,102,0,0.08);
+  --danger: #ba1a1a;
 }
 
 [data-theme='dark'] {
-  --bg-color: #121212;
-  --surface-color: #1e1e1e;
-  --text-primary: #e0e0e0;
-  --text-secondary: #9e9e9e;
-  --accent-primary: #10b981;
-  --accent-secondary: #34d399;
-  --border-color: #333333;
-  --card-shadow: 0 4px 20px rgba(0,0,0,0.2);
+  --bg-color: #1A1C00;
+  --surface-color: #2A2D00;
+  --text-primary: #E4E2E2;
+  --text-secondary: #D6F00D;
+  --accent-primary: #D6F00D;
+  --accent-secondary: #BBD200;
+  --border-color: #3D4D00;
+  --card-shadow: 0 12px 32px rgba(0,0,0,0.5);
 }
 
 * {
@@ -58,7 +58,7 @@ button {
 
 .btn-primary {
   background-color: var(--accent-primary);
-  color: white;
+  color: #506300;
   padding: 0.75rem 1.5rem;
   border-radius: 9999px;
   font-weight: 600;
@@ -154,4 +154,38 @@ button {
     padding: 1rem;
     padding-bottom: 80px; /* Space for bottom nav */
   }
+}
+
+@keyframes float {
+  0% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-10px) rotate(2deg); }
+  100% { transform: translateY(0px) rotate(0deg); }
+}
+.floating-comic {
+  display: inline-block;
+  animation: float 4s ease-in-out infinite;
+}
+
+@keyframes tail-wagging {
+  0% { transform: rotate(0deg); transform-origin: bottom right; }
+  25% { transform: rotate(15deg); transform-origin: bottom right; }
+  50% { transform: rotate(0deg); transform-origin: bottom right; }
+  75% { transform: rotate(15deg); transform-origin: bottom right; }
+  100% { transform: rotate(0deg); transform-origin: bottom right; }
+}
+
+@keyframes winking-cat {
+  0%, 90%, 100% { content: "😸"; }
+  95% { content: "😜"; }
+}
+
+.wagging-tail {
+  display: inline-block;
+  animation: tail-wagging 2s ease-in-out infinite;
+}
+
+.wink-cat::after {
+  content: "😸";
+  animation: winking-cat 5s infinite;
+  display: inline-block;
 }
