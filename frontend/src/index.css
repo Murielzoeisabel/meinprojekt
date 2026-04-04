@@ -191,6 +191,25 @@ button {
   gap: 0.55rem;
 }
 
+@keyframes cat-banner-spin {
+  0% { transform: rotate(0deg) scale(1); }
+  25% { transform: rotate(8deg) scale(1.04); }
+  50% { transform: rotate(0deg) scale(1); }
+  75% { transform: rotate(-8deg) scale(1.04); }
+  100% { transform: rotate(0deg) scale(1); }
+}
+
+.animated-page > h1::after,
+.animated-page > div:first-child:has(h1) > h1::after,
+.animated-page > div:first-child:has(h1) h1::after {
+  content: "🐱";
+  display: inline-block;
+  margin-left: 0.45rem;
+  line-height: 1;
+  animation: cat-banner-spin 2.2s ease-in-out infinite;
+  transform-origin: 50% 60%;
+}
+
 .animated-page > div:first-child:has(h1) {
   display: flex;
   align-items: center;

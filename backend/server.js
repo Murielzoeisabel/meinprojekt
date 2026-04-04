@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 
 const app = express();
-const PORT = 3000;
+const PORT = 3001;
 
 app.use(cors());
 app.use(express.json());
@@ -111,10 +111,52 @@ const getSuggestedIdealWeight = (breed = 'Mischling', size = 'mittel') => {
   return Math.max(2.5, Number((base + offset).toFixed(1)));
 };
 
+const parsePositiveInt = (value) => {
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed <= 0) return null;
+  return parsed;
+};
+
+const validateCatPayload = (payload) => {
+  if (!payload || typeof payload !== 'object') {
+    return 'Ungültiger Request-Body.';
+  }
+
+  if (typeof payload.name !== 'string' || !payload.name.trim()) {
+    return 'Feld "name" ist erforderlich.';
+  }
+
+  if (payload.userId !== undefined && parsePositiveInt(payload.userId) === null) {
+    return 'Feld "userId" muss eine positive Ganzzahl sein.';
+  }
+
+  if (payload.age !== undefined) {
+    const age = Number(payload.age);
+    if (Number.isNaN(age) || age < 0) {
+      return 'Feld "age" muss eine nicht-negative Zahl sein.';
+    }
+  }
+
+  if (payload.idealWeight !== undefined && payload.idealWeight !== '') {
+    const idealWeight = Number(payload.idealWeight);
+    if (Number.isNaN(idealWeight) || idealWeight <= 0) {
+      return 'Feld "idealWeight" muss eine positive Zahl sein.';
+    }
+  }
+
+  return null;
+};
+
+const withCurrentWeight = (cat) => {
+  const history = weightHistory[cat.id] || [];
+  const currentWeight = history.length > 0 ? history[history.length - 1].weight : null;
+  return { ...cat, currentWeight };
+};
+
 // In-memory Daten
 let cats = [
-  { id: 1, name: 'Luna', age: 3, breed: 'Europäisch Kurzhaar', size: 'mittel', idealWeight: 5.0, photo: 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=400' },
-  { id: 2, name: 'Milo', age: 2, breed: 'Mischling', size: 'mittel', idealWeight: 4.5, photo: 'https://images.unsplash.com/photo-1543852786-1cf6624b9987?w=400' }
+  { id: 1, name: 'Luna', userId: 1, age: 3, breed: 'Europäisch Kurzhaar', size: 'mittel', idealWeight: 5.0, photo: 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=400' },
+  { id: 2, name: 'Milo', userId: 2, age: 2, breed: 'Mischling', size: 'mittel', idealWeight: 4.5, photo: 'https://images.unsplash.com/photo-1543852786-1cf6624b9987?w=400' }
 ];
 
 let weightHistory = {
@@ -145,70 +187,117 @@ let communityMessages = [...communityData.messages];
 
 // --- API ROUTES: CATS ---
 app.get('/api/cats', (req, res) => {
-  // Aktuelles Gewicht anhängen
-  const catsWithWeight = cats.map(cat => {
-    const history = weightHistory[cat.id] || [];
-    const currentWeight = history.length > 0 ? history[history.length - 1].weight : null;
-    return { ...cat, currentWeight };
-  });
-  res.json(catsWithWeight);
+  const { userId } = req.query;
+
+  if (userId !== undefined) {
+    const parsedUserId = parsePositiveInt(userId);
+    if (parsedUserId === null) {
+      return res.status(400).json({ error: 'Query-Parameter "userId" ist ungültig.' });
+    }
+
+    return res.json(cats.filter((cat) => cat.userId === parsedUserId).map(withCurrentWeight));
+  }
+
+  res.json(cats.map(withCurrentWeight));
+});
+
+app.get('/api/cats/:id', (req, res) => {
+  const id = parsePositiveInt(req.params.id);
+  if (id === null) {
+    return res.status(400).json({ error: 'Ungültige Cat-ID.' });
+  }
+
+  const cat = cats.find((item) => item.id === id);
+  if (!cat) {
+    return res.status(404).json({ error: 'Cat nicht gefunden.' });
+  }
+
+  res.json(withCurrentWeight(cat));
 });
 
 app.post('/api/cats', (req, res) => {
-  const { name, age, idealWeight, breed, size, photo } = req.body;
-  const normalizedBreed = breed || 'Mischling';
-  const normalizedSize = size || 'mittel';
-  const parsedIdealWeight = parseFloat(idealWeight);
+  const validationError = validateCatPayload(req.body);
+  if (validationError) {
+    return res.status(400).json({ error: validationError });
+  }
+
+  const normalizedBreed = req.body.breed || 'Mischling';
+  const normalizedSize = req.body.size || 'mittel';
+  const parsedIdealWeight = req.body.idealWeight === undefined || req.body.idealWeight === ''
+    ? getSuggestedIdealWeight(normalizedBreed, normalizedSize)
+    : parseFloat(req.body.idealWeight);
+  const name = req.body.name.trim();
+
   const newCat = {
     id: cats.length > 0 ? Math.max(...cats.map(c => c.id)) + 1 : 1,
+    userId: req.body.userId !== undefined ? Number(req.body.userId) : null,
     name,
-    age: parseInt(age),
+    age: req.body.age !== undefined ? Number(req.body.age) : null,
     breed: normalizedBreed,
     size: normalizedSize,
-    idealWeight: Number.isNaN(parsedIdealWeight) ? getSuggestedIdealWeight(normalizedBreed, normalizedSize) : parsedIdealWeight,
-    photo: photo || `https://api.dicebear.com/7.x/fun-emoji/svg?seed=${name}`
+    idealWeight: parsedIdealWeight,
+    photo: req.body.photo || `https://api.dicebear.com/7.x/fun-emoji/svg?seed=${name}`
   };
+
   cats.push(newCat);
   weightHistory[newCat.id] = [];
   calorieHistory[newCat.id] = [];
+
   res.status(201).json(newCat);
 });
 
 app.put('/api/cats/:id', (req, res) => {
-  const id = parseInt(req.params.id);
+  const id = parsePositiveInt(req.params.id);
+  if (id === null) {
+    return res.status(400).json({ error: 'Ungültige Cat-ID.' });
+  }
+
   const catIndex = cats.findIndex(cat => cat.id === id);
 
   if (catIndex === -1) {
-    return res.status(404).json({ error: 'Katze nicht gefunden' });
+    return res.status(404).json({ error: 'Cat nicht gefunden.' });
   }
 
-  const currentCat = cats[catIndex];
-  const nextBreed = req.body.breed ?? currentCat.breed ?? 'Mischling';
-  const nextSize = req.body.size ?? currentCat.size ?? 'mittel';
-  const nextIdealWeightRaw = req.body.idealWeight;
-  const parsedIdealWeight = nextIdealWeightRaw !== undefined && nextIdealWeightRaw !== ''
-    ? parseFloat(nextIdealWeightRaw)
-    : currentCat.idealWeight;
+  const validationError = validateCatPayload(req.body);
+  if (validationError) {
+    return res.status(400).json({ error: validationError });
+  }
+
+  const nextBreed = req.body.breed || 'Mischling';
+  const nextSize = req.body.size || 'mittel';
+  const parsedIdealWeight = req.body.idealWeight === undefined || req.body.idealWeight === ''
+    ? getSuggestedIdealWeight(nextBreed, nextSize)
+    : parseFloat(req.body.idealWeight);
 
   cats[catIndex] = {
-    ...currentCat,
-    name: req.body.name ?? currentCat.name,
-    age: req.body.age !== undefined ? parseInt(req.body.age) : currentCat.age,
+    id,
+    userId: req.body.userId !== undefined ? Number(req.body.userId) : null,
+    name: req.body.name.trim(),
+    age: req.body.age !== undefined ? Number(req.body.age) : null,
     breed: nextBreed,
     size: nextSize,
-    idealWeight: Number.isNaN(parsedIdealWeight) ? getSuggestedIdealWeight(nextBreed, nextSize) : parsedIdealWeight,
-    photo: req.body.photo ?? currentCat.photo
+    idealWeight: parsedIdealWeight,
+    photo: req.body.photo || `https://api.dicebear.com/7.x/fun-emoji/svg?seed=${req.body.name.trim()}`
   };
 
   res.json(cats[catIndex]);
 });
 
 app.delete('/api/cats/:id', (req, res) => {
-  const id = parseInt(req.params.id);
-  cats = cats.filter(c => c.id !== id);
+  const id = parsePositiveInt(req.params.id);
+  if (id === null) {
+    return res.status(400).json({ error: 'Ungültige Cat-ID.' });
+  }
+
+  const catExists = cats.some((cat) => cat.id === id);
+  if (!catExists) {
+    return res.status(404).json({ error: 'Cat nicht gefunden.' });
+  }
+
+  cats = cats.filter((c) => c.id !== id);
   delete weightHistory[id];
   delete calorieHistory[id];
-  res.json({ success: true });
+  res.status(204).send();
 });
 
 // --- API ROUTES: WEIGHTS ---
@@ -288,8 +377,8 @@ app.post('/api/community/posts', (req, res) => {
       : 'https://images.unsplash.com/photo-1573865526739-10659fec78a5?auto=format&fit=crop&w=1200&q=80',
     beforeWeight: Number.isNaN(parsedBeforeWeight) ? null : parsedBeforeWeight,
     nowWeight: Number.isNaN(parsedNowWeight) ? null : parsedNowWeight,
-    likes: 0,
-    hearts: 0,
+    gefaelltMir: 0,
+    daumenHoch: 0,
     createdAt: new Date().toISOString()
   };
 
@@ -316,7 +405,7 @@ app.post('/api/community/posts/:id/reactions', (req, res) => {
   const id = Number.parseInt(req.params.id, 10);
   const { type } = req.body;
 
-  if (type !== 'like' && type !== 'heart') {
+  if (type !== 'like' && type !== 'thumbsUp') {
     return res.status(400).json({ error: 'Ungültiger Reaktionstyp.' });
   }
 
@@ -325,10 +414,14 @@ app.post('/api/community/posts/:id/reactions', (req, res) => {
     return res.status(404).json({ error: 'Post nicht gefunden.' });
   }
 
+  // Backward compatibility for existing persisted data
+  post.gefaelltMir = Number(post.gefaelltMir ?? post.likes ?? 0);
+  post.daumenHoch = Number(post.daumenHoch ?? post.hearts ?? 0);
+
   if (type === 'like') {
-    post.likes += 1;
+    post.gefaelltMir += 1;
   } else {
-    post.hearts += 1;
+    post.daumenHoch += 1;
   }
 
   writeCommunityData({ posts: communityPosts, messages: communityMessages });
@@ -361,6 +454,13 @@ app.post('/api/community/messages', (req, res) => {
 
   writeCommunityData({ posts: communityPosts, messages: communityMessages });
   res.status(201).json(message);
+});
+
+app.use((err, req, res, next) => {
+  if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
+    return res.status(400).json({ error: 'Ungültiges JSON im Request-Body.' });
+  }
+  return next(err);
 });
 
 app.listen(PORT, () => console.log(`✓ Backend läuft auf http://localhost:${PORT}`));

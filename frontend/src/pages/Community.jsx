@@ -1,11 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Heart, MessageCircle, Send, ThumbsUp, Trash2 } from 'lucide-react';
+import { Heart, MessageCircle, Send, ThumbsUp } from 'lucide-react';
 import AnimatedPage from '../components/AnimatedPage';
 import {
   addCommunityMessage,
   addCommunityPost,
-  deleteCommunityPost,
   getCommunityMessages,
   getCommunityPosts,
   reactToCommunityPost
@@ -56,21 +55,16 @@ const Community = () => {
   const totalReactions = useMemo(() => {
     return posts.reduce(
       (acc, post) => {
-        acc.likes += post.likes;
-        acc.hearts += post.hearts;
+        acc.gefaelltMir += Number(post.gefaelltMir ?? post.likes ?? 0);
+        acc.daumenHoch += Number(post.daumenHoch ?? post.hearts ?? 0);
         return acc;
       },
-      { likes: 0, hearts: 0 }
+      { gefaelltMir: 0, daumenHoch: 0 }
     );
   }, [posts]);
 
   const reactToPost = async (postId, type) => {
     await reactToCommunityPost(postId, type);
-    await loadCommunityData();
-  };
-
-  const removePost = async (postId) => {
-    await deleteCommunityPost(postId);
     await loadCommunityData();
   };
 
@@ -125,14 +119,14 @@ const Community = () => {
         }}
       >
         <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '0.7rem' }}>
-          <ThumbsUp size={18} color="var(--accent-primary)" />
-          <strong>{totalReactions.likes}</strong>
-          <span style={{ color: 'var(--text-secondary)' }}>Likes insgesamt</span>
+          <Heart size={18} color="var(--accent-primary)" />
+          <strong>{totalReactions.gefaelltMir}</strong>
+          <span style={{ color: 'var(--text-secondary)' }}>Gefaellt mir insgesamt</span>
         </div>
         <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '0.7rem' }}>
-          <Heart size={18} color="var(--accent-primary)" />
-          <strong>{totalReactions.hearts}</strong>
-          <span style={{ color: 'var(--text-secondary)' }}>Hearts insgesamt</span>
+          <ThumbsUp size={18} color="var(--accent-primary)" />
+          <strong>{totalReactions.daumenHoch}</strong>
+          <span style={{ color: 'var(--text-secondary)' }}>Daumen hoch insgesamt</span>
         </div>
         <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '0.7rem' }}>
           <MessageCircle size={18} color="var(--accent-primary)" />
@@ -248,21 +242,14 @@ const Community = () => {
                     style={{ padding: '0.45rem 0.9rem' }}
                     onClick={() => reactToPost(post.id, 'like')}
                   >
-                    <ThumbsUp size={15} /> {post.likes}
+                    <Heart size={15} /> Gefaellt mir ({post.gefaelltMir ?? post.likes ?? 0})
                   </button>
                   <button
                     className="btn-secondary"
                     style={{ padding: '0.45rem 0.9rem' }}
-                    onClick={() => reactToPost(post.id, 'heart')}
+                    onClick={() => reactToPost(post.id, 'thumbsUp')}
                   >
-                    <Heart size={15} /> {post.hearts}
-                  </button>
-                  <button
-                    className="btn-secondary"
-                    style={{ padding: '0.45rem 0.9rem' }}
-                    onClick={() => removePost(post.id)}
-                  >
-                    <Trash2 size={15} /> Löschen
+                    <ThumbsUp size={15} /> Daumen hoch ({post.daumenHoch ?? post.hearts ?? 0})
                   </button>
                 </div>
               </div>

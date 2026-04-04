@@ -4,57 +4,87 @@ import { getCats, getWeights, addWeight } from '../services/api';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { motion } from 'framer-motion';
 
-const TreadmillCat = ({ isHovered }) => (
+const DrawnCatAnimation = () => (
   <motion.svg
-    width="190"
-    height="130"
-    viewBox="0 0 200 140"
+    width="280"
+    height="170"
+    viewBox="0 0 280 170"
+    role="img"
+    aria-label="Gezeichnete, animierte Katze"
     style={{ display: 'block' }}
-    animate={{ y: isHovered ? [-1, 1, -1] : [0, 2, 0] }}
-    transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
   >
-    <ellipse cx="100" cy="112" rx="70" ry="14" fill="rgba(63, 77, 46, 0.18)" />
+    <motion.ellipse
+      cx="140"
+      cy="145"
+      rx="88"
+      ry="12"
+      fill="rgba(63, 77, 46, 0.16)"
+      animate={{ rx: [86, 90, 86] }}
+      transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
+    />
 
-    {/* Treadmill */}
-    <g>
-      <rect x="30" y="86" width="140" height="10" rx="5" fill="rgba(92, 118, 60, 0.35)" stroke="var(--border-color)" strokeWidth="1.2" />
-      <rect x="40" y="74" width="120" height="14" rx="7" fill="rgba(159, 203, 69, 0.18)" stroke="var(--accent-primary)" strokeWidth="1.2" />
-      <line x1="52" y1="88" x2="52" y2="108" stroke="var(--text-secondary)" strokeWidth="4" strokeLinecap="round" />
-      <line x1="148" y1="88" x2="148" y2="108" stroke="var(--text-secondary)" strokeWidth="4" strokeLinecap="round" />
-      <rect x="152" y="64" width="18" height="28" rx="8" fill="rgba(159, 203, 69, 0.22)" stroke="var(--accent-primary)" strokeWidth="1.2" />
-      <circle cx="165" cy="78" r="3.2" fill="var(--accent-primary)" />
-      <circle cx="165" cy="78" r="1.2" fill="var(--surface-color)" />
-    </g>
-
-    {/* Overweight cat running */}
     <motion.g
-      animate={{ x: isHovered ? [0, 6, 0] : [0, 3, 0], y: isHovered ? [0, -1, 0] : [0, 1, 0] }}
-      transition={{ duration: isHovered ? 0.6 : 0.9, repeat: Infinity, ease: 'easeInOut' }}
+      animate={{ y: [0, -1.2, 0], x: [0, 1.2, 0] }}
+      transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
     >
-      <motion.g animate={{ rotate: isHovered ? [-6, 8, -6] : [-3, 4, -3] }} transition={{ duration: 0.8, repeat: Infinity, ease: 'easeInOut' }} style={{ transformOrigin: '84px 58px' }}>
-        <ellipse cx="92" cy="90" rx="36" ry="24" fill="#d89b5a" stroke="#2b2b2b" strokeWidth="1.8" />
-        <ellipse cx="92" cy="86" rx="27" ry="16" fill="#c9874d" opacity="0.95" />
-        <circle cx="84" cy="58" r="21" fill="#d89b5a" stroke="#2b2b2b" strokeWidth="1.8" />
-        <polygon points="68,43 64,24 77,38" fill="#d89b5a" stroke="#2b2b2b" strokeWidth="1.3" />
-        <polygon points="100,43 104,24 91,38" fill="#d89b5a" stroke="#2b2b2b" strokeWidth="1.3" />
-        <polygon points="68,39 66,29 73,35" fill="#f7c8bd" />
-        <polygon points="100,39 102,29 95,35" fill="#f7c8bd" />
-        <ellipse cx="78" cy="57" rx="2.4" ry="4.4" fill="#2b2b2b" />
-        <ellipse cx="90" cy="57" rx="2.4" ry="4.4" fill="#2b2b2b" />
-        <polygon points="82,62 84,65 86,62" fill="#f5a3b3" stroke="#2b2b2b" strokeWidth="0.8" />
-        <path d="M84 65 L81 68 M84 65 L87 68" stroke="#2b2b2b" strokeWidth="0.9" strokeLinecap="round" />
-        <path d="M76 69 Q84 74 92 69" stroke="#2b2b2b" strokeWidth="1.8" fill="none" />
-        <path d="M96 65 C103 70, 106 75, 105 82" stroke="#8b5a2b" strokeWidth="4.5" strokeLinecap="round" fill="none" />
-        <path d="M64 72 C57 78, 56 87, 60 93" stroke="#8b5a2b" strokeWidth="5" strokeLinecap="round" fill="none" />
-        <path d="M59 79 C54 88, 53 98, 58 106" stroke="#8b5a2b" strokeWidth="5" strokeLinecap="round" fill="none" />
-        <path d="M103 79 C108 88, 109 98, 104 106" stroke="#8b5a2b" strokeWidth="5" strokeLinecap="round" fill="none" />
-        <path d="M92 111 C98 102, 104 99, 110 99" stroke="#8b5a2b" strokeWidth="5" strokeLinecap="round" fill="none" />
+      <motion.path
+        d="M206 98 C244 83, 250 52, 226 38"
+        stroke="#8F683F"
+        strokeWidth="10"
+        strokeLinecap="round"
+        fill="none"
+        animate={{ rotate: [-5, 6, -5] }}
+        transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
+        style={{ transformOrigin: '205px 98px' }}
+      />
+
+      <ellipse cx="146" cy="102" rx="70" ry="38" fill="#C79257" stroke="#2F2B28" strokeWidth="2" />
+      <ellipse cx="146" cy="95" rx="52" ry="24" fill="#B77A41" opacity="0.88" />
+
+      <motion.g
+        animate={{ y: [0, -0.8, 0], rotate: [-1.5, 1.5, -1.5] }}
+        transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
+        style={{ transformOrigin: '88px 78px' }}
+      >
+        <circle cx="88" cy="78" r="28" fill="#C79257" stroke="#2F2B28" strokeWidth="2" />
+        <polygon points="69,60 62,35 80,52" fill="#C79257" stroke="#2F2B28" strokeWidth="2" />
+        <polygon points="104,60 111,35 93,52" fill="#C79257" stroke="#2F2B28" strokeWidth="2" />
+        <polygon points="70,56 66,43 76,51" fill="#F6C7B8" />
+        <polygon points="103,56 107,43 97,51" fill="#F6C7B8" />
+        <ellipse cx="80" cy="77" rx="3" ry="5" fill="#2F2B28" />
+        <ellipse cx="95" cy="77" rx="3" ry="5" fill="#2F2B28" />
+        <path d="M84 86 Q88 89 92 86" stroke="#2F2B28" strokeWidth="2" fill="none" strokeLinecap="round" />
+        <polygon points="86,82 88,85 90,82" fill="#F5A4B6" stroke="#2F2B28" strokeWidth="0.8" />
       </motion.g>
 
-      <path d="M74 98 C62 102, 56 107, 52 116" stroke="#8b5a2b" strokeWidth="5" strokeLinecap="round" fill="none" />
-      <path d="M108 98 C120 102, 126 107, 130 116" stroke="#8b5a2b" strokeWidth="5" strokeLinecap="round" fill="none" />
-      <path d="M70 101 C73 91, 72 84, 68 78" stroke="#8b5a2b" strokeWidth="5" strokeLinecap="round" fill="none" />
-      <path d="M112 101 C116 91, 117 84, 121 78" stroke="#8b5a2b" strokeWidth="5" strokeLinecap="round" fill="none" />
+      <motion.g
+        animate={{ rotate: [-9, 9, -9] }}
+        transition={{ duration: 0.7, repeat: Infinity, ease: 'easeInOut' }}
+        style={{ transformOrigin: '110px 126px' }}
+      >
+        <path d="M110 126 C106 136, 106 144, 112 152" stroke="#8F683F" strokeWidth="10" strokeLinecap="round" fill="none" />
+      </motion.g>
+      <motion.g
+        animate={{ rotate: [9, -9, 9] }}
+        transition={{ duration: 0.7, repeat: Infinity, ease: 'easeInOut' }}
+        style={{ transformOrigin: '136px 127px' }}
+      >
+        <path d="M136 127 C132 137, 132 145, 138 153" stroke="#8F683F" strokeWidth="10" strokeLinecap="round" fill="none" />
+      </motion.g>
+      <motion.g
+        animate={{ rotate: [8, -8, 8] }}
+        transition={{ duration: 0.7, repeat: Infinity, ease: 'easeInOut', delay: 0.35 }}
+        style={{ transformOrigin: '160px 127px' }}
+      >
+        <path d="M160 127 C156 137, 156 145, 162 153" stroke="#8F683F" strokeWidth="10" strokeLinecap="round" fill="none" />
+      </motion.g>
+      <motion.g
+        animate={{ rotate: [-8, 8, -8] }}
+        transition={{ duration: 0.7, repeat: Infinity, ease: 'easeInOut', delay: 0.35 }}
+        style={{ transformOrigin: '184px 126px' }}
+      >
+        <path d="M184 126 C180 136, 180 144, 186 152" stroke="#8F683F" strokeWidth="10" strokeLinecap="round" fill="none" />
+      </motion.g>
     </motion.g>
   </motion.svg>
 );
@@ -65,7 +95,6 @@ const Dashboard = () => {
   const [weightHistory, setWeightHistory] = useState([]);
   const [newWeight, setNewWeight] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
-  const [headerHovered, setHeaderHovered] = useState(false);
 
   useEffect(() => {
     getCats().then(data => {
@@ -118,13 +147,9 @@ const Dashboard = () => {
           </h1>
           <p style={{ color: 'var(--text-primary)', fontWeight: 500 }}>Willkommen zurück! Bereit für ein bisschen Training?</p>
         </div>
-        <div
-          onMouseEnter={() => setHeaderHovered(true)}
-          onMouseLeave={() => setHeaderHovered(false)}
-          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: '170px' }}
-        >
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: '280px' }}>
           <motion.div whileHover={{ scale: 1.03 }} transition={{ duration: 0.2 }}>
-            <TreadmillCat isHovered={headerHovered} />
+            <DrawnCatAnimation />
           </motion.div>
         </div>
       </div>
