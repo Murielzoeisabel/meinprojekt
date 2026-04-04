@@ -111,37 +111,155 @@ const getSuggestedIdealWeight = (breed = 'Mischling', size = 'mittel') => {
   return Math.max(2.5, Number((base + offset).toFixed(1)));
 };
 
+const ALLOWED_CAT_FIELDS = new Set(['name', 'userId', 'age', 'breed', 'size', 'idealWeight', 'photo']);
+
+const sendApiError = (res, status, code, message, details = undefined) => {
+  const payload = {
+    error: {
+      code,
+      message
+    }
+  };
+
+  if (details !== undefined) {
+    payload.error.details = details;
+  }
+
+  return res.status(status).json(payload);
+};
+
 const parsePositiveInt = (value) => {
   const parsed = Number(value);
   if (!Number.isInteger(parsed) || parsed <= 0) return null;
   return parsed;
 };
 
+const isValidHttpUrl = (value) => {
+  try {
+    const parsed = new URL(value);
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+  } catch {
+    return false;
+  }
+};
+
 const validateCatPayload = (payload) => {
   if (!payload || typeof payload !== 'object') {
-    return 'Ungültiger Request-Body.';
+    return {
+      code: 'INVALID_BODY',
+      message: 'Ungültiger Request-Body. Erwartet wird ein JSON-Objekt.'
+    };
+  }
+
+  const unknownFields = Object.keys(payload).filter((key) => !ALLOWED_CAT_FIELDS.has(key));
+  if (unknownFields.length > 0) {
+    return {
+      code: 'UNKNOWN_FIELDS',
+      message: 'Unbekannte Felder im Request-Body.',
+      details: { fields: unknownFields }
+    };
   }
 
   if (typeof payload.name !== 'string' || !payload.name.trim()) {
-    return 'Feld "name" ist erforderlich.';
+    return {
+      code: 'NAME_REQUIRED',
+      message: 'Feld "name" ist erforderlich und darf nicht leer sein.',
+      details: { field: 'name' }
+    };
+  }
+
+  if (payload.name.trim().length > 60) {
+    return {
+      code: 'NAME_TOO_LONG',
+      message: 'Feld "name" darf maximal 60 Zeichen enthalten.',
+      details: { field: 'name', maxLength: 60 }
+    };
   }
 
   if (payload.userId !== undefined && parsePositiveInt(payload.userId) === null) {
-    return 'Feld "userId" muss eine positive Ganzzahl sein.';
+    return {
+      code: 'INVALID_USER_ID',
+      message: 'Feld "userId" muss eine positive Ganzzahl sein.',
+      details: { field: 'userId' }
+    };
   }
 
   if (payload.age !== undefined) {
     const age = Number(payload.age);
-    if (Number.isNaN(age) || age < 0) {
-      return 'Feld "age" muss eine nicht-negative Zahl sein.';
+    if (!Number.isInteger(age) || age < 0 || age > 40) {
+      return {
+        code: 'INVALID_AGE',
+        message: 'Feld "age" muss eine ganze Zahl zwischen 0 und 40 sein.',
+        details: { field: 'age', min: 0, max: 40 }
+      };
     }
+  }
+
+  if (payload.breed !== undefined && (typeof payload.breed !== 'string' || !payload.breed.trim())) {
+    return {
+      code: 'INVALID_BREED',
+      message: 'Feld "breed" muss ein nicht-leerer String sein.',
+      details: { field: 'breed' }
+    };
+  }
+
+  if (payload.size !== undefined && !['klein', 'mittel', 'gross'].includes(payload.size)) {
+    return {
+      code: 'INVALID_SIZE',
+      message: 'Feld "size" muss einer der Werte "klein", "mittel" oder "gross" sein.',
+      details: { field: 'size', allowedValues: ['klein', 'mittel', 'gross'] }
+    };
   }
 
   if (payload.idealWeight !== undefined && payload.idealWeight !== '') {
     const idealWeight = Number(payload.idealWeight);
-    if (Number.isNaN(idealWeight) || idealWeight <= 0) {
-      return 'Feld "idealWeight" muss eine positive Zahl sein.';
+    if (Number.isNaN(idealWeight) || idealWeight <= 0 || idealWeight > 20) {
+      return {
+        code: 'INVALID_IDEAL_WEIGHT',
+        message: 'Feld "idealWeight" muss eine positive Zahl kleiner/gleich 20 sein.',
+        details: { field: 'idealWeight', minExclusive: 0, max: 20 }
+      };
     }
+  }
+
+  if (payload.photo !== undefined && payload.photo !== '' && typeof payload.photo !== 'string') {
+    return {
+      code: 'INVALID_PHOTO_TYPE',
+      message: 'Feld "photo" muss ein String sein.',
+      details: { field: 'photo' }
+    };
+  }
+
+  if (payload.photo !== undefined && typeof payload.photo === 'string' && payload.photo.length > 300) {
+    return {
+      code: 'PHOTO_URL_TOO_LONG',
+      message: 'Feld "photo" darf maximal 300 Zeichen enthalten.',
+      details: { field: 'photo', maxLength: 300 }
+    };
+  }
+
+  if (payload.photo !== undefined && payload.photo !== '' && !isValidHttpUrl(payload.photo)) {
+    return {
+      code: 'INVALID_PHOTO_URL',
+      message: 'Feld "photo" muss eine gültige http/https URL sein.',
+      details: { field: 'photo' }
+    };
+  }
+
+  if (payload.userId === null) {
+    return {
+      code: 'INVALID_USER_ID',
+      message: 'Feld "userId" darf nicht null sein.',
+      details: { field: 'userId' }
+    };
+  }
+
+  if (payload.name.trim().length < 2) {
+    return {
+      code: 'NAME_TOO_SHORT',
+      message: 'Feld "name" muss mindestens 2 Zeichen enthalten.',
+      details: { field: 'name', minLength: 2 }
+    };
   }
 
   return null;
@@ -192,7 +310,7 @@ app.get('/api/cats', (req, res) => {
   if (userId !== undefined) {
     const parsedUserId = parsePositiveInt(userId);
     if (parsedUserId === null) {
-      return res.status(400).json({ error: 'Query-Parameter "userId" ist ungültig.' });
+      return sendApiError(res, 400, 'INVALID_QUERY_USER_ID', 'Query-Parameter "userId" muss eine positive Ganzzahl sein.', { field: 'userId' });
     }
 
     return res.json(cats.filter((cat) => cat.userId === parsedUserId).map(withCurrentWeight));
@@ -204,12 +322,12 @@ app.get('/api/cats', (req, res) => {
 app.get('/api/cats/:id', (req, res) => {
   const id = parsePositiveInt(req.params.id);
   if (id === null) {
-    return res.status(400).json({ error: 'Ungültige Cat-ID.' });
+    return sendApiError(res, 400, 'INVALID_CAT_ID', 'Pfadparameter "id" muss eine positive Ganzzahl sein.', { field: 'id' });
   }
 
   const cat = cats.find((item) => item.id === id);
   if (!cat) {
-    return res.status(404).json({ error: 'Cat nicht gefunden.' });
+    return sendApiError(res, 404, 'CAT_NOT_FOUND', `Keine Cat mit id=${id} gefunden.`);
   }
 
   res.json(withCurrentWeight(cat));
@@ -218,7 +336,7 @@ app.get('/api/cats/:id', (req, res) => {
 app.post('/api/cats', (req, res) => {
   const validationError = validateCatPayload(req.body);
   if (validationError) {
-    return res.status(400).json({ error: validationError });
+    return sendApiError(res, 400, validationError.code, validationError.message, validationError.details);
   }
 
   const normalizedBreed = req.body.breed || 'Mischling';
@@ -249,18 +367,18 @@ app.post('/api/cats', (req, res) => {
 app.put('/api/cats/:id', (req, res) => {
   const id = parsePositiveInt(req.params.id);
   if (id === null) {
-    return res.status(400).json({ error: 'Ungültige Cat-ID.' });
+    return sendApiError(res, 400, 'INVALID_CAT_ID', 'Pfadparameter "id" muss eine positive Ganzzahl sein.', { field: 'id' });
   }
 
   const catIndex = cats.findIndex(cat => cat.id === id);
 
   if (catIndex === -1) {
-    return res.status(404).json({ error: 'Cat nicht gefunden.' });
+    return sendApiError(res, 404, 'CAT_NOT_FOUND', `Keine Cat mit id=${id} gefunden.`);
   }
 
   const validationError = validateCatPayload(req.body);
   if (validationError) {
-    return res.status(400).json({ error: validationError });
+    return sendApiError(res, 400, validationError.code, validationError.message, validationError.details);
   }
 
   const nextBreed = req.body.breed || 'Mischling';
@@ -286,12 +404,12 @@ app.put('/api/cats/:id', (req, res) => {
 app.delete('/api/cats/:id', (req, res) => {
   const id = parsePositiveInt(req.params.id);
   if (id === null) {
-    return res.status(400).json({ error: 'Ungültige Cat-ID.' });
+    return sendApiError(res, 400, 'INVALID_CAT_ID', 'Pfadparameter "id" muss eine positive Ganzzahl sein.', { field: 'id' });
   }
 
   const catExists = cats.some((cat) => cat.id === id);
   if (!catExists) {
-    return res.status(404).json({ error: 'Cat nicht gefunden.' });
+    return sendApiError(res, 404, 'CAT_NOT_FOUND', `Keine Cat mit id=${id} gefunden.`);
   }
 
   cats = cats.filter((c) => c.id !== id);
@@ -458,9 +576,11 @@ app.post('/api/community/messages', (req, res) => {
 
 app.use((err, req, res, next) => {
   if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
-    return res.status(400).json({ error: 'Ungültiges JSON im Request-Body.' });
+    return sendApiError(res, 400, 'INVALID_JSON', 'Ungültiges JSON im Request-Body.');
   }
-  return next(err);
+
+  console.error('Unerwarteter Serverfehler:', err);
+  return sendApiError(res, 500, 'INTERNAL_SERVER_ERROR', 'Interner Serverfehler.');
 });
 
 app.listen(PORT, () => console.log(`✓ Backend läuft auf http://localhost:${PORT}`));
