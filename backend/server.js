@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
+const createCatsRouter = require('./routes/cats');
 
 const app = express();
 const PORT = 3001;
@@ -303,120 +304,16 @@ const communityData = readCommunityData();
 let communityPosts = [...communityData.posts];
 let communityMessages = [...communityData.messages];
 
-// --- API ROUTES: CATS ---
-app.get('/api/cats', (req, res) => {
-  const { userId } = req.query;
-
-  if (userId !== undefined) {
-    const parsedUserId = parsePositiveInt(userId);
-    if (parsedUserId === null) {
-      return sendApiError(res, 400, 'INVALID_QUERY_USER_ID', 'Query-Parameter "userId" muss eine positive Ganzzahl sein.', { field: 'userId' });
-    }
-
-    return res.json(cats.filter((cat) => cat.userId === parsedUserId).map(withCurrentWeight));
-  }
-
-  res.json(cats.map(withCurrentWeight));
-});
-
-app.get('/api/cats/:id', (req, res) => {
-  const id = parsePositiveInt(req.params.id);
-  if (id === null) {
-    return sendApiError(res, 400, 'INVALID_CAT_ID', 'Pfadparameter "id" muss eine positive Ganzzahl sein.', { field: 'id' });
-  }
-
-  const cat = cats.find((item) => item.id === id);
-  if (!cat) {
-    return sendApiError(res, 404, 'CAT_NOT_FOUND', `Keine Cat mit id=${id} gefunden.`);
-  }
-
-  res.json(withCurrentWeight(cat));
-});
-
-app.post('/api/cats', (req, res) => {
-  const validationError = validateCatPayload(req.body);
-  if (validationError) {
-    return sendApiError(res, 400, validationError.code, validationError.message, validationError.details);
-  }
-
-  const normalizedBreed = req.body.breed || 'Mischling';
-  const normalizedSize = req.body.size || 'mittel';
-  const parsedIdealWeight = req.body.idealWeight === undefined || req.body.idealWeight === ''
-    ? getSuggestedIdealWeight(normalizedBreed, normalizedSize)
-    : parseFloat(req.body.idealWeight);
-  const name = req.body.name.trim();
-
-  const newCat = {
-    id: cats.length > 0 ? Math.max(...cats.map(c => c.id)) + 1 : 1,
-    userId: req.body.userId !== undefined ? Number(req.body.userId) : null,
-    name,
-    age: req.body.age !== undefined ? Number(req.body.age) : null,
-    breed: normalizedBreed,
-    size: normalizedSize,
-    idealWeight: parsedIdealWeight,
-    photo: req.body.photo || `https://api.dicebear.com/7.x/fun-emoji/svg?seed=${name}`
-  };
-
-  cats.push(newCat);
-  weightHistory[newCat.id] = [];
-  calorieHistory[newCat.id] = [];
-
-  res.status(201).json(newCat);
-});
-
-app.put('/api/cats/:id', (req, res) => {
-  const id = parsePositiveInt(req.params.id);
-  if (id === null) {
-    return sendApiError(res, 400, 'INVALID_CAT_ID', 'Pfadparameter "id" muss eine positive Ganzzahl sein.', { field: 'id' });
-  }
-
-  const catIndex = cats.findIndex(cat => cat.id === id);
-
-  if (catIndex === -1) {
-    return sendApiError(res, 404, 'CAT_NOT_FOUND', `Keine Cat mit id=${id} gefunden.`);
-  }
-
-  const validationError = validateCatPayload(req.body);
-  if (validationError) {
-    return sendApiError(res, 400, validationError.code, validationError.message, validationError.details);
-  }
-
-  const nextBreed = req.body.breed || 'Mischling';
-  const nextSize = req.body.size || 'mittel';
-  const parsedIdealWeight = req.body.idealWeight === undefined || req.body.idealWeight === ''
-    ? getSuggestedIdealWeight(nextBreed, nextSize)
-    : parseFloat(req.body.idealWeight);
-
-  cats[catIndex] = {
-    id,
-    userId: req.body.userId !== undefined ? Number(req.body.userId) : null,
-    name: req.body.name.trim(),
-    age: req.body.age !== undefined ? Number(req.body.age) : null,
-    breed: nextBreed,
-    size: nextSize,
-    idealWeight: parsedIdealWeight,
-    photo: req.body.photo || `https://api.dicebear.com/7.x/fun-emoji/svg?seed=${req.body.name.trim()}`
-  };
-
-  res.json(cats[catIndex]);
-});
-
-app.delete('/api/cats/:id', (req, res) => {
-  const id = parsePositiveInt(req.params.id);
-  if (id === null) {
-    return sendApiError(res, 400, 'INVALID_CAT_ID', 'Pfadparameter "id" muss eine positive Ganzzahl sein.', { field: 'id' });
-  }
-
-  const catExists = cats.some((cat) => cat.id === id);
-  if (!catExists) {
-    return sendApiError(res, 404, 'CAT_NOT_FOUND', `Keine Cat mit id=${id} gefunden.`);
-  }
-
-  cats = cats.filter((c) => c.id !== id);
-  delete weightHistory[id];
-  delete calorieHistory[id];
-  res.status(204).send();
-});
+app.use('/api/cats', createCatsRouter({
+  cats,
+  weightHistory,
+  calorieHistory,
+  withCurrentWeight,
+  parsePositiveInt,
+  sendApiError,
+  validateCatPayload,
+  getSuggestedIdealWeight
+}));
 
 // --- API ROUTES: WEIGHTS ---
 app.get('/api/weights/:catId', (req, res) => {
