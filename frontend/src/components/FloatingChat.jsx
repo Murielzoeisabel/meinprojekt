@@ -2,6 +2,8 @@ import { useState, useRef, useEffect } from 'react';
 import { Bot, Send, X, MessageSquare } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
+void motion;
+
 const FloatingChat = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([

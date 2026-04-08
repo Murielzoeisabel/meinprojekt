@@ -3,6 +3,8 @@ import AnimatedPage from '../components/AnimatedPage';
 import { ChefHat, Flame, FileText, Camera } from 'lucide-react';
 import { motion } from 'framer-motion';
 
+void motion;
+
 const Nutrition = () => {
   const navigate = useNavigate();
   const catAnimations = [

@@ -10,11 +10,14 @@ import {
   reactToCommunityPost
 } from '../services/api';
 
+void motion;
+
 const Community = () => {
   const [posts, setPosts] = useState([]);
   const [messages, setMessages] = useState([]);
   const [draftMessage, setDraftMessage] = useState('');
   const [name, setName] = useState('Du');
+  const [errorMsg, setErrorMsg] = useState('');
   const [postDraft, setPostDraft] = useState({
     author: '',
     text: '',
@@ -24,9 +27,13 @@ const Community = () => {
   });
 
   const loadCommunityData = async () => {
-    const [postData, messageData] = await Promise.all([getCommunityPosts(), getCommunityMessages()]);
-    setPosts(Array.isArray(postData) ? postData : []);
-    setMessages(Array.isArray(messageData) ? messageData : []);
+    try {
+      const [postData, messageData] = await Promise.all([getCommunityPosts(), getCommunityMessages()]);
+      setPosts(Array.isArray(postData) ? postData : []);
+      setMessages(Array.isArray(messageData) ? messageData : []);
+    } catch {
+      setErrorMsg('Community-Daten konnten nicht geladen werden.');
+    }
   };
 
   useEffect(() => {
@@ -64,8 +71,13 @@ const Community = () => {
   }, [posts]);
 
   const reactToPost = async (postId, type) => {
-    await reactToCommunityPost(postId, type);
-    await loadCommunityData();
+    try {
+      setErrorMsg('');
+      await reactToCommunityPost(postId, type);
+      await loadCommunityData();
+    } catch {
+      setErrorMsg('Reaktion konnte nicht gespeichert werden.');
+    }
   };
 
   const handlePostDraftChange = (field) => (event) => {
@@ -77,16 +89,21 @@ const Community = () => {
 
     if (!postDraft.author.trim() || !postDraft.text.trim()) return;
 
-    await addCommunityPost({
-      author: postDraft.author.trim(),
-      text: postDraft.text.trim(),
-      photo: postDraft.photo.trim(),
-      beforeWeight: postDraft.beforeWeight,
-      nowWeight: postDraft.nowWeight
-    });
+    try {
+      setErrorMsg('');
+      await addCommunityPost({
+        author: postDraft.author.trim(),
+        text: postDraft.text.trim(),
+        photo: postDraft.photo.trim(),
+        beforeWeight: postDraft.beforeWeight,
+        nowWeight: postDraft.nowWeight
+      });
 
-    setPostDraft({ author: '', text: '', photo: '', beforeWeight: '', nowWeight: '' });
-    await loadCommunityData();
+      setPostDraft({ author: '', text: '', photo: '', beforeWeight: '', nowWeight: '' });
+      await loadCommunityData();
+    } catch {
+      setErrorMsg('Beitrag konnte nicht veröffentlicht werden.');
+    }
   };
 
   const sendMessage = async (event) => {
@@ -94,17 +111,27 @@ const Community = () => {
     const text = draftMessage.trim();
     if (!text) return;
 
-    await addCommunityMessage({
-      user: name.trim() || 'Du',
-      text
-    });
+    try {
+      setErrorMsg('');
+      await addCommunityMessage({
+        user: name.trim() || 'Du',
+        text
+      });
 
-    setDraftMessage('');
-    await loadCommunityData();
+      setDraftMessage('');
+      await loadCommunityData();
+    } catch {
+      setErrorMsg('Nachricht konnte nicht gesendet werden.');
+    }
   };
 
   return (
     <AnimatedPage>
+      {errorMsg && (
+        <div className="card" style={{ marginBottom: '1rem', borderColor: 'rgba(239, 68, 68, 0.45)', color: 'var(--danger)' }}>
+          {errorMsg}
+        </div>
+      )}
       <h1>Community Forum</h1>
       <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>
         Teile Fortschritte, feuere andere an und chatte live mit der Gruppe.

@@ -3,17 +3,22 @@ import AnimatedPage from '../components/AnimatedPage';
 import { motion } from 'framer-motion';
 import { getCats, addCalories } from '../services/api';
 
+void motion;
+
 const Fitness = () => {
   const [hoveredCard, setHoveredCard] = useState(null);
   const [cats, setCats] = useState([]);
   const [selectedCatId, setSelectedCatId] = useState('');
   const [quickAddMessage, setQuickAddMessage] = useState('');
+  const [errorMsg, setErrorMsg] = useState('');
 
   useEffect(() => {
-    getCats().then(data => {
-      setCats(data);
-      if (data.length > 0) setSelectedCatId(data[0].id.toString());
-    });
+    getCats()
+      .then(data => {
+        setCats(data);
+        if (data.length > 0) setSelectedCatId(data[0].id.toString());
+      })
+      .catch(() => setErrorMsg('Katzen konnten nicht geladen werden.'));
   }, []);
 
   const selectedCat = cats.find(cat => cat.id.toString() === selectedCatId);
@@ -27,13 +32,29 @@ const Fitness = () => {
     return Math.round(baseCals * adjustment);
   };
 
+  const calculateBasalMetabolism = (weight) => {
+    if (!weight || Number.isNaN(weight)) return 0;
+    return Math.round(70 * Math.pow(weight, 0.75));
+  };
+
   const handleQuickAddCalories = async (exercise) => {
     if (!selectedCatId) return;
 
-    const burned = adjustCalories(exercise.cals);
-    await addCalories({ catId: selectedCatId, burned });
-    setQuickAddMessage(`-${burned} kcal für ${exercise.title} hinzugefügt.`);
-    setTimeout(() => setQuickAddMessage(''), 2200);
+    try {
+      setErrorMsg('');
+      const burned = adjustCalories(exercise.cals);
+      const basalMetabolism = calculateBasalMetabolism(selectedCat?.currentWeight || selectedCat?.idealWeight);
+      await addCalories({
+        catId: selectedCatId,
+        consumed: 0,
+        burned,
+        basalBurned: basalMetabolism
+      });
+      setQuickAddMessage(`-${burned} kcal für ${exercise.title} hinzugefügt.`);
+      setTimeout(() => setQuickAddMessage(''), 2200);
+    } catch {
+      setErrorMsg('Kalorien konnten nicht gespeichert werden.');
+    }
   };
 
   const exercises = [
@@ -486,6 +507,11 @@ const Fitness = () => {
 
   return (
     <AnimatedPage>
+      {errorMsg && (
+        <div className="card" style={{ marginBottom: '1rem', borderColor: 'rgba(239, 68, 68, 0.45)', color: 'var(--danger)' }}>
+          {errorMsg}
+        </div>
+      )}
       <h1>🎾 Fitness & Übungen</h1>
       <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>
         Entdecke verschiedene Übungen, um deine Katze fit und gesund zu halten. Hover über eine Karte um die Übung animiert zu sehen!

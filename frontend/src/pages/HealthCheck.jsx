@@ -2,6 +2,8 @@ import AnimatedPage from '../components/AnimatedPage';
 import { Activity, BookOpen } from 'lucide-react';
 import { motion } from 'framer-motion';
 
+void motion;
+
 const HealthCheck = () => {
   return (
     <AnimatedPage>

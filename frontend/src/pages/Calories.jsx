@@ -11,6 +11,7 @@ const Calories = () => {
   const [calorieHistory, setCalorieHistory] = useState([]);
   const [inputConsumed, setInputConsumed] = useState('');
   const [inputBurned, setInputBurned] = useState('');
+  const [errorMsg, setErrorMsg] = useState('');
 
   const selectedCat = cats.find(cat => cat.id.toString() === selectedCatId);
 
@@ -34,35 +35,49 @@ const Calories = () => {
   const burnedProgress = basalMetabolism > 0 ? Math.min(100, (totalActiveBurned / basalMetabolism) * 100) : 0;
 
   useEffect(() => {
-    getCats().then(data => {
-      setCats(data);
-      if (data.length > 0) setSelectedCatId(data[0].id.toString());
-    });
+    getCats()
+      .then(data => {
+        setCats(data);
+        if (data.length > 0) setSelectedCatId(data[0].id.toString());
+      })
+      .catch(() => setErrorMsg('Katzen konnten nicht geladen werden.'));
   }, []);
 
   useEffect(() => {
     if (selectedCatId) {
-      getCalories(selectedCatId).then(data => setCalorieHistory(data));
+      getCalories(selectedCatId)
+        .then(data => setCalorieHistory(data))
+        .catch(() => setErrorMsg('Kalorienhistorie konnte nicht geladen werden.'));
     }
   }, [selectedCatId]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!selectedCatId) return;
-    await addCalories({
-      catId: selectedCatId,
-      consumed: inputConsumed,
-      burned: inputBurned,
-      basalBurned: basalMetabolism
-    });
-    const newData = await getCalories(selectedCatId);
-    setCalorieHistory(newData);
-    setInputConsumed('');
-    setInputBurned('');
+    try {
+      setErrorMsg('');
+      await addCalories({
+        catId: selectedCatId,
+        consumed: inputConsumed,
+        burned: inputBurned,
+        basalBurned: basalMetabolism
+      });
+      const newData = await getCalories(selectedCatId);
+      setCalorieHistory(newData);
+      setInputConsumed('');
+      setInputBurned('');
+    } catch {
+      setErrorMsg('Kalorien konnten nicht gespeichert werden.');
+    }
   };
 
   return (
     <AnimatedPage>
+      {errorMsg && (
+        <div className="card" style={{ marginBottom: '1rem', borderColor: 'rgba(239, 68, 68, 0.45)', color: 'var(--danger)' }}>
+          {errorMsg}
+        </div>
+      )}
       <button
         type="button"
         onClick={() => navigate('/nutrition')}

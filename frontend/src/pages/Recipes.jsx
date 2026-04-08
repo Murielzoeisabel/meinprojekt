@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft } from 'lucide-react';
 
+void motion;
+
 const Recipes = () => {
   const navigate = useNavigate();
 

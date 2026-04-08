@@ -4,6 +4,8 @@ import { getCats, addCat, updateCat, deleteCat, addWeight } from '../services/ap
 import { motion } from 'framer-motion';
 import { Trash2, Plus, Camera } from 'lucide-react';
 
+void motion;
+
 const BREED_BASE_WEIGHTS = {
   'Europäisch Kurzhaar': 4.2,
   'Britisch Kurzhaar': 5.0,
@@ -97,13 +99,13 @@ const CatList = () => {
   const suggestedIdealWeight = getSuggestedIdealWeight(newCat.breed, newCat.size);
   const sizeLabel = { klein: 'klein', mittel: 'mittel', gross: 'groß' };
 
-  useEffect(() => {
-    loadCats();
-  }, []);
-
   const loadCats = () => {
     getCats().then(data => setCats(data));
   };
+
+  useEffect(() => {
+    loadCats();
+  }, []);
 
   const handleAddCat = async (e) => {
     e.preventDefault();

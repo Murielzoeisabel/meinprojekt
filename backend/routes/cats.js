@@ -83,26 +83,31 @@ const createCatsRouter = ({
       return sendApiError(res, 404, 'CAT_NOT_FOUND', `Keine Cat mit id=${id} gefunden.`);
     }
 
-    const validationError = validateCatPayload(req.body);
+    const validationError = validateCatPayload(req.body, { requireName: false });
     if (validationError) {
       return sendApiError(res, 400, validationError.code, validationError.message, validationError.details);
     }
 
-    const nextBreed = req.body.breed || 'Mischling';
-    const nextSize = req.body.size || 'mittel';
+    const existingCat = cats[catIndex];
+    const nextBreed = req.body.breed !== undefined ? req.body.breed : existingCat.breed;
+    const nextSize = req.body.size !== undefined ? req.body.size : existingCat.size;
     const parsedIdealWeight = req.body.idealWeight === undefined || req.body.idealWeight === ''
-      ? getSuggestedIdealWeight(nextBreed, nextSize)
+      ? (req.body.breed !== undefined || req.body.size !== undefined
+        ? getSuggestedIdealWeight(nextBreed, nextSize)
+        : existingCat.idealWeight)
       : parseFloat(req.body.idealWeight);
 
     cats[catIndex] = {
       id,
-      userId: req.body.userId !== undefined ? Number(req.body.userId) : null,
-      name: req.body.name.trim(),
-      age: req.body.age !== undefined ? Number(req.body.age) : null,
+      userId: req.body.userId !== undefined ? Number(req.body.userId) : existingCat.userId,
+      name: req.body.name !== undefined ? req.body.name.trim() : existingCat.name,
+      age: req.body.age !== undefined ? Number(req.body.age) : existingCat.age,
       breed: nextBreed,
       size: nextSize,
       idealWeight: parsedIdealWeight,
-      photo: req.body.photo || `https://api.dicebear.com/7.x/fun-emoji/svg?seed=${req.body.name.trim()}`
+      photo: req.body.photo !== undefined
+        ? req.body.photo || `https://api.dicebear.com/7.x/fun-emoji/svg?seed=${encodeURIComponent(req.body.name !== undefined ? req.body.name.trim() : existingCat.name)}`
+        : existingCat.photo
     };
 
     return res.json(cats[catIndex]);

@@ -1,5 +1,7 @@
 import { motion } from 'framer-motion';
 
+void motion;
+
 const animations = {
   initial: { opacity: 0, y: 15 },
   animate: { opacity: 1, y: 0 },

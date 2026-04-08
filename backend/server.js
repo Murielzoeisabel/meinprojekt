@@ -144,7 +144,16 @@ const isValidHttpUrl = (value) => {
   }
 };
 
-const validateCatPayload = (payload) => {
+const isValidCatPhoto = (value) => {
+  if (typeof value !== 'string' || !value.trim()) {
+    return false;
+  }
+
+  const trimmedValue = value.trim();
+  return isValidHttpUrl(trimmedValue) || /^data:image\/[a-zA-Z0-9.+-]+;base64,/.test(trimmedValue);
+};
+
+const validateCatPayload = (payload, { requireName = true } = {}) => {
   if (!payload || typeof payload !== 'object') {
     return {
       code: 'INVALID_BODY',
@@ -161,7 +170,7 @@ const validateCatPayload = (payload) => {
     };
   }
 
-  if (typeof payload.name !== 'string' || !payload.name.trim()) {
+  if (payload.name !== undefined && (typeof payload.name !== 'string' || !payload.name.trim())) {
     return {
       code: 'NAME_REQUIRED',
       message: 'Feld "name" ist erforderlich und darf nicht leer sein.',
@@ -169,7 +178,15 @@ const validateCatPayload = (payload) => {
     };
   }
 
-  if (payload.name.trim().length > 60) {
+  if (requireName && payload.name === undefined) {
+    return {
+      code: 'NAME_REQUIRED',
+      message: 'Feld "name" ist erforderlich und darf nicht leer sein.',
+      details: { field: 'name' }
+    };
+  }
+
+  if (typeof payload.name === 'string' && payload.name.trim().length > 60) {
     return {
       code: 'NAME_TOO_LONG',
       message: 'Feld "name" darf maximal 60 Zeichen enthalten.',
@@ -231,18 +248,18 @@ const validateCatPayload = (payload) => {
     };
   }
 
-  if (payload.photo !== undefined && typeof payload.photo === 'string' && payload.photo.length > 300) {
+  if (payload.photo !== undefined && typeof payload.photo === 'string' && payload.photo.length > 6000000) {
     return {
       code: 'PHOTO_URL_TOO_LONG',
-      message: 'Feld "photo" darf maximal 300 Zeichen enthalten.',
-      details: { field: 'photo', maxLength: 300 }
+      message: 'Feld "photo" darf maximal 6.000.000 Zeichen enthalten.',
+      details: { field: 'photo', maxLength: 6000000 }
     };
   }
 
-  if (payload.photo !== undefined && payload.photo !== '' && !isValidHttpUrl(payload.photo)) {
+  if (payload.photo !== undefined && payload.photo !== '' && !isValidCatPhoto(payload.photo)) {
     return {
       code: 'INVALID_PHOTO_URL',
-      message: 'Feld "photo" muss eine gültige http/https URL sein.',
+      message: 'Feld "photo" muss eine gültige http/https URL oder ein Data-Image sein.',
       details: { field: 'photo' }
     };
   }
@@ -255,7 +272,7 @@ const validateCatPayload = (payload) => {
     };
   }
 
-  if (payload.name.trim().length < 2) {
+  if (typeof payload.name === 'string' && payload.name.trim().length < 2) {
     return {
       code: 'NAME_TOO_SHORT',
       message: 'Feld "name" muss mindestens 2 Zeichen enthalten.',
@@ -324,10 +341,20 @@ app.get('/api/weights/:catId', (req, res) => {
 app.post('/api/weights', (req, res) => {
   const { catId, weight, date } = req.body;
   const id = parseInt(catId);
+  const parsedWeight = parseFloat(weight);
+
+  if (!Number.isInteger(id) || id <= 0 || !cats.some((cat) => cat.id === id)) {
+    return res.status(404).json({ error: 'Cat nicht gefunden.' });
+  }
+
+  if (Number.isNaN(parsedWeight) || parsedWeight <= 0 || parsedWeight > 25) {
+    return res.status(400).json({ error: 'Ungültiges Gewicht.' });
+  }
+
   const targetDate = date || new Date().toISOString().split('T')[0];
   
   if (!weightHistory[id]) weightHistory[id] = [];
-  weightHistory[id].push({ date: targetDate, weight: parseFloat(weight) });
+  weightHistory[id].push({ date: targetDate, weight: parsedWeight });
   
   // Chronologisch sortieren
   weightHistory[id].sort((a, b) => new Date(a.date) - new Date(b.date));
@@ -344,6 +371,18 @@ app.get('/api/calories/:catId', (req, res) => {
 app.post('/api/calories', (req, res) => {
   const { catId, consumed, burned, basalBurned, date } = req.body;
   const id = parseInt(catId);
+  const parsedConsumed = consumed === undefined || consumed === '' ? 0 : parseFloat(consumed);
+  const parsedBurned = burned === undefined || burned === '' ? 0 : parseFloat(burned);
+  const parsedBasalBurned = basalBurned === undefined || basalBurned === '' ? 0 : parseFloat(basalBurned);
+
+  if (!Number.isInteger(id) || id <= 0 || !cats.some((cat) => cat.id === id)) {
+    return res.status(404).json({ error: 'Cat nicht gefunden.' });
+  }
+
+  if ([parsedConsumed, parsedBurned, parsedBasalBurned].some((value) => Number.isNaN(value) || value < 0)) {
+    return res.status(400).json({ error: 'Ungültige Kalorienwerte.' });
+  }
+
   const targetDate = date || new Date().toISOString().split('T')[0];
   
   if (!calorieHistory[id]) calorieHistory[id] = [];
@@ -351,15 +390,15 @@ app.post('/api/calories', (req, res) => {
   // Vorhandenen Eintrag überschreiben/ergänzen falls Datum übereinstimmt, ansonsten neu
   const existing = calorieHistory[id].find(entry => entry.date === targetDate);
   if (existing) {
-    if (consumed !== undefined) existing.consumed += parseFloat(consumed);
-    if (burned !== undefined) existing.burned += parseFloat(burned);
-    if (basalBurned !== undefined) existing.basalBurned = parseFloat(basalBurned);
+    if (consumed !== undefined) existing.consumed += parsedConsumed;
+    if (burned !== undefined) existing.burned += parsedBurned;
+    if (basalBurned !== undefined) existing.basalBurned = parsedBasalBurned;
   } else {
     calorieHistory[id].push({
       date: targetDate,
-      consumed: parseFloat(consumed || 0),
-      burned: parseFloat(burned || 0),
-      basalBurned: parseFloat(basalBurned || 0)
+      consumed: parsedConsumed,
+      burned: parsedBurned,
+      basalBurned: parsedBasalBurned
     });
   }
   
@@ -392,6 +431,8 @@ app.post('/api/community/posts', (req, res) => {
       : 'https://images.unsplash.com/photo-1573865526739-10659fec78a5?auto=format&fit=crop&w=1200&q=80',
     beforeWeight: Number.isNaN(parsedBeforeWeight) ? null : parsedBeforeWeight,
     nowWeight: Number.isNaN(parsedNowWeight) ? null : parsedNowWeight,
+    likes: 0,
+    hearts: 0,
     gefaelltMir: 0,
     daumenHoch: 0,
     createdAt: new Date().toISOString()
@@ -432,6 +473,8 @@ app.post('/api/community/posts/:id/reactions', (req, res) => {
   // Backward compatibility for existing persisted data
   post.gefaelltMir = Number(post.gefaelltMir ?? post.likes ?? 0);
   post.daumenHoch = Number(post.daumenHoch ?? post.hearts ?? 0);
+  post.likes = post.gefaelltMir;
+  post.hearts = post.daumenHoch;
 
   if (type === 'like') {
     post.gefaelltMir += 1;

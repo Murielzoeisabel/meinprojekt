@@ -1,8 +1,7 @@
-# meinprojekt
 # CatSlimDown
-# katzengewichtstracker
+# Katzengewichtstracker
 
-Projekt für Web Architecture. Zeigt den Gewichtsverlauf meiner Katze als Diagramm.
+Cat Slim Down ist eine digitale Begleitung für gesundes Katzengewicht: eine App, in der Katzenbesitzer Gewicht, Entwicklung und Gewohnheiten ihrer Tiere einfach dokumentieren und nachvollziehen können, um Fortschritte früh zu erkennen und den Alltag rund um Fütterung, Bewegung und Gesundheit besser zu steuern.
 
 # Studio Session 1
 
@@ -187,9 +186,3 @@ Fehlerfall:
 - Beleg:Fehlerfall (404):
 ![DELETE cat 404](screenshots/delete-cat-404.png)
 
-
-# Kurzfazit
-
-- Alle fünf Endpunkte wurden erfolgreich getestet.
-- Pro Endpoint wurde mindestens ein Fehlerfall nachgewiesen.
-- Die API liefert die erwarteten HTTP-Statuscodes und strukturierte Fehlermeldungen.

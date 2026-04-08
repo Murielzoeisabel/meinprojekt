@@ -4,6 +4,8 @@ import { getCats, getWeights, addWeight } from '../services/api';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { motion } from 'framer-motion';
 
+void motion;
+
 const DrawnCatAnimation = () => (
   <motion.svg
     width="280"
@@ -95,39 +97,49 @@ const Dashboard = () => {
   const [weightHistory, setWeightHistory] = useState([]);
   const [newWeight, setNewWeight] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+  const [errorMsg, setErrorMsg] = useState('');
 
   useEffect(() => {
-    getCats().then(data => {
-      setCats(data);
-      if (data.length > 0) {
-        setSelectedCatId(data[0].id.toString());
-      }
-    });
+    getCats()
+      .then(data => {
+        setCats(data);
+        if (data.length > 0) {
+          setSelectedCatId(data[0].id.toString());
+        }
+      })
+      .catch(() => setErrorMsg('Katzen konnten nicht geladen werden.'));
   }, []);
 
   useEffect(() => {
     if (selectedCatId) {
-      getWeights(selectedCatId).then(data => setWeightHistory(data));
+      getWeights(selectedCatId)
+        .then(data => setWeightHistory(data))
+        .catch(() => setErrorMsg('Gewichtsdaten konnten nicht geladen werden.'));
     }
   }, [selectedCatId]);
 
   const handleWeightSubmit = async (e) => {
     e.preventDefault();
     if (!newWeight || !selectedCatId) return;
-    
-    await addWeight({ catId: selectedCatId, weight: newWeight });
-    const updatedHistory = await getWeights(selectedCatId);
-    setWeightHistory(updatedHistory);
-    setNewWeight('');
-    
-    setCats(cats.map(c => 
-      c.id.toString() === selectedCatId 
-        ? { ...c, currentWeight: parseFloat(newWeight) } 
-        : c
-    ));
 
-    setSuccessMsg('Gewicht erfolgreich gespeichert!');
-    setTimeout(() => setSuccessMsg(''), 3000);
+    try {
+      setErrorMsg('');
+      await addWeight({ catId: selectedCatId, weight: newWeight });
+      const updatedHistory = await getWeights(selectedCatId);
+      setWeightHistory(updatedHistory);
+      setNewWeight('');
+
+      setCats(cats.map(c =>
+        c.id.toString() === selectedCatId
+          ? { ...c, currentWeight: parseFloat(newWeight) }
+          : c
+      ));
+
+      setSuccessMsg('Gewicht erfolgreich gespeichert!');
+      setTimeout(() => setSuccessMsg(''), 3000);
+    } catch {
+      setErrorMsg('Gewicht konnte nicht gespeichert werden.');
+    }
   };
 
   const selectedCat = cats.find(c => c.id.toString() === selectedCatId);
@@ -140,6 +152,11 @@ const Dashboard = () => {
 
   return (
     <AnimatedPage>
+      {errorMsg && (
+        <div className="card" style={{ marginBottom: '1rem', borderColor: 'rgba(239, 68, 68, 0.45)', color: 'var(--danger)' }}>
+          {errorMsg}
+        </div>
+      )}
       <div style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'var(--surface-color)', padding: '1.5rem', borderRadius: '20px', boxShadow: 'var(--card-shadow)' }}>
         <div>
           <h1 style={{ fontSize: '2.5rem', color: 'var(--text-secondary)' }}>

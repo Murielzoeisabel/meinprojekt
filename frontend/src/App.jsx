@@ -9,6 +9,7 @@ import HealthCheck from './pages/HealthCheck';
 import Profile from './pages/Profile';
 import Legal from './pages/Legal';
 import Settings from './pages/Settings';
+import CatManagement from './pages/CatManagement';
 import MealTemplates from './pages/MealTemplates';
 import Recipes from './pages/Recipes';
 import FoodAnalyzer from './pages/FoodAnalyzer';
@@ -34,6 +35,7 @@ function App() {
           <Route path="/profile" element={<Profile />} />
           <Route path="/legal" element={<Legal />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/cat-management" element={<CatManagement />} />
           <Route path="/community" element={<Community />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

@@ -5,6 +5,8 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 
+void motion;
+
 const MealTemplates = () => {
   const navigate = useNavigate();
   const [cats, setCats] = useState([]);
