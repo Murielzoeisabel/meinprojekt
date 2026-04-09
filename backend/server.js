@@ -8,9 +8,10 @@ const app = express();
 const PORT = 3001;
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '8mb' }));
 
 const COMMUNITY_DATA_PATH = path.join(__dirname, 'data', 'community.json');
+const CAT_STATE_PATH = path.join(__dirname, 'data', 'cats-state.json');
 
 const DEFAULT_COMMUNITY_DATA = {
   posts: [
@@ -82,6 +83,47 @@ const readCommunityData = () => {
     console.error('Fehler beim Lesen der Community-Daten:', error);
     writeCommunityData(DEFAULT_COMMUNITY_DATA);
     return { ...DEFAULT_COMMUNITY_DATA };
+  }
+};
+
+const DEFAULT_CAT_STATE = {
+  cats: [],
+  weightHistory: {},
+  calorieHistory: {}
+};
+
+const ensureDataDir = () => {
+  fs.mkdirSync(path.join(__dirname, 'data'), { recursive: true });
+};
+
+const writeCatState = (state) => {
+  ensureDataDir();
+  fs.writeFileSync(CAT_STATE_PATH, JSON.stringify(state, null, 2), 'utf8');
+};
+
+const readCatState = () => {
+  try {
+    if (!fs.existsSync(CAT_STATE_PATH)) {
+      writeCatState(DEFAULT_CAT_STATE);
+      return { ...DEFAULT_CAT_STATE };
+    }
+
+    const raw = fs.readFileSync(CAT_STATE_PATH, 'utf8');
+    const parsed = JSON.parse(raw);
+    if (!parsed || !Array.isArray(parsed.cats) || typeof parsed.weightHistory !== 'object' || typeof parsed.calorieHistory !== 'object') {
+      writeCatState(DEFAULT_CAT_STATE);
+      return { ...DEFAULT_CAT_STATE };
+    }
+
+    return {
+      cats: Array.isArray(parsed.cats) ? parsed.cats : [],
+      weightHistory: parsed.weightHistory || {},
+      calorieHistory: parsed.calorieHistory || {}
+    };
+  } catch (error) {
+    console.error('Fehler beim Lesen der Katzen-Daten:', error);
+    writeCatState(DEFAULT_CAT_STATE);
+    return { ...DEFAULT_CAT_STATE };
   }
 };
 
@@ -289,32 +331,21 @@ const withCurrentWeight = (cat) => {
   return { ...cat, currentWeight };
 };
 
+const catState = readCatState();
+
 // In-memory Daten
-let cats = [
-  { id: 1, name: 'Luna', userId: 1, age: 3, breed: 'Europäisch Kurzhaar', size: 'mittel', idealWeight: 5.0, photo: 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=400' },
-  { id: 2, name: 'Milo', userId: 2, age: 2, breed: 'Mischling', size: 'mittel', idealWeight: 4.5, photo: 'https://images.unsplash.com/photo-1543852786-1cf6624b9987?w=400' }
-];
+let cats = catState.cats;
 
-let weightHistory = {
-  1: [
-    { date: '2026-03-01', weight: 5.3 },
-    { date: '2026-03-10', weight: 5.1 },
-    { date: '2026-03-25', weight: 5.0 }
-  ],
-  2: [
-    { date: '2026-03-01', weight: 5.0 },
-    { date: '2026-03-25', weight: 4.8 }
-  ]
-};
+let weightHistory = catState.weightHistory;
 
-let calorieHistory = {
-  1: [
-    { date: '2026-03-25', consumed: 220, burned: 50, basalBurned: 185 },
-    { date: '2026-03-26', consumed: 215, burned: 60, basalBurned: 185 }
-  ],
-  2: [
-    { date: '2026-03-26', consumed: 200, burned: 45, basalBurned: 172 }
-  ]
+let calorieHistory = catState.calorieHistory;
+
+const persistCatState = () => {
+  writeCatState({
+    cats,
+    weightHistory,
+    calorieHistory
+  });
 };
 
 const communityData = readCommunityData();
@@ -329,7 +360,8 @@ app.use('/api/cats', createCatsRouter({
   parsePositiveInt,
   sendApiError,
   validateCatPayload,
-  getSuggestedIdealWeight
+  getSuggestedIdealWeight,
+  persistCatState
 }));
 
 // --- API ROUTES: WEIGHTS ---
@@ -358,6 +390,7 @@ app.post('/api/weights', (req, res) => {
   
   // Chronologisch sortieren
   weightHistory[id].sort((a, b) => new Date(a.date) - new Date(b.date));
+  persistCatState();
   
   res.status(201).json(weightHistory[id]);
 });
@@ -403,6 +436,7 @@ app.post('/api/calories', (req, res) => {
   }
   
   calorieHistory[id].sort((a, b) => new Date(a.date) - new Date(b.date));
+  persistCatState();
   res.status(201).json(calorieHistory[id]);
 });
 
@@ -492,7 +526,7 @@ app.get('/api/community/messages', (req, res) => {
 });
 
 app.post('/api/community/messages', (req, res) => {
-  const { user, text } = req.body;
+  const { user, text, avatar } = req.body;
 
   if (!text || !String(text).trim()) {
     return res.status(400).json({ error: 'Nachrichtentext ist erforderlich.' });
@@ -501,6 +535,7 @@ app.post('/api/community/messages', (req, res) => {
   const message = {
     id: getNextId(communityMessages),
     user: user && String(user).trim() ? String(user).trim() : 'Du',
+    avatar: avatar && String(avatar).trim() ? String(avatar).trim() : undefined,
     text: String(text).trim(),
     createdAt: new Date().toISOString()
   };
@@ -515,6 +550,16 @@ app.post('/api/community/messages', (req, res) => {
 });
 
 app.use((err, req, res, next) => {
+  if (err?.type === 'entity.too.large' || err?.status === 413) {
+    return sendApiError(
+      res,
+      413,
+      'REQUEST_TOO_LARGE',
+      'Die Anfrage ist zu groß. Bitte nutze ein kleineres Bild (empfohlen: maximal 3 MB).',
+      { limit: '8mb' }
+    );
+  }
+
   if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
     return sendApiError(res, 400, 'INVALID_JSON', 'Ungültiges JSON im Request-Body.');
   }

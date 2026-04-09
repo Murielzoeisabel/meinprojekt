@@ -36,6 +36,51 @@ const Stats = () => {
   const selectedCat = cats.find(cat => cat.id.toString() === selectedCatId);
   const latestWeight = weights.length > 0 ? weights[weights.length - 1].weight : null;
 
+  const getWeightAnalysisHint = () => {
+    if (!selectedCat || latestWeight === null || selectedCat.idealWeight === undefined || selectedCat.idealWeight === null) {
+      return {
+        title: 'Analyse-Hinweis',
+        text: 'Sobald aktuelles Gewicht und Zielgewicht vorliegen, bekommst du hier eine kurze Analyse.',
+        tone: 'neutral'
+      };
+    }
+
+    const delta = Number((latestWeight - selectedCat.idealWeight).toFixed(2));
+
+    if (delta <= 0.15 && delta >= -0.35) {
+      return {
+        title: 'Sehr gut gemacht',
+        text: `Es sieht so aus, als ob ${selectedCat.name} bereits im idealen Gewichtsbereich liegt. Halte den aktuellen Kurs!`,
+        tone: 'success'
+      };
+    }
+
+    if (delta > 0.15) {
+      const remaining = Number(delta.toFixed(1));
+      if (remaining <= 1) {
+        return {
+          title: 'Fast geschafft',
+          text: `Nur noch etwa ${remaining} kg bis zum Zielgewicht. Du schaffst das!`,
+          tone: 'motivation'
+        };
+      }
+
+      return {
+        title: 'Weiter so',
+        text: `Noch etwa ${remaining} kg bis zum Zielgewicht. Mit konstanten Einträgen bleibt ihr auf Kurs.`,
+        tone: 'motivation'
+      };
+    }
+
+    return {
+      title: 'Unter dem Zielgewicht',
+      text: `${selectedCat.name} liegt aktuell etwa ${Math.abs(delta).toFixed(1)} kg unter dem Zielgewicht. Bitte Werte beobachten und bei Unsicherheit tierärztlich abklären.`,
+      tone: 'warning'
+    };
+  };
+
+  const weightAnalysisHint = getWeightAnalysisHint();
+
   const getLongestDailyStreak = () => {
     if (weights.length === 0) return 0;
 
@@ -149,6 +194,28 @@ const Stats = () => {
       >
         {cats.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
       </select>
+
+      <div
+        className="card"
+        style={{
+          marginBottom: '1.5rem',
+          border:
+            weightAnalysisHint.tone === 'success'
+              ? '1px solid rgba(16, 185, 129, 0.38)'
+              : weightAnalysisHint.tone === 'warning'
+                ? '1px solid rgba(245, 158, 11, 0.42)'
+                : '1px solid var(--border-color)',
+          background:
+            weightAnalysisHint.tone === 'success'
+              ? 'rgba(16, 185, 129, 0.09)'
+              : weightAnalysisHint.tone === 'warning'
+                ? 'rgba(245, 158, 11, 0.12)'
+                : 'var(--surface-color)'
+        }}
+      >
+        <h3 style={{ margin: '0 0 0.45rem 0' }}>{weightAnalysisHint.title}</h3>
+        <p style={{ margin: 0, color: 'var(--text-secondary)' }}>{weightAnalysisHint.text}</p>
+      </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 3fr) minmax(0, 1fr)', gap: '2rem' }}>
         <div className="card" style={{ height: '450px' }}>

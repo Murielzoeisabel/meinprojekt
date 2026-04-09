@@ -7,9 +7,11 @@
       "nowWeight": 5.7,
       "text": "🎉 Woche 6 geschafft! Muffin wiegt jetzt 700g weniger. Mehr Spielzeit am Abend hat bei uns super geholfen. Sie sprintet wieder wie früher!",
       "photo": "https://cataas.com/cat?width=600&height=400&fit=cover",
-      "likes": 24,
+      "likes": 25,
       "hearts": 19,
-      "createdAt": "2026-03-28T09:15:00.000Z"
+      "createdAt": "2026-03-28T09:15:00.000Z",
+      "gefaelltMir": 25,
+      "daumenHoch": 20
     },
     {
       "id": 2,
@@ -42,7 +44,9 @@
       "photo": "https://placecats.com/303/300",
       "likes": 19,
       "hearts": 20,
-      "createdAt": "2026-03-31T11:45:00.000Z"
+      "createdAt": "2026-03-31T11:45:00.000Z",
+      "gefaelltMir": 20,
+      "daumenHoch": 20
     },
     {
       "id": 5,
@@ -53,7 +57,9 @@
       "photo": "https://placecats.com/304/300",
       "likes": 17,
       "hearts": 18,
-      "createdAt": "2026-04-01T13:20:00.000Z"
+      "createdAt": "2026-04-01T13:20:00.000Z",
+      "gefaelltMir": 17,
+      "daumenHoch": 19
     },
     {
       "id": 6,
@@ -62,9 +68,11 @@
       "nowWeight": 6.2,
       "text": "Felix hat jetzt 1.1kg abgenommen! Unglaublich - vor 2 Monaten konnte er kaum springen. Jetzt wieder top fit! Futterumstellung + Workouts wirken.",
       "photo": "https://placecats.com/305/300",
-      "likes": 33,
+      "likes": 34,
       "hearts": 29,
-      "createdAt": "2026-04-02T10:15:00.000Z"
+      "createdAt": "2026-04-02T10:15:00.000Z",
+      "gefaelltMir": 34,
+      "daumenHoch": 30
     }
   ],
   "messages": [
@@ -115,6 +123,19 @@
       "user": "Luca",
       "text": "Bei uns waren es -100 kcal pro Woche. So langsam, dass Nala es nicht gemerkt hat. Der Tierarzt empfahl max 10% weniger.",
       "createdAt": "2026-04-02T11:30:00.000Z"
+    },
+    {
+      "id": 9,
+      "user": "Muriel",
+      "text": "hallo, salvador ist gerade dabei abzunehmen.",
+      "createdAt": "2026-04-09T12:48:08.795Z"
+    },
+    {
+      "id": 10,
+      "user": "Muriel",
+      "avatar": "https://api.dicebear.com/7.x/personas/svg?seed=Noah&backgroundColor=ffdfbf",
+      "text": "@Luca sehr gut😻",
+      "createdAt": "2026-04-09T16:58:29.256Z"
     }
   ]
 }

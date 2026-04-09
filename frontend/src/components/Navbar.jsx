@@ -6,7 +6,6 @@ import './Navbar.css';
 const navItems = [
   { path: '/', label: 'Dashboard', icon: <Home size={20} /> },
   { path: '/cats', label: 'Katzen', icon: <Cat size={20} /> },
-  { path: '/cat-management', label: 'Verwaltung', icon: <SettingsIcon size={20} /> },
   { path: '/stats', label: 'Statistik', icon: <Activity size={20} /> },
   { path: '/fitness', label: 'Fitness', icon: <HeartPulse size={20} /> },
   { path: '/nutrition', label: 'Ernährung', icon: <Utensils size={20} /> },

@@ -96,8 +96,20 @@ const Dashboard = () => {
   const [selectedCatId, setSelectedCatId] = useState('');
   const [weightHistory, setWeightHistory] = useState([]);
   const [newWeight, setNewWeight] = useState('');
+  const [newWeightDate, setNewWeightDate] = useState(new Date().toISOString().split('T')[0]);
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+
+  const formatDate = (value) => {
+    if (!value) return '-';
+    const parsedDate = new Date(value);
+    if (Number.isNaN(parsedDate.getTime())) return value;
+    return new Intl.DateTimeFormat('de-DE', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    }).format(parsedDate);
+  };
 
   useEffect(() => {
     getCats()
@@ -120,18 +132,22 @@ const Dashboard = () => {
 
   const handleWeightSubmit = async (e) => {
     e.preventDefault();
-    if (!newWeight || !selectedCatId) return;
+    if (!newWeight || !selectedCatId || !newWeightDate) return;
 
     try {
       setErrorMsg('');
-      await addWeight({ catId: selectedCatId, weight: newWeight });
+      await addWeight({ catId: selectedCatId, weight: newWeight, date: newWeightDate });
       const updatedHistory = await getWeights(selectedCatId);
       setWeightHistory(updatedHistory);
       setNewWeight('');
 
+      const latestEntry = updatedHistory.length > 0
+        ? [...updatedHistory].sort((a, b) => new Date(a.date) - new Date(b.date))[updatedHistory.length - 1]
+        : null;
+
       setCats(cats.map(c =>
         c.id.toString() === selectedCatId
-          ? { ...c, currentWeight: parseFloat(newWeight) }
+          ? { ...c, currentWeight: latestEntry ? parseFloat(latestEntry.weight) : c.currentWeight }
           : c
       ));
 
@@ -208,10 +224,12 @@ const Dashboard = () => {
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={weightHistory} margin={{ top: 20, right: 30, left: 0, bottom: 20 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-color)" />
-              <XAxis dataKey="date" stroke="var(--text-secondary)" />
+              <XAxis dataKey="date" stroke="var(--text-secondary)" tickFormatter={formatDate} />
               <YAxis stroke="var(--text-secondary)" domain={['dataMin - 0.5', 'dataMax + 0.5']} />
               <Tooltip 
                 contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: 'var(--card-shadow)' }}
+                labelFormatter={(label) => formatDate(label)}
+                formatter={(value) => [`${value} kg`, 'Gewicht']}
               />
               <Line 
                 type="monotone" 
@@ -237,6 +255,16 @@ const Dashboard = () => {
               onChange={(e) => setNewWeight(e.target.value)}
               required
             />
+            <input
+              type="date"
+              className="input-field"
+              value={newWeightDate}
+              onChange={(e) => setNewWeightDate(e.target.value)}
+              required
+            />
+            <p style={{ marginTop: '-0.4rem', marginBottom: '0.8rem', color: 'var(--text-secondary)', fontSize: '0.82rem' }}>
+              Hinweis: Rückdatierte Einträge sind erlaubt.
+            </p>
             <button type="submit" className="btn-primary" style={{ width: '100%' }}>Gewicht speichern</button>
           </form>
           {successMsg && (

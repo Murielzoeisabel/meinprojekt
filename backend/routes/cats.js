@@ -8,7 +8,8 @@ const createCatsRouter = ({
   parsePositiveInt,
   sendApiError,
   validateCatPayload,
-  getSuggestedIdealWeight
+  getSuggestedIdealWeight,
+  persistCatState
 }) => {
   const router = express.Router();
 
@@ -68,6 +69,7 @@ const createCatsRouter = ({
     cats.push(newCat);
     weightHistory[newCat.id] = [];
     calorieHistory[newCat.id] = [];
+    persistCatState();
 
     return res.status(201).json(newCat);
   });
@@ -110,6 +112,8 @@ const createCatsRouter = ({
         : existingCat.photo
     };
 
+      persistCatState();
+
     return res.json(cats[catIndex]);
   });
 
@@ -127,6 +131,7 @@ const createCatsRouter = ({
     cats.splice(catIndex, 1);
     delete weightHistory[id];
     delete calorieHistory[id];
+    persistCatState();
     return res.status(204).send();
   });
 
@@ -169,6 +174,7 @@ const createCatsRouter = ({
     if (!weightHistory[id]) weightHistory[id] = [];
     weightHistory[id].push({ date: targetDate, weight: parsedWeight });
     weightHistory[id].sort((a, b) => new Date(a.date) - new Date(b.date));
+    persistCatState();
 
     return res.status(201).json(weightHistory[id]);
   });

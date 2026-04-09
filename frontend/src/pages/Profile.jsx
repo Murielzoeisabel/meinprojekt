@@ -3,13 +3,23 @@ import AnimatedPage from '../components/AnimatedPage';
 import { getCats, getWeights } from '../services/api';
 import { Camera } from 'lucide-react';
 
+const PROFILE_NAME_KEY = 'cat-slim-down-profile-name';
+const PROFILE_IMAGE_KEY = 'cat-slim-down-profile-image';
+
 const HUMAN_AVATAR_PRESETS = [
   'https://api.dicebear.com/7.x/personas/svg?seed=Alex&backgroundColor=b6e3f4',
   'https://api.dicebear.com/7.x/personas/svg?seed=Sam&backgroundColor=c0aede',
   'https://api.dicebear.com/7.x/personas/svg?seed=Lea&backgroundColor=ffd5dc',
   'https://api.dicebear.com/7.x/personas/svg?seed=Max&backgroundColor=d1d4f9',
   'https://api.dicebear.com/7.x/personas/svg?seed=Noah&backgroundColor=ffdfbf',
-  'https://api.dicebear.com/7.x/personas/svg?seed=Mia&backgroundColor=b6e3f4'
+  'https://api.dicebear.com/7.x/personas/svg?seed=Mia&backgroundColor=b6e3f4',
+  'https://api.dicebear.com/7.x/personas/svg?seed=Lara&backgroundColor=ffe6b3',
+  'https://api.dicebear.com/7.x/personas/svg?seed=Finn&backgroundColor=c7f9cc',
+  'https://api.dicebear.com/7.x/personas/svg?seed=Emil&backgroundColor=ffd6e0',
+  'https://api.dicebear.com/7.x/personas/svg?seed=Jule&backgroundColor=cde7ff',
+  'https://api.dicebear.com/7.x/personas/svg?seed=Tom&backgroundColor=f1f5b8',
+  'https://api.dicebear.com/7.x/personas/svg?seed=Nina&backgroundColor=f3d1ff',
+  'https://api.dicebear.com/7.x/personas/svg?seed=Kai&backgroundColor=d1fae5'
 ];
 
 const Profile = () => {
@@ -19,6 +29,18 @@ const Profile = () => {
   const [cats, setCats] = useState([]);
   const [selectedCatId, setSelectedCatId] = useState('');
   const [weights, setWeights] = useState([]);
+
+  useEffect(() => {
+    const storedName = localStorage.getItem(PROFILE_NAME_KEY);
+    if (storedName && storedName.trim()) {
+      setName(storedName.trim());
+    }
+
+    const storedProfileImage = localStorage.getItem(PROFILE_IMAGE_KEY);
+    if (storedProfileImage && storedProfileImage.trim()) {
+      setProfileImage(storedProfileImage);
+    }
+  }, []);
 
   useEffect(() => {
     getCats().then((data) => {
@@ -35,6 +57,9 @@ const Profile = () => {
 
   const handleSave = (e) => {
     e.preventDefault();
+    localStorage.setItem(PROFILE_NAME_KEY, name.trim() || 'Katzenfreund');
+    localStorage.setItem(PROFILE_IMAGE_KEY, profileImage);
+    window.dispatchEvent(new Event('profile-updated'));
     alert('Profil erfolgreich gespeichert!');
   };
 
@@ -176,7 +201,7 @@ const Profile = () => {
           <div>
             <label style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Profilbild</label>
             <p style={{ marginTop: '0.25rem', marginBottom: '0.75rem', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-              Wähle ein Menschen-Icon oder lade ein eigenes Bild hoch.
+              Wähle ein Icon oder lade ein eigenes Bild hoch.
             </p>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(64px, 1fr))', gap: '0.6rem', marginBottom: '0.75rem' }}>
@@ -193,7 +218,7 @@ const Profile = () => {
                     cursor: 'pointer'
                   }}
                 >
-                  <img src={avatarUrl} alt="Menschen-Avatar" style={{ width: '48px', height: '48px' }} />
+                  <img src={avatarUrl} alt="Profil-Icon" style={{ width: '48px', height: '48px' }} />
                 </button>
               ))}
             </div>
