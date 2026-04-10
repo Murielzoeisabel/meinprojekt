@@ -179,10 +179,22 @@ const Stats = () => {
     }
   ];
 
+  const formatDateDDMMYYYY = (dateValue) => {
+    const parsed = new Date(dateValue);
+    if (Number.isNaN(parsed.getTime())) {
+      return dateValue;
+    }
+
+    const day = String(parsed.getDate()).padStart(2, '0');
+    const month = String(parsed.getMonth() + 1).padStart(2, '0');
+    const year = parsed.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
+
   return (
     <AnimatedPage>
       <h1>Statistiken & Analyse</h1>
-      <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>
+      <p className="page-subtitle">
         Detaillierte Einblicke in die Gewichtsentwicklung.
       </p>
 
@@ -217,7 +229,7 @@ const Stats = () => {
         <p style={{ margin: 0, color: 'var(--text-secondary)' }}>{weightAnalysisHint.text}</p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 3fr) minmax(0, 1fr)', gap: '2rem' }}>
+      <div className="two-col-layout stats-layout">
         <div className="card" style={{ height: '450px' }}>
           <h3>Langzeittrend</h3>
           <ResponsiveContainer width="100%" height="100%">
@@ -228,10 +240,10 @@ const Stats = () => {
                   <stop offset="95%" stopColor="var(--accent-primary)" stopOpacity={0}/>
                 </linearGradient>
               </defs>
-              <XAxis dataKey="date" stroke="var(--text-secondary)" />
+              <XAxis dataKey="date" stroke="var(--text-secondary)" tickFormatter={formatDateDDMMYYYY} />
               <YAxis stroke="var(--text-secondary)" domain={['dataMin - 0.5', 'dataMax + 0.5']} />
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-color)" />
-              <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: 'var(--card-shadow)' }} />
+              <Tooltip labelFormatter={formatDateDDMMYYYY} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: 'var(--card-shadow)' }} />
               <Area type="monotone" dataKey="weight" stroke="var(--accent-primary)" fillOpacity={1} fill="url(#colorWeight)" animationDuration={2000} />
             </AreaChart>
           </ResponsiveContainer>

@@ -1,5 +1,5 @@
-import { lazy, Suspense } from 'react';
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { lazy, Suspense, useEffect } from 'react';
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import Navbar from './components/Navbar';
 
 const Dashboard = lazy(() => import('./pages/Dashboard'));
@@ -13,7 +13,6 @@ const Legal = lazy(() => import('./pages/Legal'));
 const Settings = lazy(() => import('./pages/Settings'));
 const MealTemplates = lazy(() => import('./pages/MealTemplates'));
 const Recipes = lazy(() => import('./pages/Recipes'));
-const FoodAnalyzer = lazy(() => import('./pages/FoodAnalyzer'));
 const Calories = lazy(() => import('./pages/Calories'));
 const Community = lazy(() => import('./pages/Community'));
 
@@ -23,9 +22,20 @@ const PageLoader = () => (
   </div>
 );
 
+const ScrollToTop = () => {
+  const location = useLocation();
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+  }, [location.pathname]);
+
+  return null;
+};
+
 function App() {
   return (
     <div className="app-container">
+      <ScrollToTop />
       <Navbar />
       <main className="main-content">
         <Suspense fallback={<PageLoader />}>
@@ -37,7 +47,7 @@ function App() {
             <Route path="/nutrition" element={<Nutrition />} />
             <Route path="/meal-templates" element={<MealTemplates />} />
             <Route path="/recipes" element={<Recipes />} />
-            <Route path="/food-analyzer" element={<FoodAnalyzer />} />
+            <Route path="/food-analyzer" element={<Navigate to="/nutrition" replace />} />
             <Route path="/calories" element={<Calories />} />
             <Route path="/health" element={<HealthCheck />} />
             <Route path="/profile" element={<Profile />} />

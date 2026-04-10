@@ -173,12 +173,12 @@ const Dashboard = () => {
           {errorMsg}
         </div>
       )}
-      <div style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'var(--surface-color)', padding: '1.5rem', borderRadius: '20px', boxShadow: 'var(--card-shadow)' }}>
+      <div style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'var(--surface-elevated)', padding: '1.5rem', borderRadius: '20px', boxShadow: 'var(--card-shadow)' }}>
         <div>
           <h1 style={{ fontSize: '2.5rem', color: 'var(--text-secondary)' }}>
             Cat Slim Down <span className="floating-comic">👋</span>
           </h1>
-          <p style={{ color: 'var(--text-primary)', fontWeight: 500 }}>Willkommen zurück! Bereit für ein bisschen Training?</p>
+          <p className="page-subtitle" style={{ marginBottom: 0, color: 'var(--text-primary)', fontWeight: 500 }}>Willkommen zurück! Bereit für ein bisschen Training?</p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: '280px' }}>
           <motion.div whileHover={{ scale: 1.03 }} transition={{ duration: 0.2 }}>
@@ -203,22 +203,22 @@ const Dashboard = () => {
 
       {selectedCat && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
-          <motion.div className="card" whileHover={{ scale: 1.02 }}>
+          <motion.div className="card card-hover-lift" whileHover={{ scale: 1.015 }}>
             <h4 style={{ color: 'var(--text-secondary)' }}>Aktuelles Gewicht</h4>
             <h2>{currentWeight} kg</h2>
           </motion.div>
-          <motion.div className="card" whileHover={{ scale: 1.02 }}>
+          <motion.div className="card card-hover-lift" whileHover={{ scale: 1.015 }}>
             <h4 style={{ color: 'var(--text-secondary)' }}>Zielgewicht</h4>
             <h2>{targetWeight} kg</h2>
           </motion.div>
-          <motion.div className="card" whileHover={{ scale: 1.02 }}>
+          <motion.div className="card card-hover-lift" whileHover={{ scale: 1.015 }}>
             <h4 style={{ color: 'var(--text-secondary)' }}>Durchschnitts-Gewicht</h4>
             <h2>{avgWeight} kg</h2>
           </motion.div>
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 2fr) minmax(0, 1fr)', gap: '2rem' }}>
+      <div className="two-col-layout">
         <div className="card" style={{ height: '400px' }}>
           <h3>Gewichtsverlauf</h3>
           <ResponsiveContainer width="100%" height="100%">

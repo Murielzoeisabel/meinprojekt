@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Award, Cat, MessageCircle, Send, ThumbsUp } from 'lucide-react';
+import { Award, Cat, MessageCircle, Send, Sparkles, ThumbsUp } from 'lucide-react';
 import AnimatedPage from '../components/AnimatedPage';
+import './Community.css';
 import {
   addCommunityMessage,
   addCommunityPost,
@@ -118,16 +119,18 @@ const Community = () => {
   }, []);
 
   useEffect(() => {
-    let isMounted = true;
+    let cancelled = false;
 
     const fetchData = async () => {
       try {
         const [postData, messageData] = await Promise.all([getCommunityPosts(), getCommunityMessages()]);
-        if (!isMounted) return;
+        if (cancelled) return;
         setPosts(Array.isArray(postData) ? postData : []);
         setMessages(Array.isArray(messageData) ? messageData : []);
       } catch (error) {
-        console.error('Fehler beim Laden der Community-Daten:', error);
+        if (!cancelled) {
+          console.error('Fehler beim Laden der Community-Daten:', error);
+        }
       }
     };
 
@@ -135,7 +138,7 @@ const Community = () => {
     const intervalId = setInterval(fetchData, 5000);
 
     return () => {
-      isMounted = false;
+      cancelled = true;
       clearInterval(intervalId);
     };
   }, []);
@@ -319,37 +322,92 @@ const Community = () => {
           {errorMsg}
         </div>
       )}
-      <h1>Community Forum</h1>
-      <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>
-        Teile Fortschritte, feuere andere an und chatte live mit der Gruppe.
-      </p>
 
-      <div
+      <motion.div
+        className="card"
+        initial={{ opacity: 0, y: 16, scale: 0.99 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.35, ease: 'easeOut' }}
         style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
-          gap: '1rem',
-          marginBottom: '1.5rem'
+          marginBottom: '1.5rem',
+          border: '1px solid rgba(16, 185, 129, 0.35)',
+          background:
+            'radial-gradient(circle at 85% 20%, rgba(251, 191, 36, 0.24), transparent 36%), linear-gradient(130deg, rgba(16, 185, 129, 0.16), rgba(59, 130, 246, 0.12))',
+          position: 'relative',
+          overflow: 'hidden'
         }}
       >
-        <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '0.7rem' }}>
+        <div
+          aria-hidden="true"
+          style={{
+            position: 'absolute',
+            width: '220px',
+            height: '220px',
+            borderRadius: '999px',
+            background: 'rgba(16, 185, 129, 0.16)',
+            right: '-60px',
+            top: '-70px',
+            filter: 'blur(2px)'
+          }}
+        />
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', marginBottom: '0.4rem', color: 'var(--accent-primary)', fontWeight: 700, position: 'relative' }}>
+          <Sparkles size={16} />
+          Community Forum
+        </div>
+
+        <h1 style={{ margin: '0 0 0.45rem 0', position: 'relative' }}>Gemeinsam leichter ans Ziel</h1>
+        <p style={{ color: 'var(--text-secondary)', margin: 0, maxWidth: '780px', lineHeight: 1.6, position: 'relative' }}>
+          Teile Fortschritte, motiviere andere Katzeneltern und feiere jeden kleinen Erfolg zusammen mit der Community.
+        </p>
+
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.6rem', marginTop: '0.9rem', position: 'relative' }}>
+          <motion.span
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.08, duration: 0.24 }}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', border: '1px solid var(--border-color)', background: 'var(--surface-color)', borderRadius: '999px', padding: '0.25rem 0.62rem', fontSize: '0.84rem', fontWeight: 700 }}
+          >
+            <MessageCircle size={14} /> {messages.length} Chatnachrichten
+          </motion.span>
+          <motion.span
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.14, duration: 0.24 }}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', border: '1px solid var(--border-color)', background: 'var(--surface-color)', borderRadius: '999px', padding: '0.25rem 0.62rem', fontSize: '0.84rem', fontWeight: 700 }}
+          >
+            <Cat size={14} /> {posts.length} Fortschrittsbeiträge
+          </motion.span>
+          <motion.span
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2, duration: 0.24 }}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', border: '1px solid var(--border-color)', background: 'var(--surface-color)', borderRadius: '999px', padding: '0.25rem 0.62rem', fontSize: '0.84rem', fontWeight: 700 }}
+          >
+            <ThumbsUp size={14} /> {totalReactions.gefaelltMir + totalReactions.daumenHoch} Reaktionen gesamt
+          </motion.span>
+        </div>
+      </motion.div>
+
+      <div className="community-stats-grid">
+        <div className="card card-hover-lift" style={{ display: 'flex', alignItems: 'center', gap: '0.7rem' }}>
           <Cat size={18} color="var(--accent-primary)" />
           <strong>{reactionStats.givenLikes}</strong>
           <span style={{ color: 'var(--text-secondary)' }}>Von dir vergeben: Super süß</span>
         </div>
-        <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '0.7rem' }}>
+        <div className="card card-hover-lift" style={{ display: 'flex', alignItems: 'center', gap: '0.7rem' }}>
           <ThumbsUp size={18} color="var(--accent-primary)" />
           <strong>{reactionStats.givenThumbs}</strong>
           <span style={{ color: 'var(--text-secondary)' }}>Von dir vergeben: Daumen hoch</span>
         </div>
-        <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '0.7rem' }}>
+        <div className="card card-hover-lift" style={{ display: 'flex', alignItems: 'center', gap: '0.7rem' }}>
           <Cat size={18} color="var(--accent-primary)" />
           <strong>{myReceivedReactions.likes + myReceivedReactions.thumbs}</strong>
           <span style={{ color: 'var(--text-secondary)' }}>
             Auf deine Beiträge erhalten ({viewerName})
           </span>
         </div>
-        <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '0.7rem' }}>
+        <div className="card card-hover-lift" style={{ display: 'flex', alignItems: 'center', gap: '0.7rem' }}>
           <MessageCircle size={18} color="var(--accent-primary)" />
           <strong>{messages.length}</strong>
           <span style={{ color: 'var(--text-secondary)' }}>Textnachrichten im Gruppen-Chat</span>
