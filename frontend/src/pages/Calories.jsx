@@ -21,11 +21,15 @@ const Calories = () => {
     return Math.round(70 * Math.pow(weight, 0.75));
   };
 
-  const basalMetabolism = calculateBasalMetabolism(selectedCat?.currentWeight || selectedCat?.idealWeight);
+  const basalMetabolism = calculateBasalMetabolism(
+    selectedCat?.currentWeight !== null && selectedCat?.currentWeight !== undefined
+      ? selectedCat.currentWeight
+      : selectedCat?.idealWeight
+  );
 
   const totalConsumed = calorieHistory.reduce((sum, entry) => sum + Number(entry.consumed || 0), 0);
   const totalActiveBurned = calorieHistory.reduce((sum, entry) => sum + Number(entry.burned || 0), 0);
-  const totalBasalBurned = calorieHistory.reduce((sum, entry) => sum + Number(entry.basalBurned || basalMetabolism || 0), 0);
+  const totalBasalBurned = calorieHistory.reduce((sum, entry) => sum + Number(entry.basalBurned ?? basalMetabolism ?? 0), 0);
   const totalNeed = totalBasalBurned + totalActiveBurned;
   const fulfilledNeed = Math.min(totalConsumed, totalNeed);
   const openNeed = Math.max(totalNeed - totalConsumed, 0);
@@ -37,6 +41,7 @@ const Calories = () => {
   useEffect(() => {
     getCats()
       .then(data => {
+        setErrorMsg('');
         setCats(data);
         if (data.length > 0) setSelectedCatId(data[0].id.toString());
       })
@@ -46,7 +51,10 @@ const Calories = () => {
   useEffect(() => {
     if (selectedCatId) {
       getCalories(selectedCatId)
-        .then(data => setCalorieHistory(data))
+        .then(data => {
+          setErrorMsg('');
+          setCalorieHistory(data);
+        })
         .catch(() => setErrorMsg('Kalorienhistorie konnte nicht geladen werden.'));
     }
   }, [selectedCatId]);
@@ -96,7 +104,7 @@ const Calories = () => {
         </select>
         {selectedCat && (
           <p style={{ color: 'var(--text-secondary)', margin: 0 }}>
-            {selectedCat.name} | Gewicht: {selectedCat.currentWeight || selectedCat.idealWeight} kg | Grundumsatz: {basalMetabolism} kcal/Tag
+            {selectedCat.name} | Gewicht: {selectedCat.currentWeight !== null && selectedCat.currentWeight !== undefined ? selectedCat.currentWeight : selectedCat.idealWeight} kg | Grundumsatz: {basalMetabolism} kcal/Tag
           </p>
         )}
       </div>

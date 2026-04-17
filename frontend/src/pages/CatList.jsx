@@ -239,8 +239,13 @@ const CatList = () => {
   const activeSuggestedRange = bcsRange || { min: suggestedRangeMin, max: suggestedRangeMax, center: suggestedIdealWeight };
   const sizeLabel = { klein: 'klein', mittel: 'mittel', gross: 'groß' };
 
-  const loadCats = () => {
-    getCats().then(data => setCats(data));
+  const loadCats = async () => {
+    try {
+      const data = await getCats();
+      setCats(Array.isArray(data) ? data : []);
+    } catch {
+      setGlobalFeedback({ type: 'error', message: 'Katzen konnten nicht geladen werden.' });
+    }
   };
 
   useEffect(() => {
@@ -256,7 +261,9 @@ const CatList = () => {
     try {
       const payload = {
         ...newCat,
-        idealWeight: newCat.idealWeight || activeSuggestedRange.center
+        idealWeight: newCat.idealWeight !== '' && newCat.idealWeight !== null && newCat.idealWeight !== undefined
+          ? newCat.idealWeight
+          : activeSuggestedRange.center
       };
 
       const createdCat = await addCat(payload);
@@ -286,7 +293,7 @@ const CatList = () => {
             ? 'Katze wurde gespeichert, aber das aktuelle Gewicht konnte nicht als letzter Eintrag gespeichert werden.'
             : 'Katze erfolgreich gespeichert.'
       });
-      loadCats();
+      await loadCats();
     } catch (error) {
       setAddFormFeedback({ type: 'error', message: getApiErrorMessage(error, 'Speichern fehlgeschlagen. Bitte prüfe die Eingaben und versuche es erneut.') });
     } finally {
@@ -313,7 +320,7 @@ const CatList = () => {
     setAddFormFeedback(null);
 
     fileToDataUrl(file).then((dataUrl) => {
-      setNewCat({ ...newCat, photo: dataUrl });
+      setNewCat((prev) => ({ ...prev, photo: dataUrl }));
     });
   };
 
@@ -328,7 +335,7 @@ const CatList = () => {
         return;
       }
 
-      setNewCat({ ...newCat, photo: resized.dataUrl });
+      setNewCat((prev) => ({ ...prev, photo: resized.dataUrl }));
       setPendingAutoResizeAddFile(null);
       setAddFormFeedback({ type: 'success', message: `Bild automatisch verkleinert (${bytesToMb(resized.sizeBytes)} MB). Du kannst jetzt speichern.` });
     } catch {
@@ -499,8 +506,12 @@ const CatList = () => {
 
   const handleDelete = async (id) => {
     if (window.confirm('Möchtest du diese Katze wirklich löschen?')) {
-      await deleteCat(id);
-      loadCats();
+      try {
+        await deleteCat(id);
+        await loadCats();
+      } catch {
+        setGlobalFeedback({ type: 'error', message: 'Katze konnte nicht gelöscht werden.' });
+      }
     }
   };
 
@@ -922,7 +933,9 @@ const CatList = () => {
             <div style={{ background: 'var(--bg-color)', padding: '1rem', borderRadius: '12px', marginTop: 'auto' }}>
               <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Letztes Gewicht:</span>
               <div style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'var(--accent-primary)' }}>
-                {cat.currentWeight ? `${parseFloat(cat.currentWeight).toFixed(2)} kg` : 'Keine Daten'}
+                {cat.currentWeight !== null && cat.currentWeight !== undefined
+                  ? `${parseFloat(cat.currentWeight).toFixed(2)} kg`
+                  : 'Keine Daten'}
               </div>
             </div>
 

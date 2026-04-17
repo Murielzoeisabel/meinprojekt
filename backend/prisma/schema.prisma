@@ -1,0 +1,116 @@
+generator client {
+  provider = "prisma-client-js"
+  engineType = "client"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+enum CatSize {
+  KLEIN @map("klein")
+  MITTEL @map("mittel")
+  GROSS @map("gross")
+}
+
+enum ReactionType {
+  LIKE @map("like")
+  THUMBS_UP @map("thumbsUp")
+}
+
+model User {
+  id           Int               @id @default(autoincrement())
+  email        String            @unique
+  name         String
+  avatarUrl    String?
+  createdAt    DateTime          @default(now())
+  cats         Cat[]
+  posts        CommunityPost[]
+  reactions    PostReaction[]
+  messages     CommunityMessage[]
+
+  @@map("users")
+}
+
+model Cat {
+  id            Int             @id @default(autoincrement())
+  userId        Int
+  name          String
+  age           Int?
+  breed         String
+  size          CatSize
+  idealWeight   Float
+  photo         String?
+  createdAt     DateTime        @default(now())
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  weightEntries WeightEntry[]
+  calorieEntries CalorieEntry[]
+
+  @@map("cats")
+}
+
+model WeightEntry {
+  id        Int      @id @default(autoincrement())
+  catId     Int
+  date      DateTime
+  weight    Float
+  cat       Cat      @relation(fields: [catId], references: [id], onDelete: Cascade)
+
+  @@unique([catId, date])
+  @@map("weight_entries")
+}
+
+model CalorieEntry {
+  id           Int      @id @default(autoincrement())
+  catId        Int
+  date         DateTime
+  consumed     Float
+  burned       Float
+  basalBurned  Float
+  cat          Cat      @relation(fields: [catId], references: [id], onDelete: Cascade)
+
+  @@unique([catId, date])
+  @@map("calorie_entries")
+}
+
+model CommunityPost {
+  id           Int             @id @default(autoincrement())
+  userId       Int?
+  author       String
+  text         String
+  photo        String?
+  beforeWeight Float?
+  nowWeight    Float?
+  likes        Int             @default(0)
+  hearts       Int             @default(0)
+  createdAt    DateTime        @default(now())
+  user         User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
+  reactions    PostReaction[]
+
+  @@map("community_posts")
+}
+
+model PostReaction {
+  id        Int          @id @default(autoincrement())
+  postId    Int
+  userId    Int
+  type      ReactionType
+  createdAt DateTime     @default(now())
+  post      CommunityPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId, type])
+  @@map("post_reactions")
+}
+
+model CommunityMessage {
+  id        Int      @id @default(autoincrement())
+  userId    Int?
+  userName  String
+  avatar    String?
+  text      String
+  createdAt DateTime @default(now())
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("community_messages")
+}

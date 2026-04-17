@@ -190,72 +190,85 @@ Fehlerfall:
 
 # Datenschema
 
-users
------------------------------
-id            (PK)
-email         (NOT NULL, UNIQUE)
-name          (NOT NULL)
-avatarUrl
-createdAt     (NOT NULL)
+### users
 
-cats
------------------------------
-id            (PK)
-userId        (FK -> users.id, NOT NULL)
-name          (NOT NULL)
-age
-breed         (NOT NULL)
-size          (NOT NULL; klein|mittel|gross)
-idealWeight   (NOT NULL)
-photo
-createdAt     (NOT NULL)
+| Feld | Typ | Constraint |
+| --- | --- | --- |
+| id | int | PK |
+| email | string | NOT NULL, UNIQUE |
+| name | string | NOT NULL |
+| avatarUrl | string | optional |
+| createdAt | datetime | NOT NULL |
 
-weight_entries
------------------------------
-id            (PK)
-catId         (FK -> cats.id, NOT NULL)
-date          (NOT NULL)
-weight        (NOT NULL)
+### cats
 
-calorie_entries
------------------------------
-id            (PK)
-catId         (FK -> cats.id, NOT NULL)
-date          (NOT NULL)
-consumed      (NOT NULL)
-burned        (NOT NULL)
-basalBurned   (NOT NULL)
+| Feld | Typ | Constraint |
+| --- | --- | --- |
+| id | int | PK |
+| userId | int | FK -> users.id, NOT NULL |
+| name | string | NOT NULL |
+| age | int | optional |
+| breed | string | NOT NULL |
+| size | enum | NOT NULL (klein, mittel, gross) |
+| idealWeight | float | NOT NULL |
+| photo | string | optional |
+| createdAt | datetime | NOT NULL |
 
-community_posts
------------------------------
-id            (PK)
-userId        (FK -> users.id) optional
-author        (NOT NULL)
-text          (NOT NULL)
-photo
-beforeWeight
-nowWeight
-likes         (NOT NULL, default 0)
-hearts        (NOT NULL, default 0)
-createdAt     (NOT NULL)
+### weight_entries
 
-post_reactions
------------------------------
-id            (PK)
-postId        (FK -> community_posts.id, NOT NULL)
-userId        (FK -> users.id, NOT NULL)
-type          (NOT NULL; like|thumbsUp)
-createdAt     (NOT NULL)
+| Feld | Typ | Constraint |
+| --- | --- | --- |
+| id | int | PK |
+| catId | int | FK -> cats.id, NOT NULL |
+| date | date | NOT NULL |
+| weight | float | NOT NULL |
 
-community_messages
------------------------------
-id            (PK)
-userId        (FK -> users.id) optional
-userName      (NOT NULL)
-avatar
-text          (NOT NULL)
-createdAt     (NOT NULL)
-```
+### calorie_entries
+
+| Feld | Typ | Constraint |
+| --- | --- | --- |
+| id | int | PK |
+| catId | int | FK -> cats.id, NOT NULL |
+| date | date | NOT NULL |
+| consumed | float | NOT NULL |
+| burned | float | NOT NULL |
+| basalBurned | float | NOT NULL |
+
+### community_posts
+
+| Feld | Typ | Constraint |
+| --- | --- | --- |
+| id | int | PK |
+| userId | int | FK -> users.id, optional |
+| author | string | NOT NULL |
+| text | string | NOT NULL |
+| photo | string | optional |
+| beforeWeight | float | optional |
+| nowWeight | float | optional |
+| likes | int | NOT NULL, default 0 |
+| hearts | int | NOT NULL, default 0 |
+| createdAt | datetime | NOT NULL |
+
+### post_reactions
+
+| Feld | Typ | Constraint |
+| --- | --- | --- |
+| id | int | PK |
+| postId | int | FK -> community_posts.id, NOT NULL |
+| userId | int | FK -> users.id, NOT NULL |
+| type | enum | NOT NULL (like, thumbsUp) |
+| createdAt | datetime | NOT NULL |
+
+### community_messages
+
+| Feld | Typ | Constraint |
+| --- | --- | --- |
+| id | int | PK |
+| userId | int | FK -> users.id, optional |
+| userName | string | NOT NULL |
+| avatar | string | optional |
+| text | string | NOT NULL |
+| createdAt | datetime | NOT NULL |
 
 # Beziehungen
 
@@ -276,3 +289,16 @@ createdAt     (NOT NULL)
 - post_reactions: postId, userId, type, createdAt
 - community_messages: userName, text, createdAt
 
+# Ersetzen der Mock-Daten-Handler
+
+Für die Umstellung von Mock-Daten auf Prisma habe ich den Endpoint GET/api/cats in zwei Prompt-Iterationen umgesetzt.
+
+Erste Iteration:
+
+Ersetze den GET /api/cats-Handler. Bisher: res.json(cats). Neu: Alle Tasks aus der Datenbank laden mit prisma und als JSON zurückgeben. Fehlerbehandlung mit try/catch und 500-Status.
+
+Zweite Iteration:
+
+Ergänze den GET /api/cats-Handler um einen optionalen Query-Parameter userId mit where-Bedingung in Prisma. Wenn userId gesetzt ist, sollen nur die Cats dieses Users geladen werden; wenn kein userId gesetzt ist, weiterhin alle Cats zurückgeben. Bei ungültigem userId soll der Endpoint 400 Bad Request mit einer klaren Fehlermeldung zurückgeben.
+
+# Persistenz-Test

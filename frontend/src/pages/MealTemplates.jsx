@@ -14,8 +14,11 @@ const MealTemplates = () => {
 
   useEffect(() => {
     getCats().then(data => {
-      setCats(data);
-      if (data.length > 0) setSelectedCatId(data[0].id.toString());
+      const safeCats = Array.isArray(data) ? data : [];
+      setCats(safeCats);
+      if (safeCats.length > 0) setSelectedCatId(safeCats[0].id.toString());
+    }).catch(() => {
+      setCats([]);
     });
   }, []);
 
@@ -27,7 +30,11 @@ const MealTemplates = () => {
     return Math.round(70 * Math.pow(weight, 0.75));
   };
 
-  const basalMetabolism = calculateBasalMetabolism(selectedCat?.currentWeight || selectedCat?.idealWeight);
+  const basalMetabolism = calculateBasalMetabolism(
+    selectedCat?.currentWeight !== null && selectedCat?.currentWeight !== undefined
+      ? selectedCat.currentWeight
+      : selectedCat?.idealWeight
+  );
 
   // Futtermengen basierend auf Kalorienzielen berechnen
   // Nassfutter: ~85 kcal per 100g, Trockenfutter: ~380 kcal per 100g
@@ -72,7 +79,9 @@ const MealTemplates = () => {
           onChange={(e) => setSelectedCatId(e.target.value)}
         >
           {cats.map(cat => (
-            <option key={cat.id} value={cat.id}>{cat.name} ({cat.currentWeight || cat.idealWeight}kg)</option>
+            <option key={cat.id} value={cat.id}>
+              {cat.name} ({cat.currentWeight !== null && cat.currentWeight !== undefined ? cat.currentWeight : cat.idealWeight}kg)
+            </option>
           ))}
         </select>
       </div>
@@ -82,7 +91,11 @@ const MealTemplates = () => {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
           <motion.div className="card" whileHover={{ scale: 1.05 }} style={{ textAlign: 'center' }}>
             <h4 style={{ color: 'var(--text-secondary)', margin: 0 }}>Gewicht</h4>
-            <h2 style={{ margin: '0.5rem 0 0 0' }}>{selectedCat.currentWeight || selectedCat.idealWeight} kg</h2>
+            <h2 style={{ margin: '0.5rem 0 0 0' }}>
+              {selectedCat.currentWeight !== null && selectedCat.currentWeight !== undefined
+                ? selectedCat.currentWeight
+                : selectedCat.idealWeight} kg
+            </h2>
           </motion.div>
           <motion.div className="card" whileHover={{ scale: 1.05 }} style={{ textAlign: 'center' }}>
             <h4 style={{ color: 'var(--text-secondary)', margin: 0 }}>Grundumsatz</h4>

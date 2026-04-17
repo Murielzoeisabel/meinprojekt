@@ -114,6 +114,7 @@ const Dashboard = () => {
   useEffect(() => {
     getCats()
       .then(data => {
+        setErrorMsg('');
         setCats(data);
         if (data.length > 0) {
           setSelectedCatId(data[0].id.toString());
@@ -125,7 +126,10 @@ const Dashboard = () => {
   useEffect(() => {
     if (selectedCatId) {
       getWeights(selectedCatId)
-        .then(data => setWeightHistory(data))
+        .then(data => {
+          setErrorMsg('');
+          setWeightHistory(data);
+        })
         .catch(() => setErrorMsg('Gewichtsdaten konnten nicht geladen werden.'));
     }
   }, [selectedCatId]);
@@ -142,10 +146,10 @@ const Dashboard = () => {
       setNewWeight('');
 
       const latestEntry = updatedHistory.length > 0
-        ? [...updatedHistory].sort((a, b) => new Date(a.date) - new Date(b.date))[updatedHistory.length - 1]
+        ? [...updatedHistory].sort((a, b) => new Date(a.date) - new Date(b.date)).at(-1)
         : null;
 
-      setCats(cats.map(c =>
+      setCats(prevCats => prevCats.map(c =>
         c.id.toString() === selectedCatId
           ? { ...c, currentWeight: latestEntry ? parseFloat(latestEntry.weight) : c.currentWeight }
           : c
@@ -159,8 +163,12 @@ const Dashboard = () => {
   };
 
   const selectedCat = cats.find(c => c.id.toString() === selectedCatId);
-  const currentWeight = selectedCat?.currentWeight ? selectedCat.currentWeight.toFixed(2) : '-';
-  const targetWeight = selectedCat?.idealWeight ? selectedCat.idealWeight.toFixed(2) : '-';
+  const currentWeight = selectedCat?.currentWeight !== null && selectedCat?.currentWeight !== undefined
+    ? selectedCat.currentWeight.toFixed(2)
+    : '-';
+  const targetWeight = selectedCat?.idealWeight !== null && selectedCat?.idealWeight !== undefined
+    ? selectedCat.idealWeight.toFixed(2)
+    : '-';
   
   const avgWeight = weightHistory.length > 0 
     ? (weightHistory.reduce((acc, curr) => acc + curr.weight, 0) / weightHistory.length).toFixed(2)

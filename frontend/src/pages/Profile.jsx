@@ -44,14 +44,17 @@ const Profile = () => {
 
   useEffect(() => {
     getCats().then((data) => {
-      setCats(data);
-      if (data.length > 0) setSelectedCatId(data[0].id.toString());
+      const safeCats = Array.isArray(data) ? data : [];
+      setCats(safeCats);
+      if (safeCats.length > 0) setSelectedCatId(safeCats[0].id.toString());
+    }).catch(() => {
+      setCats([]);
     });
   }, []);
 
   useEffect(() => {
     if (selectedCatId) {
-      getWeights(selectedCatId).then((data) => setWeights(data));
+      getWeights(selectedCatId).then((data) => setWeights(data)).catch(() => setWeights([]));
     }
   }, [selectedCatId]);
 
@@ -114,7 +117,7 @@ const Profile = () => {
   };
 
   const getGoalStreakFromLatest = () => {
-    if (!selectedCat?.idealWeight || weights.length === 0) return 0;
+    if (selectedCat?.idealWeight === null || selectedCat?.idealWeight === undefined || weights.length === 0) return 0;
 
     let streak = 0;
     for (let i = weights.length - 1; i >= 0; i -= 1) {
@@ -156,13 +159,13 @@ const Profile = () => {
       id: 'near-goal',
       icon: '🎯',
       title: 'Fast am Ziel',
-      unlocked: latestWeight !== null && selectedCat?.idealWeight !== undefined && latestWeight <= selectedCat.idealWeight + 0.2
+      unlocked: latestWeight !== null && selectedCat?.idealWeight !== null && selectedCat?.idealWeight !== undefined && latestWeight <= selectedCat.idealWeight + 0.2
     },
     {
       id: 'goal-hit',
       icon: '🏆',
       title: 'Ziel erreicht',
-      unlocked: latestWeight !== null && selectedCat?.idealWeight !== undefined && latestWeight <= selectedCat.idealWeight
+      unlocked: latestWeight !== null && selectedCat?.idealWeight !== null && selectedCat?.idealWeight !== undefined && latestWeight <= selectedCat.idealWeight
     },
     {
       id: 'week-streak',

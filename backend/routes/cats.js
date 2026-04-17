@@ -1,4 +1,5 @@
 const express = require('express');
+const prisma = require('../prisma/client');
 
 const createCatsRouter = ({
   cats,
@@ -13,170 +14,417 @@ const createCatsRouter = ({
 }) => {
   const router = express.Router();
 
-  router.get('/', (req, res) => {
-    const { userId } = req.query;
-
-    if (userId !== undefined) {
-      const parsedUserId = parsePositiveInt(userId);
+  const resolveCatOwnerId = async (requestedUserId) => {
+    if (requestedUserId !== undefined) {
+      const parsedUserId = parsePositiveInt(requestedUserId);
       if (parsedUserId === null) {
-        return sendApiError(res, 400, 'INVALID_QUERY_USER_ID', 'Query-Parameter "userId" muss eine positive Ganzzahl sein.', { field: 'userId' });
+        return null;
       }
 
-      return res.json(cats.filter((cat) => cat.userId === parsedUserId).map(withCurrentWeight));
+      const requestedUser = await prisma.user.findUnique({
+        where: { id: parsedUserId },
+        select: { id: true }
+      });
+
+      return requestedUser ? requestedUser.id : null;
     }
 
-    return res.json(cats.map(withCurrentWeight));
-  });
+    const existingUser = await prisma.user.findFirst({
+      orderBy: { id: 'asc' },
+      select: { id: true }
+    });
 
-  router.get('/:id', (req, res) => {
-    const id = parsePositiveInt(req.params.id);
-    if (id === null) {
-      return sendApiError(res, 400, 'INVALID_CAT_ID', 'Pfadparameter "id" muss eine positive Ganzzahl sein.', { field: 'id' });
+    if (existingUser) {
+      return existingUser.id;
     }
 
-    const cat = cats.find((item) => item.id === id);
-    if (!cat) {
-      return sendApiError(res, 404, 'CAT_NOT_FOUND', `Keine Cat mit id=${id} gefunden.`);
-    }
+    const fallbackUser = await prisma.user.upsert({
+      where: { email: 'default@cat-slim-down.local' },
+      update: {},
+      create: {
+        email: 'default@cat-slim-down.local',
+        name: 'Default User'
+      },
+      select: { id: true }
+    });
 
-    return res.json(withCurrentWeight(cat));
-  });
+    return fallbackUser.id;
+  };
 
-  router.post('/', (req, res) => {
-    const validationError = validateCatPayload(req.body);
-    if (validationError) {
-      return sendApiError(res, 400, validationError.code, validationError.message, validationError.details);
-    }
+  router.get('/', async (req, res) => {
+    try {
+      const { userId } = req.query;
+      let where;
 
-    const normalizedBreed = req.body.breed || 'Mischling';
-    const normalizedSize = req.body.size || 'mittel';
-    const parsedIdealWeight = req.body.idealWeight === undefined || req.body.idealWeight === ''
-      ? getSuggestedIdealWeight(normalizedBreed, normalizedSize)
-      : parseFloat(req.body.idealWeight);
-    const name = req.body.name.trim();
+      if (userId !== undefined) {
+        const parsedUserId = parsePositiveInt(userId);
+        if (parsedUserId === null) {
+          return sendApiError(
+            res,
+            400,
+            'INVALID_QUERY_USER_ID',
+            'Query-Parameter "userId" muss eine positive Ganzzahl sein.',
+            { field: 'userId' }
+          );
+        }
 
-    const newCat = {
-      id: cats.length > 0 ? Math.max(...cats.map((cat) => cat.id)) + 1 : 1,
-      userId: req.body.userId !== undefined ? Number(req.body.userId) : null,
-      name,
-      age: req.body.age !== undefined ? Number(req.body.age) : null,
-      breed: normalizedBreed,
-      size: normalizedSize,
-      idealWeight: parsedIdealWeight,
-      photo: req.body.photo || `https://api.dicebear.com/7.x/fun-emoji/svg?seed=${name}`
-    };
+        where = { userId: parsedUserId };
+      }
 
-    cats.push(newCat);
-    weightHistory[newCat.id] = [];
-    calorieHistory[newCat.id] = [];
-    persistCatState();
+      const catsFromDatabase = await prisma.cat.findMany({
+        where,
+        orderBy: { id: 'asc' },
+        include: {
+          weightEntries: {
+            orderBy: { date: 'asc' }
+          }
+        }
+      });
 
-    return res.status(201).json(newCat);
-  });
+      const catsWithCurrentWeight = catsFromDatabase.map((cat) => {
+        const latestWeightEntry = cat.weightEntries[cat.weightEntries.length - 1] || null;
 
-  router.put('/:id', (req, res) => {
-    const id = parsePositiveInt(req.params.id);
-    if (id === null) {
-      return sendApiError(res, 400, 'INVALID_CAT_ID', 'Pfadparameter "id" muss eine positive Ganzzahl sein.', { field: 'id' });
-    }
+        return {
+          ...cat,
+          currentWeight: latestWeightEntry ? latestWeightEntry.weight : null
+        };
+      });
 
-    const catIndex = cats.findIndex((cat) => cat.id === id);
-    if (catIndex === -1) {
-      return sendApiError(res, 404, 'CAT_NOT_FOUND', `Keine Cat mit id=${id} gefunden.`);
-    }
-
-    const validationError = validateCatPayload(req.body, { requireName: false });
-    if (validationError) {
-      return sendApiError(res, 400, validationError.code, validationError.message, validationError.details);
-    }
-
-    const existingCat = cats[catIndex];
-    const nextBreed = req.body.breed !== undefined ? req.body.breed : existingCat.breed;
-    const nextSize = req.body.size !== undefined ? req.body.size : existingCat.size;
-    const parsedIdealWeight = req.body.idealWeight === undefined || req.body.idealWeight === ''
-      ? (req.body.breed !== undefined || req.body.size !== undefined
-        ? getSuggestedIdealWeight(nextBreed, nextSize)
-        : existingCat.idealWeight)
-      : parseFloat(req.body.idealWeight);
-
-    cats[catIndex] = {
-      id,
-      userId: req.body.userId !== undefined ? Number(req.body.userId) : existingCat.userId,
-      name: req.body.name !== undefined ? req.body.name.trim() : existingCat.name,
-      age: req.body.age !== undefined ? Number(req.body.age) : existingCat.age,
-      breed: nextBreed,
-      size: nextSize,
-      idealWeight: parsedIdealWeight,
-      photo: req.body.photo !== undefined
-        ? req.body.photo || `https://api.dicebear.com/7.x/fun-emoji/svg?seed=${encodeURIComponent(req.body.name !== undefined ? req.body.name.trim() : existingCat.name)}`
-        : existingCat.photo
-    };
-
-      persistCatState();
-
-    return res.json(cats[catIndex]);
-  });
-
-  router.delete('/:id', (req, res) => {
-    const id = parsePositiveInt(req.params.id);
-    if (id === null) {
-      return sendApiError(res, 400, 'INVALID_CAT_ID', 'Pfadparameter "id" muss eine positive Ganzzahl sein.', { field: 'id' });
-    }
-
-    const catIndex = cats.findIndex((cat) => cat.id === id);
-    if (catIndex === -1) {
-      return sendApiError(res, 404, 'CAT_NOT_FOUND', `Keine Cat mit id=${id} gefunden.`);
-    }
-
-    cats.splice(catIndex, 1);
-    delete weightHistory[id];
-    delete calorieHistory[id];
-    persistCatState();
-    return res.status(204).send();
-  });
-
-  router.get('/:id/weightentries', (req, res) => {
-    const id = parsePositiveInt(req.params.id);
-    if (id === null) {
-      return sendApiError(res, 400, 'INVALID_CAT_ID', 'Pfadparameter "id" muss eine positive Ganzzahl sein.', { field: 'id' });
-    }
-
-    const catExists = cats.some((cat) => cat.id === id);
-    if (!catExists) {
-      return sendApiError(res, 404, 'CAT_NOT_FOUND', `Keine Cat mit id=${id} gefunden.`);
-    }
-
-    return res.json(weightHistory[id] || []);
-  });
-
-  router.post('/:id/weightentries', (req, res) => {
-    const id = parsePositiveInt(req.params.id);
-    if (id === null) {
-      return sendApiError(res, 400, 'INVALID_CAT_ID', 'Pfadparameter "id" muss eine positive Ganzzahl sein.', { field: 'id' });
-    }
-
-    const catExists = cats.some((cat) => cat.id === id);
-    if (!catExists) {
-      return sendApiError(res, 404, 'CAT_NOT_FOUND', `Keine Cat mit id=${id} gefunden.`);
-    }
-
-    const { weight, date } = req.body || {};
-    const parsedWeight = Number(weight);
-    if (Number.isNaN(parsedWeight) || parsedWeight <= 0 || parsedWeight > 25) {
-      return sendApiError(res, 400, 'INVALID_WEIGHT', 'Feld "weight" muss eine positive Zahl kleiner/gleich 25 sein.', {
-        field: 'weight',
-        minExclusive: 0,
-        max: 25
+      return res.json(catsWithCurrentWeight);
+    } catch (error) {
+      console.error('Fehler beim Laden der Katzen aus der Datenbank:', error);
+      return res.status(500).json({
+        error: 'Katzen konnten nicht aus der Datenbank geladen werden.'
       });
     }
+  });
 
-    const targetDate = date || new Date().toISOString().split('T')[0];
-    if (!weightHistory[id]) weightHistory[id] = [];
-    weightHistory[id].push({ date: targetDate, weight: parsedWeight });
-    weightHistory[id].sort((a, b) => new Date(a.date) - new Date(b.date));
-    persistCatState();
+  router.get('/:id', async (req, res) => {
+    try {
+      const id = parsePositiveInt(req.params.id);
+      if (id === null) {
+        return sendApiError(res, 400, 'INVALID_CAT_ID', 'Pfadparameter "id" muss eine positive Ganzzahl sein.', { field: 'id' });
+      }
 
-    return res.status(201).json(weightHistory[id]);
+      const { userId } = req.query;
+      const where = { id };
+
+      if (userId !== undefined) {
+        const parsedUserId = parsePositiveInt(userId);
+        if (parsedUserId === null) {
+          return sendApiError(
+            res,
+            400,
+            'INVALID_QUERY_USER_ID',
+            'Query-Parameter "userId" muss eine positive Ganzzahl sein.',
+            { field: 'userId' }
+          );
+        }
+
+        where.userId = parsedUserId;
+      }
+
+      const cat = await prisma.cat.findFirst({
+        where,
+        include: {
+          weightEntries: {
+            orderBy: { date: 'asc' }
+          }
+        }
+      });
+
+      if (!cat) {
+        return sendApiError(res, 404, 'CAT_NOT_FOUND', `Keine Cat mit id=${id} gefunden.`);
+      }
+
+      const latestWeightEntry = cat.weightEntries[cat.weightEntries.length - 1] || null;
+      return res.json({
+        ...cat,
+        currentWeight: latestWeightEntry ? latestWeightEntry.weight : null
+      });
+    } catch (error) {
+      console.error('Fehler beim Laden der Cat aus der Datenbank:', error);
+      return res.status(500).json({
+        error: 'Cat konnte nicht aus der Datenbank geladen werden.'
+      });
+    }
+  });
+
+  router.post('/', async (req, res) => {
+    try {
+      const validationError = validateCatPayload(req.body);
+      if (validationError) {
+        return sendApiError(res, 400, validationError.code, validationError.message, validationError.details);
+      }
+
+      const parsedUserId = await resolveCatOwnerId(req.body.userId);
+      if (parsedUserId === null) {
+        return sendApiError(res, 400, 'INVALID_USER_ID', 'Feld "userId" muss eine positive Ganzzahl sein.', { field: 'userId' });
+      }
+
+      const normalizedBreed = req.body.breed || 'Mischling';
+      const normalizedSize = req.body.size || 'mittel';
+      const parsedIdealWeight = req.body.idealWeight === undefined || req.body.idealWeight === ''
+        ? getSuggestedIdealWeight(normalizedBreed, normalizedSize)
+        : parseFloat(req.body.idealWeight);
+      const name = req.body.name.trim();
+
+      const sizeMap = {
+        klein: 'KLEIN',
+        mittel: 'MITTEL',
+        gross: 'GROSS'
+      };
+
+      const createdCat = await prisma.cat.create({
+        data: {
+          userId: parsedUserId,
+          name,
+          age: req.body.age !== undefined ? Number(req.body.age) : null,
+          breed: normalizedBreed,
+          size: sizeMap[normalizedSize],
+          idealWeight: parsedIdealWeight,
+          photo: req.body.photo || `https://api.dicebear.com/7.x/fun-emoji/svg?seed=${name}`
+        }
+      });
+
+      return res.status(201).json({
+        ...createdCat,
+        size: normalizedSize
+      });
+    } catch (error) {
+      if (error?.code === 'P2003') {
+        return sendApiError(
+          res,
+          400,
+          'INVALID_USER_ID',
+          'Feld "userId" verweist auf keinen existierenden User.',
+          { field: 'userId' }
+        );
+      }
+
+      console.error('Fehler beim Erstellen der Cat in der Datenbank:', error);
+      return res.status(500).json({
+        error: 'Cat konnte nicht in der Datenbank erstellt werden.'
+      });
+    }
+  });
+
+  router.put('/:id', async (req, res) => {
+    try {
+      const id = parsePositiveInt(req.params.id);
+      if (id === null) {
+        return sendApiError(res, 400, 'INVALID_CAT_ID', 'Pfadparameter "id" muss eine positive Ganzzahl sein.', { field: 'id' });
+      }
+
+      const validationError = validateCatPayload(req.body, { requireName: false });
+      if (validationError) {
+        return sendApiError(res, 400, validationError.code, validationError.message, validationError.details);
+      }
+
+      const existingCat = await prisma.cat.findUnique({ where: { id } });
+      if (!existingCat) {
+        return sendApiError(res, 404, 'CAT_NOT_FOUND', `Keine Cat mit id=${id} gefunden.`);
+      }
+
+      const sizeToPrisma = {
+        klein: 'KLEIN',
+        mittel: 'MITTEL',
+        gross: 'GROSS'
+      };
+      const sizeFromPrisma = {
+        KLEIN: 'klein',
+        MITTEL: 'mittel',
+        GROSS: 'gross'
+      };
+
+      const existingSize = sizeFromPrisma[existingCat.size] || 'mittel';
+      const nextBreed = req.body.breed !== undefined ? req.body.breed : existingCat.breed;
+      const nextSize = req.body.size !== undefined ? req.body.size : existingSize;
+      const parsedIdealWeight = req.body.idealWeight === undefined || req.body.idealWeight === ''
+        ? (req.body.breed !== undefined || req.body.size !== undefined
+          ? getSuggestedIdealWeight(nextBreed, nextSize)
+          : existingCat.idealWeight)
+        : parseFloat(req.body.idealWeight);
+
+      const resolvedName = req.body.name !== undefined ? req.body.name.trim() : existingCat.name;
+      const resolvedPhoto = req.body.photo !== undefined
+        ? req.body.photo || `https://api.dicebear.com/7.x/fun-emoji/svg?seed=${encodeURIComponent(resolvedName)}`
+        : existingCat.photo;
+
+      let nextUserId = existingCat.userId;
+      if (req.body.userId !== undefined) {
+        const parsedUserId = parsePositiveInt(req.body.userId);
+        if (parsedUserId === null) {
+          return sendApiError(res, 400, 'INVALID_USER_ID', 'Feld "userId" muss eine positive Ganzzahl sein.', { field: 'userId' });
+        }
+
+        const targetUser = await prisma.user.findUnique({
+          where: { id: parsedUserId },
+          select: { id: true }
+        });
+
+        if (!targetUser) {
+          return sendApiError(res, 400, 'INVALID_USER_ID', 'Feld "userId" verweist auf keinen existierenden User.', { field: 'userId' });
+        }
+
+        nextUserId = targetUser.id;
+      }
+
+      const updatedCat = await prisma.cat.update({
+        where: { id },
+        data: {
+          userId: nextUserId,
+          name: resolvedName,
+          age: req.body.age !== undefined ? Number(req.body.age) : existingCat.age,
+          breed: nextBreed,
+          size: sizeToPrisma[nextSize],
+          idealWeight: parsedIdealWeight,
+          photo: resolvedPhoto
+        }
+      });
+
+      return res.json({
+        ...updatedCat,
+        size: nextSize
+      });
+    } catch (error) {
+      if (error?.code === 'P2003') {
+        return sendApiError(
+          res,
+          400,
+          'INVALID_USER_ID',
+          'Feld "userId" verweist auf keinen existierenden User.',
+          { field: 'userId' }
+        );
+      }
+
+      console.error('Fehler beim Aktualisieren der Cat in der Datenbank:', error);
+      return res.status(500).json({
+        error: 'Cat konnte nicht in der Datenbank aktualisiert werden.'
+      });
+    }
+  });
+
+  router.delete('/:id', async (req, res) => {
+    try {
+      const id = parsePositiveInt(req.params.id);
+      if (id === null) {
+        return sendApiError(res, 400, 'INVALID_CAT_ID', 'Pfadparameter "id" muss eine positive Ganzzahl sein.', { field: 'id' });
+      }
+
+      const existingCat = await prisma.cat.findUnique({ where: { id } });
+      if (!existingCat) {
+        return sendApiError(res, 404, 'CAT_NOT_FOUND', `Keine Cat mit id=${id} gefunden.`);
+      }
+
+      await prisma.cat.delete({ where: { id } });
+      return res.status(204).send();
+    } catch (error) {
+      console.error('Fehler beim Loeschen der Cat aus der Datenbank:', error);
+      return res.status(500).json({
+        error: 'Cat konnte nicht aus der Datenbank geloescht werden.'
+      });
+    }
+  });
+
+  router.get('/:id/weightentries', async (req, res) => {
+    try {
+      const id = parsePositiveInt(req.params.id);
+      if (id === null) {
+        return sendApiError(res, 400, 'INVALID_CAT_ID', 'Pfadparameter "id" muss eine positive Ganzzahl sein.', { field: 'id' });
+      }
+
+      const cat = await prisma.cat.findUnique({
+        where: { id },
+        include: {
+          weightEntries: {
+            orderBy: { date: 'asc' }
+          }
+        }
+      });
+
+      if (!cat) {
+        return sendApiError(res, 404, 'CAT_NOT_FOUND', `Keine Cat mit id=${id} gefunden.`);
+      }
+
+      return res.json(
+        cat.weightEntries.map((entry) => ({
+          date: new Date(entry.date).toISOString().split('T')[0],
+          weight: entry.weight
+        }))
+      );
+    } catch (error) {
+      console.error('Fehler beim Laden der Gewichtseintraege aus der Datenbank:', error);
+      return res.status(500).json({
+        error: 'Gewichtseintraege konnten nicht aus der Datenbank geladen werden.'
+      });
+    }
+  });
+
+  router.post('/:id/weightentries', async (req, res) => {
+    try {
+      const id = parsePositiveInt(req.params.id);
+      if (id === null) {
+        return sendApiError(res, 400, 'INVALID_CAT_ID', 'Pfadparameter "id" muss eine positive Ganzzahl sein.', { field: 'id' });
+      }
+
+      const catExists = await prisma.cat.findUnique({ where: { id }, select: { id: true } });
+      if (!catExists) {
+        return sendApiError(res, 404, 'CAT_NOT_FOUND', `Keine Cat mit id=${id} gefunden.`);
+      }
+
+      const { weight, date } = req.body || {};
+      const parsedWeight = Number(weight);
+      if (Number.isNaN(parsedWeight) || parsedWeight <= 0 || parsedWeight > 25) {
+        return sendApiError(res, 400, 'INVALID_WEIGHT', 'Feld "weight" muss eine positive Zahl kleiner/gleich 25 sein.', {
+          field: 'weight',
+          minExclusive: 0,
+          max: 25
+        });
+      }
+
+      const targetDate = date || new Date().toISOString().split('T')[0];
+      const parsedDate = new Date(`${targetDate}T00:00:00.000Z`);
+      if (Number.isNaN(parsedDate.getTime())) {
+        return sendApiError(res, 400, 'INVALID_DATE', 'Feld "date" muss ein gueltiges Datum im Format YYYY-MM-DD sein.', {
+          field: 'date'
+        });
+      }
+
+      await prisma.weightEntry.upsert({
+        where: {
+          catId_date: {
+            catId: id,
+            date: parsedDate
+          }
+        },
+        create: {
+          catId: id,
+          date: parsedDate,
+          weight: parsedWeight
+        },
+        update: {
+          weight: parsedWeight
+        }
+      });
+
+      const entries = await prisma.weightEntry.findMany({
+        where: { catId: id },
+        orderBy: { date: 'asc' }
+      });
+
+      return res.status(201).json(
+        entries.map((entry) => ({
+          date: new Date(entry.date).toISOString().split('T')[0],
+          weight: entry.weight
+        }))
+      );
+    } catch (error) {
+      console.error('Fehler beim Speichern des Gewichtseintrags in der Datenbank:', error);
+      return res.status(500).json({
+        error: 'Gewichtseintrag konnte nicht in der Datenbank gespeichert werden.'
+      });
+    }
   });
 
   return router;

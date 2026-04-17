@@ -3,9 +3,10 @@ const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
 const createCatsRouter = require('./routes/cats');
+const prisma = require('./prisma/client');
 
 const app = express();
-const PORT = 3001;
+const PORT = Number(process.env.PORT) || 3001;
 
 app.use(cors());
 app.use(express.json({ limit: '8mb' }));
@@ -365,188 +366,357 @@ app.use('/api/cats', createCatsRouter({
 }));
 
 // --- API ROUTES: WEIGHTS ---
-app.get('/api/weights/:catId', (req, res) => {
-  const catId = parseInt(req.params.catId);
-  res.json(weightHistory[catId] || []);
+app.get('/api/weights/:catId', async (req, res) => {
+  try {
+    const catId = parsePositiveInt(req.params.catId);
+    if (catId === null) {
+      return res.status(400).json({ error: 'Ungueltige Cat-ID.' });
+    }
+
+    const cat = await prisma.cat.findUnique({ where: { id: catId }, select: { id: true } });
+    if (!cat) {
+      return res.status(404).json({ error: 'Cat nicht gefunden.' });
+    }
+
+    const entries = await prisma.weightEntry.findMany({
+      where: { catId },
+      orderBy: { date: 'asc' }
+    });
+
+    return res.json(entries.map((entry) => ({
+      date: new Date(entry.date).toISOString().split('T')[0],
+      weight: entry.weight
+    })));
+  } catch (error) {
+    console.error('Fehler beim Laden der Gewichte:', error);
+    return res.status(500).json({ error: 'Gewichte konnten nicht geladen werden.' });
+  }
 });
 
-app.post('/api/weights', (req, res) => {
-  const { catId, weight, date } = req.body;
-  const id = parseInt(catId);
-  const parsedWeight = parseFloat(weight);
+app.post('/api/weights', async (req, res) => {
+  try {
+    const { catId, weight, date } = req.body;
+    const id = parsePositiveInt(catId);
+    const parsedWeight = Number(weight);
 
-  if (!Number.isInteger(id) || id <= 0 || !cats.some((cat) => cat.id === id)) {
-    return res.status(404).json({ error: 'Cat nicht gefunden.' });
+    if (id === null) {
+      return res.status(400).json({ error: 'Ungueltige Cat-ID.' });
+    }
+
+    const cat = await prisma.cat.findUnique({ where: { id }, select: { id: true } });
+    if (!cat) {
+      return res.status(404).json({ error: 'Cat nicht gefunden.' });
+    }
+
+    if (Number.isNaN(parsedWeight) || parsedWeight <= 0 || parsedWeight > 25) {
+      return res.status(400).json({ error: 'Ungültiges Gewicht.' });
+    }
+
+    const targetDate = date || new Date().toISOString().split('T')[0];
+    const parsedDate = new Date(`${targetDate}T00:00:00.000Z`);
+    if (Number.isNaN(parsedDate.getTime())) {
+      return res.status(400).json({ error: 'Ungueltiges Datum.' });
+    }
+
+    await prisma.weightEntry.upsert({
+      where: {
+        catId_date: {
+          catId: id,
+          date: parsedDate
+        }
+      },
+      create: {
+        catId: id,
+        date: parsedDate,
+        weight: parsedWeight
+      },
+      update: {
+        weight: parsedWeight
+      }
+    });
+
+    const entries = await prisma.weightEntry.findMany({
+      where: { catId: id },
+      orderBy: { date: 'asc' }
+    });
+
+    return res.status(201).json(entries.map((entry) => ({
+      date: new Date(entry.date).toISOString().split('T')[0],
+      weight: entry.weight
+    })));
+  } catch (error) {
+    console.error('Fehler beim Speichern des Gewichts:', error);
+    return res.status(500).json({ error: 'Gewicht konnte nicht gespeichert werden.' });
   }
-
-  if (Number.isNaN(parsedWeight) || parsedWeight <= 0 || parsedWeight > 25) {
-    return res.status(400).json({ error: 'Ungültiges Gewicht.' });
-  }
-
-  const targetDate = date || new Date().toISOString().split('T')[0];
-  
-  if (!weightHistory[id]) weightHistory[id] = [];
-  weightHistory[id].push({ date: targetDate, weight: parsedWeight });
-  
-  // Chronologisch sortieren
-  weightHistory[id].sort((a, b) => new Date(a.date) - new Date(b.date));
-  persistCatState();
-  
-  res.status(201).json(weightHistory[id]);
 });
 
 // --- API ROUTES: CALORIES ---
-app.get('/api/calories/:catId', (req, res) => {
-  const catId = parseInt(req.params.catId);
-  res.json(calorieHistory[catId] || []);
+app.get('/api/calories/:catId', async (req, res) => {
+  try {
+    const catId = parsePositiveInt(req.params.catId);
+    if (catId === null) {
+      return res.status(400).json({ error: 'Ungueltige Cat-ID.' });
+    }
+
+    const cat = await prisma.cat.findUnique({ where: { id: catId }, select: { id: true } });
+    if (!cat) {
+      return res.status(404).json({ error: 'Cat nicht gefunden.' });
+    }
+
+    const entries = await prisma.calorieEntry.findMany({
+      where: { catId },
+      orderBy: { date: 'asc' }
+    });
+
+    return res.json(entries.map((entry) => ({
+      date: new Date(entry.date).toISOString().split('T')[0],
+      consumed: entry.consumed,
+      burned: entry.burned,
+      basalBurned: entry.basalBurned
+    })));
+  } catch (error) {
+    console.error('Fehler beim Laden der Kalorien:', error);
+    return res.status(500).json({ error: 'Kalorien konnten nicht geladen werden.' });
+  }
 });
 
-app.post('/api/calories', (req, res) => {
-  const { catId, consumed, burned, basalBurned, date } = req.body;
-  const id = parseInt(catId);
-  const parsedConsumed = consumed === undefined || consumed === '' ? 0 : parseFloat(consumed);
-  const parsedBurned = burned === undefined || burned === '' ? 0 : parseFloat(burned);
-  const parsedBasalBurned = basalBurned === undefined || basalBurned === '' ? 0 : parseFloat(basalBurned);
+app.post('/api/calories', async (req, res) => {
+  try {
+    const { catId, consumed, burned, basalBurned, date } = req.body;
+    const id = parsePositiveInt(catId);
+    const parsedConsumed = consumed === undefined || consumed === '' ? 0 : parseFloat(consumed);
+    const parsedBurned = burned === undefined || burned === '' ? 0 : parseFloat(burned);
+    const parsedBasalBurned = basalBurned === undefined || basalBurned === '' ? 0 : parseFloat(basalBurned);
 
-  if (!Number.isInteger(id) || id <= 0 || !cats.some((cat) => cat.id === id)) {
-    return res.status(404).json({ error: 'Cat nicht gefunden.' });
-  }
+    if (id === null) {
+      return res.status(400).json({ error: 'Ungueltige Cat-ID.' });
+    }
 
-  if ([parsedConsumed, parsedBurned, parsedBasalBurned].some((value) => Number.isNaN(value) || value < 0)) {
-    return res.status(400).json({ error: 'Ungültige Kalorienwerte.' });
-  }
+    const cat = await prisma.cat.findUnique({ where: { id }, select: { id: true } });
+    if (!cat) {
+      return res.status(404).json({ error: 'Cat nicht gefunden.' });
+    }
 
-  const targetDate = date || new Date().toISOString().split('T')[0];
-  
-  if (!calorieHistory[id]) calorieHistory[id] = [];
-  
-  // Vorhandenen Eintrag überschreiben/ergänzen falls Datum übereinstimmt, ansonsten neu
-  const existing = calorieHistory[id].find(entry => entry.date === targetDate);
-  if (existing) {
-    if (consumed !== undefined) existing.consumed += parsedConsumed;
-    if (burned !== undefined) existing.burned += parsedBurned;
-    if (basalBurned !== undefined) existing.basalBurned = parsedBasalBurned;
-  } else {
-    calorieHistory[id].push({
-      date: targetDate,
-      consumed: parsedConsumed,
-      burned: parsedBurned,
-      basalBurned: parsedBasalBurned
+    if ([parsedConsumed, parsedBurned, parsedBasalBurned].some((value) => Number.isNaN(value) || value < 0)) {
+      return res.status(400).json({ error: 'Ungültige Kalorienwerte.' });
+    }
+
+    const targetDate = date || new Date().toISOString().split('T')[0];
+    const parsedDate = new Date(`${targetDate}T00:00:00.000Z`);
+    if (Number.isNaN(parsedDate.getTime())) {
+      return res.status(400).json({ error: 'Ungueltiges Datum.' });
+    }
+
+    const existing = await prisma.calorieEntry.findUnique({
+      where: {
+        catId_date: {
+          catId: id,
+          date: parsedDate
+        }
+      }
     });
+
+    if (existing) {
+      await prisma.calorieEntry.update({
+        where: {
+          catId_date: {
+            catId: id,
+            date: parsedDate
+          }
+        },
+        data: {
+          consumed: consumed !== undefined ? existing.consumed + parsedConsumed : existing.consumed,
+          burned: burned !== undefined ? existing.burned + parsedBurned : existing.burned,
+          basalBurned: basalBurned !== undefined ? parsedBasalBurned : existing.basalBurned
+        }
+      });
+    } else {
+      await prisma.calorieEntry.create({
+        data: {
+          catId: id,
+          date: parsedDate,
+          consumed: parsedConsumed,
+          burned: parsedBurned,
+          basalBurned: parsedBasalBurned
+        }
+      });
+    }
+
+    const entries = await prisma.calorieEntry.findMany({
+      where: { catId: id },
+      orderBy: { date: 'asc' }
+    });
+
+    return res.status(201).json(entries.map((entry) => ({
+      date: new Date(entry.date).toISOString().split('T')[0],
+      consumed: entry.consumed,
+      burned: entry.burned,
+      basalBurned: entry.basalBurned
+    })));
+  } catch (error) {
+    console.error('Fehler beim Speichern der Kalorien:', error);
+    return res.status(500).json({ error: 'Kalorien konnten nicht gespeichert werden.' });
   }
-  
-  calorieHistory[id].sort((a, b) => new Date(a.date) - new Date(b.date));
-  persistCatState();
-  res.status(201).json(calorieHistory[id]);
 });
 
 // --- API ROUTES: COMMUNITY ---
-app.get('/api/community/posts', (req, res) => {
-  const sortedPosts = [...communityPosts].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-  res.json(sortedPosts);
+app.get('/api/community/posts', async (req, res) => {
+  try {
+    const posts = await prisma.communityPost.findMany({
+      orderBy: { createdAt: 'desc' }
+    });
+
+    return res.json(posts.map((post) => ({
+      ...post,
+      gefaelltMir: post.likes,
+      daumenHoch: post.hearts
+    })));
+  } catch (error) {
+    console.error('Fehler beim Laden der Community-Posts:', error);
+    return res.status(500).json({ error: 'Community-Posts konnten nicht geladen werden.' });
+  }
 });
 
-app.post('/api/community/posts', (req, res) => {
-  const { author, text, photo, beforeWeight, nowWeight } = req.body;
+app.post('/api/community/posts', async (req, res) => {
+  try {
+    const { author, text, photo, beforeWeight, nowWeight } = req.body;
 
-  if (!author || !String(author).trim() || !text || !String(text).trim()) {
-    return res.status(400).json({ error: 'Autor und Text sind erforderlich.' });
+    if (!author || !String(author).trim() || !text || !String(text).trim()) {
+      return res.status(400).json({ error: 'Autor und Text sind erforderlich.' });
+    }
+
+    const parsedBeforeWeight = Number.parseFloat(beforeWeight);
+    const parsedNowWeight = Number.parseFloat(nowWeight);
+
+    const createdPost = await prisma.communityPost.create({
+      data: {
+        author: String(author).trim(),
+        text: String(text).trim(),
+        photo: photo && String(photo).trim()
+          ? String(photo).trim()
+          : 'https://images.unsplash.com/photo-1573865526739-10659fec78a5?auto=format&fit=crop&w=1200&q=80',
+        beforeWeight: Number.isNaN(parsedBeforeWeight) ? null : parsedBeforeWeight,
+        nowWeight: Number.isNaN(parsedNowWeight) ? null : parsedNowWeight,
+        likes: 0,
+        hearts: 0
+      }
+    });
+
+    return res.status(201).json({
+      ...createdPost,
+      gefaelltMir: createdPost.likes,
+      daumenHoch: createdPost.hearts
+    });
+  } catch (error) {
+    console.error('Fehler beim Erstellen eines Community-Posts:', error);
+    return res.status(500).json({ error: 'Beitrag konnte nicht erstellt werden.' });
   }
-
-  const parsedBeforeWeight = Number.parseFloat(beforeWeight);
-  const parsedNowWeight = Number.parseFloat(nowWeight);
-
-  const post = {
-    id: getNextId(communityPosts),
-    author: String(author).trim(),
-    text: String(text).trim(),
-    photo: photo && String(photo).trim()
-      ? String(photo).trim()
-      : 'https://images.unsplash.com/photo-1573865526739-10659fec78a5?auto=format&fit=crop&w=1200&q=80',
-    beforeWeight: Number.isNaN(parsedBeforeWeight) ? null : parsedBeforeWeight,
-    nowWeight: Number.isNaN(parsedNowWeight) ? null : parsedNowWeight,
-    likes: 0,
-    hearts: 0,
-    gefaelltMir: 0,
-    daumenHoch: 0,
-    createdAt: new Date().toISOString()
-  };
-
-  communityPosts.push(post);
-  writeCommunityData({ posts: communityPosts, messages: communityMessages });
-
-  res.status(201).json(post);
 });
 
-app.delete('/api/community/posts/:id', (req, res) => {
-  const id = Number.parseInt(req.params.id, 10);
-  const beforeCount = communityPosts.length;
-  communityPosts = communityPosts.filter(post => post.id !== id);
+app.delete('/api/community/posts/:id', async (req, res) => {
+  try {
+    const id = parsePositiveInt(req.params.id);
+    if (id === null) {
+      return res.status(400).json({ error: 'Ungueltige Post-ID.' });
+    }
 
-  if (communityPosts.length === beforeCount) {
-    return res.status(404).json({ error: 'Post nicht gefunden.' });
+    const existing = await prisma.communityPost.findUnique({ where: { id }, select: { id: true } });
+    if (!existing) {
+      return res.status(404).json({ error: 'Post nicht gefunden.' });
+    }
+
+    await prisma.communityPost.delete({ where: { id } });
+    return res.json({ success: true });
+  } catch (error) {
+    console.error('Fehler beim Loeschen eines Community-Posts:', error);
+    return res.status(500).json({ error: 'Post konnte nicht geloescht werden.' });
   }
-
-  writeCommunityData({ posts: communityPosts, messages: communityMessages });
-  res.json({ success: true });
 });
 
-app.post('/api/community/posts/:id/reactions', (req, res) => {
-  const id = Number.parseInt(req.params.id, 10);
-  const { type } = req.body;
+app.post('/api/community/posts/:id/reactions', async (req, res) => {
+  try {
+    const id = parsePositiveInt(req.params.id);
+    const { type } = req.body;
 
-  if (type !== 'like' && type !== 'thumbsUp') {
-    return res.status(400).json({ error: 'Ungültiger Reaktionstyp.' });
+    if (id === null) {
+      return res.status(400).json({ error: 'Ungueltige Post-ID.' });
+    }
+
+    if (type !== 'like' && type !== 'thumbsUp') {
+      return res.status(400).json({ error: 'Ungültiger Reaktionstyp.' });
+    }
+
+    const existing = await prisma.communityPost.findUnique({ where: { id }, select: { id: true } });
+    if (!existing) {
+      return res.status(404).json({ error: 'Post nicht gefunden.' });
+    }
+
+    const updatedPost = await prisma.communityPost.update({
+      where: { id },
+      data: type === 'like'
+        ? { likes: { increment: 1 } }
+        : { hearts: { increment: 1 } }
+    });
+
+    return res.json({
+      ...updatedPost,
+      gefaelltMir: updatedPost.likes,
+      daumenHoch: updatedPost.hearts
+    });
+  } catch (error) {
+    console.error('Fehler beim Speichern einer Reaktion:', error);
+    return res.status(500).json({ error: 'Reaktion konnte nicht gespeichert werden.' });
   }
-
-  const post = communityPosts.find(item => item.id === id);
-  if (!post) {
-    return res.status(404).json({ error: 'Post nicht gefunden.' });
-  }
-
-  // Backward compatibility for existing persisted data
-  post.gefaelltMir = Number(post.gefaelltMir ?? post.likes ?? 0);
-  post.daumenHoch = Number(post.daumenHoch ?? post.hearts ?? 0);
-  post.likes = post.gefaelltMir;
-  post.hearts = post.daumenHoch;
-
-  if (type === 'like') {
-    post.gefaelltMir += 1;
-  } else {
-    post.daumenHoch += 1;
-  }
-
-  writeCommunityData({ posts: communityPosts, messages: communityMessages });
-  res.json(post);
 });
 
-app.get('/api/community/messages', (req, res) => {
-  const sortedMessages = [...communityMessages].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
-  res.json(sortedMessages);
+app.get('/api/community/messages', async (req, res) => {
+  try {
+    const messages = await prisma.communityMessage.findMany({
+      orderBy: { createdAt: 'asc' }
+    });
+
+    return res.json(messages.map((message) => ({
+      id: message.id,
+      user: message.userName,
+      avatar: message.avatar,
+      text: message.text,
+      createdAt: message.createdAt
+    })));
+  } catch (error) {
+    console.error('Fehler beim Laden der Community-Nachrichten:', error);
+    return res.status(500).json({ error: 'Nachrichten konnten nicht geladen werden.' });
+  }
 });
 
-app.post('/api/community/messages', (req, res) => {
-  const { user, text, avatar } = req.body;
+app.post('/api/community/messages', async (req, res) => {
+  try {
+    const { user, text, avatar } = req.body;
 
-  if (!text || !String(text).trim()) {
-    return res.status(400).json({ error: 'Nachrichtentext ist erforderlich.' });
+    if (!text || !String(text).trim()) {
+      return res.status(400).json({ error: 'Nachrichtentext ist erforderlich.' });
+    }
+
+    const createdMessage = await prisma.communityMessage.create({
+      data: {
+        userName: user && String(user).trim() ? String(user).trim() : 'Du',
+        avatar: avatar && String(avatar).trim() ? String(avatar).trim() : null,
+        text: String(text).trim()
+      }
+    });
+
+    const messagePayload = {
+      id: createdMessage.id,
+      user: createdMessage.userName,
+      avatar: createdMessage.avatar,
+      text: createdMessage.text,
+      createdAt: createdMessage.createdAt
+    };
+
+    return res.status(201).json(messagePayload);
+  } catch (error) {
+    console.error('Fehler beim Erstellen einer Community-Nachricht:', error);
+    return res.status(500).json({ error: 'Nachricht konnte nicht gesendet werden.' });
   }
-
-  const message = {
-    id: getNextId(communityMessages),
-    user: user && String(user).trim() ? String(user).trim() : 'Du',
-    avatar: avatar && String(avatar).trim() ? String(avatar).trim() : undefined,
-    text: String(text).trim(),
-    createdAt: new Date().toISOString()
-  };
-
-  communityMessages.push(message);
-  if (communityMessages.length > 500) {
-    communityMessages = communityMessages.slice(-500);
-  }
-
-  writeCommunityData({ posts: communityPosts, messages: communityMessages });
-  res.status(201).json(message);
 });
 
 app.use((err, req, res, next) => {

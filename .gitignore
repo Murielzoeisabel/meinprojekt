@@ -2,3 +2,9 @@
 .vs/
 .vscode/
 *.vsidx
+
+# Backend / Prisma
+backend/.env
+backend/prisma/dev.db
+backend/prisma/dev.db-journal
+node_modules

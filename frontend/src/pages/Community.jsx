@@ -93,6 +93,7 @@ const Community = () => {
   const loadCommunityData = async () => {
     try {
       const [postData, messageData] = await Promise.all([getCommunityPosts(), getCommunityMessages()]);
+      setErrorMsg('');
       setPosts(Array.isArray(postData) ? postData : []);
       setMessages(Array.isArray(messageData) ? messageData : []);
     } catch {
@@ -125,6 +126,7 @@ const Community = () => {
       try {
         const [postData, messageData] = await Promise.all([getCommunityPosts(), getCommunityMessages()]);
         if (cancelled) return;
+        setErrorMsg('');
         setPosts(Array.isArray(postData) ? postData : []);
         setMessages(Array.isArray(messageData) ? messageData : []);
       } catch (error) {

@@ -15,6 +15,7 @@ const Fitness = () => {
   useEffect(() => {
     getCats()
       .then(data => {
+        setErrorMsg('');
         setCats(data);
         if (data.length > 0) setSelectedCatId(data[0].id.toString());
       })
@@ -25,8 +26,10 @@ const Fitness = () => {
   
   // Kalorienbasis für 4kg Katze - angepasst after Katzengewicht
   const adjustCalories = (baseCals) => {
-    if (!selectedCat || !selectedCat.currentWeight) return baseCals;
-    const catWeight = selectedCat.currentWeight || selectedCat.idealWeight;
+    if (!selectedCat || selectedCat.currentWeight === null || selectedCat.currentWeight === undefined) return baseCals;
+    const catWeight = selectedCat.currentWeight !== null && selectedCat.currentWeight !== undefined
+      ? selectedCat.currentWeight
+      : selectedCat.idealWeight;
     const baseWeight = 4;
     const adjustment = (catWeight / baseWeight);
     return Math.round(baseCals * adjustment);
@@ -43,7 +46,11 @@ const Fitness = () => {
     try {
       setErrorMsg('');
       const burned = adjustCalories(exercise.cals);
-      const basalMetabolism = calculateBasalMetabolism(selectedCat?.currentWeight || selectedCat?.idealWeight);
+      const basalMetabolism = calculateBasalMetabolism(
+        selectedCat?.currentWeight !== null && selectedCat?.currentWeight !== undefined
+          ? selectedCat.currentWeight
+          : selectedCat?.idealWeight
+      );
       await addCalories({
         catId: selectedCatId,
         consumed: 0,
@@ -526,7 +533,9 @@ const Fitness = () => {
           onChange={(e) => setSelectedCatId(e.target.value)}
         >
           {cats.map(cat => (
-            <option key={cat.id} value={cat.id}>{cat.name} ({cat.currentWeight || cat.idealWeight}kg)</option>
+            <option key={cat.id} value={cat.id}>
+              {cat.name} ({cat.currentWeight !== null && cat.currentWeight !== undefined ? cat.currentWeight : cat.idealWeight}kg)
+            </option>
           ))}
         </select>
         <p style={{ color: 'var(--text-secondary)', margin: 0 }}>
