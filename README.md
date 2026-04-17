@@ -186,3 +186,93 @@ Fehlerfall:
 - Beleg:Fehlerfall (404):
 ![DELETE cat 404](screenshots/delete-cat-404.png)
 
+# Studio Session 4
+
+# Datenschema
+
+users
+-----------------------------
+id            (PK)
+email         (NOT NULL, UNIQUE)
+name          (NOT NULL)
+avatarUrl
+createdAt     (NOT NULL)
+
+cats
+-----------------------------
+id            (PK)
+userId        (FK -> users.id, NOT NULL)
+name          (NOT NULL)
+age
+breed         (NOT NULL)
+size          (NOT NULL; klein|mittel|gross)
+idealWeight   (NOT NULL)
+photo
+createdAt     (NOT NULL)
+
+weight_entries
+-----------------------------
+id            (PK)
+catId         (FK -> cats.id, NOT NULL)
+date          (NOT NULL)
+weight        (NOT NULL)
+
+calorie_entries
+-----------------------------
+id            (PK)
+catId         (FK -> cats.id, NOT NULL)
+date          (NOT NULL)
+consumed      (NOT NULL)
+burned        (NOT NULL)
+basalBurned   (NOT NULL)
+
+community_posts
+-----------------------------
+id            (PK)
+userId        (FK -> users.id) optional
+author        (NOT NULL)
+text          (NOT NULL)
+photo
+beforeWeight
+nowWeight
+likes         (NOT NULL, default 0)
+hearts        (NOT NULL, default 0)
+createdAt     (NOT NULL)
+
+post_reactions
+-----------------------------
+id            (PK)
+postId        (FK -> community_posts.id, NOT NULL)
+userId        (FK -> users.id, NOT NULL)
+type          (NOT NULL; like|thumbsUp)
+createdAt     (NOT NULL)
+
+community_messages
+-----------------------------
+id            (PK)
+userId        (FK -> users.id) optional
+userName      (NOT NULL)
+avatar
+text          (NOT NULL)
+createdAt     (NOT NULL)
+```
+
+# Beziehungen
+
+- users 1:n cats
+- cats 1:n weight_entries
+- cats 1:n calorie_entries
+- community_posts 1:n post_reactions
+- users 1:n post_reactions
+- users n:m community_posts ueber post_reactions 
+
+# Pflichtfelder
+
+- users: email, name, createdAt
+- cats: userId, name, breed, size, idealWeight, createdAt
+- weight_entries: catId, date, weight
+- calorie_entries: catId, date, consumed, burned, basalBurned
+- community_posts: author, text, likes, hearts, createdAt
+- post_reactions: postId, userId, type, createdAt
+- community_messages: userName, text, createdAt
+
