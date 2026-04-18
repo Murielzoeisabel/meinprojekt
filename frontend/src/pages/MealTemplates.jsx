@@ -4,6 +4,7 @@ import { getCats } from '../services/api';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
+import NoCatsFeedback from '../components/NoCatsFeedback';
 
 void motion;
 
@@ -70,22 +71,28 @@ const MealTemplates = () => {
       </p>
 
       {/* Cat Selector */}
-      <div className="card" style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-        <h3 style={{ margin: 0 }}>Katze auswählen:</h3>
-        <select
-          className="input-field"
-          style={{ width: '250px', margin: 0 }}
-          value={selectedCatId}
-          onChange={(e) => setSelectedCatId(e.target.value)}
-        >
-          {cats.map(cat => (
-            <option key={cat.id} value={cat.id}>
-              {cat.name} ({cat.currentWeight !== null && cat.currentWeight !== undefined ? cat.currentWeight : cat.idealWeight}kg)
-            </option>
-          ))}
-        </select>
-      </div>
+      {cats.length === 0 ? (
+        <NoCatsFeedback />
+      ) : (
+        <div className="card" style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <h3 style={{ margin: 0 }}>Katze auswählen:</h3>
+          <select
+            className="input-field"
+            style={{ width: '250px', margin: 0 }}
+            value={selectedCatId}
+            onChange={(e) => setSelectedCatId(e.target.value)}
+          >
+            {cats.map(cat => (
+              <option key={cat.id} value={cat.id}>
+                {cat.name} ({cat.currentWeight !== null && cat.currentWeight !== undefined ? cat.currentWeight : cat.idealWeight}kg)
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
+      {cats.length > 0 && (
+        <>
       {/* Nutrition Info */}
       {selectedCat && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
@@ -166,6 +173,8 @@ const MealTemplates = () => {
           <li>Wiege die Katze regelmäßig und passe die Portionen entsprechend an</li>
         </ul>
       </motion.div>
+        </>
+      )}
     </AnimatedPage>
   );
 };

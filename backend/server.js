@@ -326,43 +326,15 @@ const validateCatPayload = (payload, { requireName = true } = {}) => {
   return null;
 };
 
-const withCurrentWeight = (cat) => {
-  const history = weightHistory[cat.id] || [];
-  const currentWeight = history.length > 0 ? history[history.length - 1].weight : null;
-  return { ...cat, currentWeight };
-};
-
-const catState = readCatState();
-
-// In-memory Daten
-let cats = catState.cats;
-
-let weightHistory = catState.weightHistory;
-
-let calorieHistory = catState.calorieHistory;
-
-const persistCatState = () => {
-  writeCatState({
-    cats,
-    weightHistory,
-    calorieHistory
-  });
-};
-
 const communityData = readCommunityData();
 let communityPosts = [...communityData.posts];
 let communityMessages = [...communityData.messages];
 
 app.use('/api/cats', createCatsRouter({
-  cats,
-  weightHistory,
-  calorieHistory,
-  withCurrentWeight,
   parsePositiveInt,
   sendApiError,
   validateCatPayload,
-  getSuggestedIdealWeight,
-  persistCatState
+  getSuggestedIdealWeight
 }));
 
 // --- API ROUTES: WEIGHTS ---

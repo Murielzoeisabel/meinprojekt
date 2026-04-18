@@ -2,17 +2,18 @@ const express = require('express');
 const prisma = require('../prisma/client');
 
 const createCatsRouter = ({
-  cats,
-  weightHistory,
-  calorieHistory,
-  withCurrentWeight,
   parsePositiveInt,
   sendApiError,
   validateCatPayload,
-  getSuggestedIdealWeight,
-  persistCatState
+  getSuggestedIdealWeight
 }) => {
   const router = express.Router();
+
+  const sizeFromPrisma = {
+    KLEIN: 'klein',
+    MITTEL: 'mittel',
+    GROSS: 'gross'
+  };
 
   const resolveCatOwnerId = async (requestedUserId) => {
     if (requestedUserId !== undefined) {
@@ -86,6 +87,7 @@ const createCatsRouter = ({
 
         return {
           ...cat,
+          size: sizeFromPrisma[cat.size] || cat.size,
           currentWeight: latestWeightEntry ? latestWeightEntry.weight : null
         };
       });
@@ -140,6 +142,7 @@ const createCatsRouter = ({
       const latestWeightEntry = cat.weightEntries[cat.weightEntries.length - 1] || null;
       return res.json({
         ...cat,
+        size: sizeFromPrisma[cat.size] || cat.size,
         currentWeight: latestWeightEntry ? latestWeightEntry.weight : null
       });
     } catch (error) {
@@ -230,11 +233,6 @@ const createCatsRouter = ({
         klein: 'KLEIN',
         mittel: 'MITTEL',
         gross: 'GROSS'
-      };
-      const sizeFromPrisma = {
-        KLEIN: 'klein',
-        MITTEL: 'mittel',
-        GROSS: 'gross'
       };
 
       const existingSize = sizeFromPrisma[existingCat.size] || 'mittel';

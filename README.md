@@ -302,3 +302,23 @@ Zweite Iteration:
 Ergänze den GET /api/cats-Handler um einen optionalen Query-Parameter userId mit where-Bedingung in Prisma. Wenn userId gesetzt ist, sollen nur die Cats dieses Users geladen werden; wenn kein userId gesetzt ist, weiterhin alle Cats zurückgeben. Bei ungültigem userId soll der Endpoint 400 Bad Request mit einer klaren Fehlermeldung zurückgeben.
 
 # Persistenz-Test
+
+Nach dem Senden des Eintrag POST /api/cats erhielt ich wie erwartet die Antwort Status 201 Created.
+
+Beleg: ![POST cat](screenshots/post-cat.png)
+
+Anschließend wurde der Server gestoppt und wieder neu gestartet, um zu überprüfen, ob der Eintrag noch vorhanden ist. Dann wurde der Eintrag GET/api/cats gesendet und ich erhielt die Antwort Status 200 OK.
+
+Beleg: ![GET cat](screenshots/get-cat.png)
+
+Der Test war erfolgreich, da der neu angelegte Eintrag nach dem Neustart weiterhin vorhanden war.
+
+# Architekturentscheidung
+
+Aus architektonischer Sicht sollten vor allem strukturierte und beziehungsreiche Daten in der Datenbank gespeichert werden,
+zum Beispiel:
+User, Cats, Gewichtseinträge und Community-Posts.
+
+Redis wäre für kurzlebige Daten wie Sessions, Caching-Ergebnisse oder temporäre Zähler sinnvoll, da diese Daten schnell verfügbar sein müssen, aber nicht dauerhaft gespeichert werden.
+
+Für Bilder und größere Uploads ist langfristig ein Cloud Object Store wie S3 geeigneter, damit die Datenbank entlastet wird und sich auf relationale Daten konzentrieren kann.

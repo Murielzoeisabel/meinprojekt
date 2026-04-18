@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import AnimatedPage from '../components/AnimatedPage';
 import { getCats, getWeights } from '../services/api';
 import { Camera } from 'lucide-react';
+import NoCatsFeedback from '../components/NoCatsFeedback';
 
 const PROFILE_NAME_KEY = 'cat-slim-down-profile-name';
 const PROFILE_IMAGE_KEY = 'cat-slim-down-profile-image';
@@ -29,6 +30,7 @@ const Profile = () => {
   const [cats, setCats] = useState([]);
   const [selectedCatId, setSelectedCatId] = useState('');
   const [weights, setWeights] = useState([]);
+  const [saveMessage, setSaveMessage] = useState('');
 
   useEffect(() => {
     const storedName = localStorage.getItem(PROFILE_NAME_KEY);
@@ -63,7 +65,8 @@ const Profile = () => {
     localStorage.setItem(PROFILE_NAME_KEY, name.trim() || 'Katzenfreund');
     localStorage.setItem(PROFILE_IMAGE_KEY, profileImage);
     window.dispatchEvent(new Event('profile-updated'));
-    alert('Profil erfolgreich gespeichert!');
+    setSaveMessage('Profil erfolgreich gespeichert!');
+    setTimeout(() => setSaveMessage(''), 2500);
   };
 
   const handleAvatarUpload = (e) => {
@@ -243,6 +246,9 @@ const Profile = () => {
             <input type="email" className="input-field" value={email} onChange={e => setEmail(e.target.value)} style={{ marginBottom: 0 }} />
           </div>
           <button type="submit" className="btn-primary" style={{ marginTop: '1rem', width: '100%' }}>Speichern</button>
+          {saveMessage && (
+            <p style={{ margin: 0, color: 'var(--accent-primary)', fontWeight: 600 }}>{saveMessage}</p>
+          )}
         </form>
       </div>
 
@@ -252,19 +258,23 @@ const Profile = () => {
           Hier siehst du alle bereits freigeschalteten Abzeichen deiner ausgewählten Katze.
         </p>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
-          <label style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Katze:</label>
-          <select
-            className="input-field"
-            style={{ width: '260px', marginBottom: 0 }}
-            value={selectedCatId}
-            onChange={(e) => setSelectedCatId(e.target.value)}
-          >
-            {cats.map((cat) => (
-              <option key={cat.id} value={cat.id}>{cat.name}</option>
-            ))}
-          </select>
-        </div>
+        {cats.length === 0 ? (
+          <NoCatsFeedback compact />
+        ) : (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
+            <label style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Katze:</label>
+            <select
+              className="input-field"
+              style={{ width: '260px', marginBottom: 0 }}
+              value={selectedCatId}
+              onChange={(e) => setSelectedCatId(e.target.value)}
+            >
+              {cats.map((cat) => (
+                <option key={cat.id} value={cat.id}>{cat.name}</option>
+              ))}
+            </select>
+          </div>
+        )}
 
         {unlockedBadges.length === 0 ? (
           <p style={{ color: 'var(--text-secondary)', margin: 0 }}>Noch keine Abzeichen freigeschaltet.</p>

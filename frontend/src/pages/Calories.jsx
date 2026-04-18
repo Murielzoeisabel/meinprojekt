@@ -3,6 +3,7 @@ import AnimatedPage from '../components/AnimatedPage';
 import { getCats, getCalories, addCalories } from '../services/api';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
+import NoCatsFeedback from '../components/NoCatsFeedback';
 
 const Calories = () => {
   const navigate = useNavigate();
@@ -97,18 +98,24 @@ const Calories = () => {
       <h1>Kalorien-Tracker</h1>
       <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>Hier siehst du klar, wie viel deine Katze insgesamt braucht, wie viel davon schon durch Futter erfüllt ist und wie viel noch fehlt.</p>
 
-      <div className="card" style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
-        <h3 style={{ margin: 0 }}>Katze auswählen:</h3>
-        <select className="input-field" value={selectedCatId} onChange={e => setSelectedCatId(e.target.value)} style={{ width: '250px', marginBottom: 0 }}>
-          {cats.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
-        </select>
-        {selectedCat && (
-          <p style={{ color: 'var(--text-secondary)', margin: 0 }}>
-            {selectedCat.name} | Gewicht: {selectedCat.currentWeight !== null && selectedCat.currentWeight !== undefined ? selectedCat.currentWeight : selectedCat.idealWeight} kg | Grundumsatz: {basalMetabolism} kcal/Tag
-          </p>
-        )}
-      </div>
+      {cats.length === 0 ? (
+        <NoCatsFeedback />
+      ) : (
+        <div className="card" style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+          <h3 style={{ margin: 0 }}>Katze auswählen:</h3>
+          <select className="input-field" value={selectedCatId} onChange={e => setSelectedCatId(e.target.value)} style={{ width: '250px', marginBottom: 0 }}>
+            {cats.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
+          </select>
+          {selectedCat && (
+            <p style={{ color: 'var(--text-secondary)', margin: 0 }}>
+              {selectedCat.name} | Gewicht: {selectedCat.currentWeight !== null && selectedCat.currentWeight !== undefined ? selectedCat.currentWeight : selectedCat.idealWeight} kg | Grundumsatz: {basalMetabolism} kcal/Tag
+            </p>
+          )}
+        </div>
+      )}
 
+      {cats.length > 0 && (
+        <>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
         <div className="card" style={{ padding: '1rem' }}>
           <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Gesamtbedarf</div>
@@ -227,6 +234,8 @@ const Calories = () => {
           </div>
         </div>
       </div>
+        </>
+      )}
     </AnimatedPage>
   );
 };
