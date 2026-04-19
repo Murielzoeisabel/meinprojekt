@@ -22,6 +22,15 @@ const SIZE_OFFSETS = {
   gross: 0.5
 };
 
+const encodeSvgToBase64 = (svg) => {
+  const bytes = new TextEncoder().encode(svg);
+  let binary = '';
+  bytes.forEach((byte) => {
+    binary += String.fromCharCode(byte);
+  });
+  return btoa(binary);
+};
+
 const createCatHeadIcon = ({ base, innerEar, stripe, eye = '#1f2937' }) => {
   const svg = `
     <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
@@ -54,7 +63,7 @@ const createCatHeadIcon = ({ base, innerEar, stripe, eye = '#1f2937' }) => {
       <line x1='67' y1='67' x2='83' y2='67' stroke='#2b2b2b' stroke-width='1.2'/>
     </svg>
   `;
-  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+  return `data:image/svg+xml;base64,${encodeSvgToBase64(svg)}`;
 };
 
 const CAT_ICON_PRESETS = [
@@ -671,13 +680,10 @@ const CatList = () => {
             </div>
 
             <div style={{ gridColumn: '1 / -1', background: 'rgba(59, 130, 246, 0.08)', border: '1px solid rgba(59, 130, 246, 0.28)', borderRadius: '10px', padding: '0.8rem 1rem' }}>
-              <p style={{ margin: 0, color: 'var(--text-primary)', fontSize: '0.9rem' }}>
-                <strong>BCS Grafik (frei nutzbar):</strong> Diese Grafik wurde im Projekt selbst erstellt und ist lizenzfrei nutzbar.
-              </p>
               <img
-                src="/images/cat-bcs-guide.svg"
-                alt="Body Condition Score 1 bis 9 mit vereinfachten Katzen-Silhouetten"
-                style={{ width: '100%', maxWidth: '820px', marginTop: '0.65rem', borderRadius: '10px', border: '1px solid var(--border-color)', background: '#ffffff' }}
+                src="/images/cat-bcs-guide.svg?v=24"
+                alt="Body Condition Score für Katzen in Bereichen 1 bis 2, 3 bis 4, 5, 6 bis 7 und 8 bis 9"
+                style={{ width: '100%', height: 'auto', marginTop: '0.65rem', borderRadius: '10px', border: '1px solid var(--border-color)', background: '#ffffff' }}
               />
             </div>
 

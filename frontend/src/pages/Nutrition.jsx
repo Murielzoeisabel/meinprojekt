@@ -6,6 +6,8 @@ import { motion } from 'framer-motion';
 import { recognize } from 'tesseract.js';
 import './Nutrition.css';
 
+void motion;
+
 const Nutrition = () => {
   const navigate = useNavigate();
   const [labelInput, setLabelInput] = useState('');
@@ -60,7 +62,7 @@ const Nutrition = () => {
   ];
 
   const stages = [
-    { stage: 'Kitten (bis 12 Monate)', focus: 'Wachstum', energy: 'ca. 90-120 kcal/kg', note: 'Energie- und nährstoffdicht, mehrere kleine Mahlzeiten.' },
+    { stage: 'Jungkatze (bis 12 Monate)', focus: 'Wachstum', energy: 'ca. 90-120 kcal/kg', note: 'Energie- und nährstoffdicht, mehrere kleine Mahlzeiten.' },
     { stage: 'Erwachsen', focus: 'Gewicht halten', energy: 'ca. 60-80 kcal/kg', note: 'Konstante Routine, viel Wasser, Portionskontrolle.' },
     { stage: 'Senior', focus: 'Muskeln erhalten', energy: 'ca. 55-75 kcal/kg', note: 'Gut verdauliches Protein, regelmäßige Checks beim Tierarzt.' },
     { stage: 'Übergewicht', focus: 'Schonend abnehmen', energy: 'individuell reduzieren', note: 'Langsam reduzieren, Aktivität erhöhen, Verlauf dokumentieren.' },
@@ -232,7 +234,7 @@ const Nutrition = () => {
       <div className="card nutrition-quicknav">
         <div className="nutrition-quicknav-head">
           <Sparkles size={18} />
-          <h3>Direkt weiter zu den Tools</h3>
+          <h3>Direkt weiter zu den Werkzeugen</h3>
         </div>
         <div className="nutrition-tool-grid">
           {menuItems.map((item, index) => (
@@ -255,6 +257,8 @@ const Nutrition = () => {
           ))}
         </div>
       </div>
+
+      <div className="paw-separator" aria-hidden="true">🐾 🐾 🐾</div>
 
       <div className="card nutrition-love-note">
         <div>
@@ -351,7 +355,7 @@ const Nutrition = () => {
                 <span className={`nutrition-ampel nutrition-ampel-${analysis.tone}`}>
                   Ampel: {analysis.tone === 'good' ? 'Grün' : analysis.tone === 'ok' ? 'Gelb' : 'Rot'}
                 </span>
-                <span>Score: {analysis.score}/100</span>
+                <span>Bewertung: {analysis.score}/100</span>
               </div>
 
               <div className="nutrition-analyzer-columns">
@@ -386,6 +390,8 @@ const Nutrition = () => {
           )}
         </div>
       </div>
+
+      <div className="paw-separator" aria-hidden="true">🐾 🐾 🐾</div>
 
       <div className="nutrition-cook-vs-buy">
         <div className="card nutrition-compare-card">
@@ -428,20 +434,21 @@ const Nutrition = () => {
         </div>
       </div>
 
+      <div className="paw-separator" aria-hidden="true">🐾 🐾 🐾</div>
+
       <div className="nutrition-principles">
         {keyPrinciples.map((item) => (
           <motion.div
             key={item.title}
-            className="card"
+            className="card nutrition-principle-card"
             whileHover={{ y: -4, scale: 1.01 }}
             transition={{ duration: 0.18 }}
-            style={{ display: 'grid', gap: '0.6rem', border: '1px solid rgba(16,185,129,0.25)' }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+            <div className="nutrition-principle-head">
               {item.icon}
-              <h3 style={{ margin: 0 }}>{item.title}</h3>
+              <h3>{item.title}</h3>
             </div>
-            <p style={{ margin: 0, color: 'var(--text-secondary)', lineHeight: 1.65 }}>{item.text}</p>
+            <p>{item.text}</p>
           </motion.div>
         ))}
       </div>
@@ -486,10 +493,12 @@ const Nutrition = () => {
         </div>
       </div>
 
+      <div className="paw-separator" aria-hidden="true">🐾 🐾 🐾</div>
+
       <div className="card nutrition-warning">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.7rem', marginBottom: '0.65rem' }}>
+        <div className="nutrition-warning-head">
           <ShieldAlert size={20} color="#b45309" />
-          <h3 style={{ margin: 0 }}>Giftig oder ungeeignet</h3>
+          <h3>Giftig oder ungeeignet</h3>
         </div>
         <div className="nutrition-warning-chips">
           {warningItems.map((item) => (
@@ -499,6 +508,8 @@ const Nutrition = () => {
           ))}
         </div>
       </div>
+
+      <div className="paw-separator" aria-hidden="true">🐾 🐾 🐾</div>
 
       <div className="card nutrition-closing">
         <div>

@@ -35,9 +35,10 @@ const ScrollToTop = () => {
 function App() {
   return (
     <div className="app-container">
+      <a href="#main-content" className="skip-link">Zum Inhalt springen</a>
       <ScrollToTop />
       <Navbar />
-      <main className="main-content">
+      <main id="main-content" className="main-content" tabIndex={-1}>
         <Suspense fallback={<PageLoader />}>
           <Routes>
             <Route path="/" element={<Dashboard />} />

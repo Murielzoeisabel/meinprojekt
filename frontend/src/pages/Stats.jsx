@@ -1,13 +1,22 @@
 import { useState, useEffect } from 'react';
 import AnimatedPage from '../components/AnimatedPage';
-import { getCats, getWeights } from '../services/api';
+import { getCats, getWeights, addWeight } from '../services/api';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { motion } from 'framer-motion';
 import NoCatsFeedback from '../components/NoCatsFeedback';
+import './DashboardStats.css';
 
 const Stats = () => {
   const [cats, setCats] = useState([]);
   const [selectedCatId, setSelectedCatId] = useState('');
   const [weights, setWeights] = useState([]);
+  const [newWeight, setNewWeight] = useState('');
+  const [newWeightDate, setNewWeightDate] = useState(new Date().toISOString().split('T')[0]);
+  const [successMsg, setSuccessMsg] = useState('');
+  const [errorMsg, setErrorMsg] = useState('');
+  const [editingEntryDate, setEditingEntryDate] = useState('');
+  const [editingEntryWeight, setEditingEntryWeight] = useState('');
+  const sortedWeights = [...weights].sort((a, b) => new Date(a.date) - new Date(b.date));
 
   useEffect(() => {
     getCats().then(data => {
@@ -15,20 +24,94 @@ const Stats = () => {
       setCats(safeCats);
       if (safeCats.length > 0) setSelectedCatId(safeCats[0].id.toString());
     }).catch(() => {
+      setErrorMsg('Katzen konnten nicht geladen werden.');
       setCats([]);
     });
   }, []);
 
   useEffect(() => {
     if (selectedCatId) {
-      getWeights(selectedCatId).then(data => setWeights(data)).catch(() => setWeights([]));
+      getWeights(selectedCatId)
+        .then(data => {
+          setErrorMsg('');
+          setWeights(data);
+        })
+        .catch(() => {
+          setErrorMsg('Gewichtsdaten konnten nicht geladen werden.');
+          setWeights([]);
+        });
     }
   }, [selectedCatId]);
 
+  const formatDate = (value) => {
+    if (!value) return '-';
+    const parsedDate = new Date(value);
+    if (Number.isNaN(parsedDate.getTime())) return value;
+    return new Intl.DateTimeFormat('de-DE', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    }).format(parsedDate);
+  };
+
+  const beginEditWeightEntry = (entry) => {
+    if (!entry?.date) return;
+    setEditingEntryDate(entry.date);
+    setEditingEntryWeight(String(entry.weight));
+    setErrorMsg('');
+  };
+
+  const cancelEditWeightEntry = () => {
+    setEditingEntryDate('');
+    setEditingEntryWeight('');
+  };
+
+  const refreshWeights = async () => {
+    const updated = await getWeights(selectedCatId);
+    setWeights(updated);
+    return updated;
+  };
+
+  const handleWeightSubmit = async (e) => {
+    e.preventDefault();
+    if (!newWeight || !selectedCatId || !newWeightDate) return;
+
+    try {
+      setErrorMsg('');
+      await addWeight({ catId: selectedCatId, weight: newWeight, date: newWeightDate });
+      await refreshWeights();
+      setNewWeight('');
+      setSuccessMsg('Gewicht erfolgreich gespeichert!');
+      setTimeout(() => setSuccessMsg(''), 3000);
+    } catch {
+      setErrorMsg('Gewicht konnte nicht gespeichert werden.');
+    }
+  };
+
+  const saveEditedWeightEntry = async () => {
+    if (!selectedCatId || !editingEntryDate) return;
+    const parsedWeight = Number(editingEntryWeight);
+    if (Number.isNaN(parsedWeight) || parsedWeight <= 0) {
+      setErrorMsg('Bitte ein gültiges Gewicht größer als 0 eingeben.');
+      return;
+    }
+
+    try {
+      setErrorMsg('');
+      await addWeight({ catId: selectedCatId, weight: parsedWeight, date: editingEntryDate });
+      await refreshWeights();
+      setSuccessMsg(`Gewichtseintrag vom ${formatDate(editingEntryDate)} wurde aktualisiert.`);
+      setTimeout(() => setSuccessMsg(''), 3000);
+      cancelEditWeightEntry();
+    } catch {
+      setErrorMsg('Gewichtseintrag konnte nicht aktualisiert werden.');
+    }
+  };
+
   const calculateTrend = () => {
-    if (weights.length < 2) return { status: 'stabil', diff: 0, direction: '' };
-    const first = weights[0].weight;
-    const last = weights[weights.length - 1].weight;
+    if (sortedWeights.length < 2) return { status: 'stabil', diff: 0, direction: '' };
+    const first = sortedWeights[0].weight;
+    const last = sortedWeights[sortedWeights.length - 1].weight;
     const diff = last - first;
     
     if (diff > 0.1) return { status: 'steigend', diff: diff.toFixed(2), direction: '+' };
@@ -38,7 +121,7 @@ const Stats = () => {
 
   const trend = calculateTrend();
   const selectedCat = cats.find(cat => cat.id.toString() === selectedCatId);
-  const latestWeight = weights.length > 0 ? weights[weights.length - 1].weight : null;
+  const latestWeight = sortedWeights.length > 0 ? sortedWeights[sortedWeights.length - 1].weight : null;
 
   const getWeightAnalysisHint = () => {
     if (!selectedCat || latestWeight === null || selectedCat.idealWeight === undefined || selectedCat.idealWeight === null) {
@@ -86,9 +169,9 @@ const Stats = () => {
   const weightAnalysisHint = getWeightAnalysisHint();
 
   const getLongestDailyStreak = () => {
-    if (weights.length === 0) return 0;
+    if (sortedWeights.length === 0) return 0;
 
-    const uniqueSortedDates = [...new Set(weights.map(entry => entry.date))]
+    const uniqueSortedDates = [...new Set(sortedWeights.map(entry => entry.date))]
       .map(date => new Date(date))
       .sort((a, b) => a - b);
 
@@ -112,11 +195,11 @@ const Stats = () => {
   };
 
   const getGoalStreakFromLatest = () => {
-    if (selectedCat?.idealWeight === null || selectedCat?.idealWeight === undefined || weights.length === 0) return 0;
+    if (selectedCat?.idealWeight === null || selectedCat?.idealWeight === undefined || sortedWeights.length === 0) return 0;
 
     let streak = 0;
-    for (let i = weights.length - 1; i >= 0; i -= 1) {
-      if (weights[i].weight <= selectedCat.idealWeight + 0.1) {
+    for (let i = sortedWeights.length - 1; i >= 0; i -= 1) {
+      if (sortedWeights[i].weight <= selectedCat.idealWeight + 0.1) {
         streak += 1;
       } else {
         break;
@@ -128,6 +211,8 @@ const Stats = () => {
 
   const longestDailyStreak = getLongestDailyStreak();
   const goalStreakFromLatest = getGoalStreakFromLatest();
+  const isEditingFromChart = Boolean(editingEntryDate);
+  const recentWeights = [...sortedWeights].reverse().slice(0, 8);
 
   const badges = [
     {
@@ -135,14 +220,14 @@ const Stats = () => {
       icon: '🥉',
       title: 'Erste Messung',
       description: 'Mindestens 1 Gewichtseintrag erfasst.',
-      unlocked: weights.length >= 1
+      unlocked: sortedWeights.length >= 1
     },
     {
       id: 'consistent',
       icon: '📅',
       title: 'Dranbleiber',
       description: 'Mindestens 5 Gewichtseinträge erfasst.',
-      unlocked: weights.length >= 5
+      unlocked: sortedWeights.length >= 5
     },
     {
       id: 'weight-loss',
@@ -197,116 +282,233 @@ const Stats = () => {
 
   return (
     <AnimatedPage>
-      <h1>Statistiken & Analyse</h1>
-      <p className="page-subtitle">
-        Detaillierte Einblicke in die Gewichtsentwicklung.
-      </p>
+      {errorMsg && (
+        <div className="card alert-error">
+          {errorMsg}
+        </div>
+      )}
+
+      <div className="cat-page-hero">
+        <div>
+          <h1>Statistiken & Analyse</h1>
+          <p className="page-subtitle">Detaillierte Einblicke in die Gewichtsentwicklung.</p>
+        </div>
+        <div className="cat-page-hero-art" aria-hidden="true">😸📈</div>
+      </div>
 
       {cats.length === 0 ? (
         <NoCatsFeedback />
       ) : (
-        <select 
-          className="input-field" 
-          style={{ width: '250px', marginBottom: '2rem' }}
-          value={selectedCatId} 
-          onChange={(e) => setSelectedCatId(e.target.value)}
-        >
-          {cats.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
-        </select>
+        <div className="card filter-card">
+          <div className="selector-profile-preview" aria-hidden={!selectedCat?.photo}>
+            {selectedCat?.photo ? (
+              <img
+                src={selectedCat.photo}
+                alt={selectedCat.name ? `Profilbild von ${selectedCat.name}` : 'Profilbild der ausgewählten Katze'}
+                className="selector-profile-image"
+              />
+            ) : (
+              <div className="selector-profile-placeholder">🐱</div>
+            )}
+          </div>
+
+          <div className="selector-controls">
+            <select 
+              className="input-field"
+              value={selectedCatId} 
+              onChange={(e) => setSelectedCatId(e.target.value)}
+            >
+              {cats.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
+            </select>
+          </div>
+        </div>
       )}
 
       {cats.length > 0 && (
         <>
           <div
-            className="card"
-            style={{
-              marginBottom: '1.5rem',
-              border:
-                weightAnalysisHint.tone === 'success'
-                  ? '1px solid rgba(16, 185, 129, 0.38)'
-                  : weightAnalysisHint.tone === 'warning'
-                    ? '1px solid rgba(245, 158, 11, 0.42)'
-                    : '1px solid var(--border-color)',
-              background:
-                weightAnalysisHint.tone === 'success'
-                  ? 'rgba(16, 185, 129, 0.09)'
-                  : weightAnalysisHint.tone === 'warning'
-                    ? 'rgba(245, 158, 11, 0.12)'
-                    : 'var(--surface-color)'
-            }}
+            className={`card analysis-card ${
+              weightAnalysisHint.tone === 'success'
+                ? 'analysis-success'
+                : weightAnalysisHint.tone === 'warning'
+                  ? 'analysis-warning'
+                  : 'analysis-neutral'
+            }`}
           >
-            <h3 style={{ margin: '0 0 0.45rem 0' }}>{weightAnalysisHint.title}</h3>
-            <p style={{ margin: 0, color: 'var(--text-secondary)' }}>{weightAnalysisHint.text}</p>
+            <h3>{weightAnalysisHint.title}</h3>
+            <p>{weightAnalysisHint.text}</p>
           </div>
+
+          <div className="paw-separator" aria-hidden="true">🐾 🐾 🐾</div>
 
           <div className="two-col-layout stats-layout">
-            <div className="card" style={{ height: '450px' }}>
-              <h3>Langzeittrend</h3>
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={weights} margin={{ top: 20, right: 30, left: 0, bottom: 20 }}>
-                  <defs>
-                    <linearGradient id="colorWeight" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="var(--accent-primary)" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="var(--accent-primary)" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <XAxis dataKey="date" stroke="var(--text-secondary)" tickFormatter={formatDateDDMMYYYY} />
-                  <YAxis stroke="var(--text-secondary)" domain={['dataMin - 0.5', 'dataMax + 0.5']} />
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-color)" />
-                  <Tooltip labelFormatter={formatDateDDMMYYYY} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: 'var(--card-shadow)' }} />
-                  <Area type="monotone" dataKey="weight" stroke="var(--accent-primary)" fillOpacity={1} fill="url(#colorWeight)" animationDuration={2000} />
-                </AreaChart>
-              </ResponsiveContainer>
+            <div className="stats-main-column">
+              <div className="card chart-card stats-chart-card">
+                <h3 className="chart-title">Langzeittrend</h3>
+                <ResponsiveContainer width="100%" height={320} minWidth={0}>
+                  <AreaChart data={sortedWeights} margin={{ top: 20, right: 30, left: 0, bottom: 20 }}>
+                    <defs>
+                      <linearGradient id="colorWeight" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="var(--accent-primary)" stopOpacity={0.8}/>
+                        <stop offset="95%" stopColor="var(--accent-primary)" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <XAxis dataKey="date" stroke="var(--text-secondary)" tickFormatter={formatDateDDMMYYYY} />
+                    <YAxis stroke="var(--text-secondary)" domain={['dataMin - 0.5', 'dataMax + 0.5']} />
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-color)" />
+                    <Tooltip labelFormatter={formatDateDDMMYYYY} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: 'var(--card-shadow)' }} />
+                    <Area
+                      type="monotone"
+                      dataKey="weight"
+                      stroke="var(--accent-primary)"
+                      fillOpacity={1}
+                      fill="url(#colorWeight)"
+                      animationDuration={2000}
+                      activeDot={{ r: 8 }}
+                      dot={({ cx, cy, payload }) => (
+                        <circle
+                          cx={cx}
+                          cy={cy}
+                          r={5}
+                          fill="var(--accent-primary)"
+                          stroke="#fff"
+                          strokeWidth={1.5}
+                          style={{ cursor: 'pointer' }}
+                          onClick={() => beginEditWeightEntry(payload)}
+                        />
+                      )}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+
+              <div className="stats-mini-row">
+                <div className="card stats-mini">
+                  <h4>Allgemeiner Trend</h4>
+                  <h2 style={{ color: trend.status === 'fallend' ? 'var(--accent-primary)' : (trend.status === 'steigend' ? 'var(--danger)' : 'var(--text-primary)') }}>
+                    {trend.status.toUpperCase()}
+                  </h2>
+                </div>
+
+                <div className="card stats-mini">
+                  <h4>Gesamtveränderung</h4>
+                  <h2>{trend.direction}{trend.diff} kg</h2>
+                </div>
+
+                <div className="card stats-mini">
+                  <h4>Einträge gesamt</h4>
+                  <h2>{sortedWeights.length}</h2>
+                </div>
+              </div>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-              <div className="card">
-                <h4 style={{ color: 'var(--text-secondary)', margin: 0 }}>Allgemeiner Trend</h4>
-                <h2 style={{ fontSize: '1.5rem', color: trend.status === 'fallend' ? 'var(--accent-primary)' : (trend.status === 'steigend' ? 'var(--danger)' : 'var(--text-primary)') }}>
-                  {trend.status.toUpperCase()}
-                </h2>
-              </div>
-              
-              <div className="card">
-                <h4 style={{ color: 'var(--text-secondary)', margin: 0 }}>Gesamtveränderung</h4>
-                <h2 style={{ fontSize: '1.5rem', margin: '0.5rem 0 0 0' }}>{trend.direction}{trend.diff} kg</h2>
-              </div>
+            <div className="stats-panel">
+              <div className="card form-card">
+                <h3>Gewicht eintragen</h3>
+                <form onSubmit={handleWeightSubmit}>
+                  <input
+                    type="number"
+                    step="0.01"
+                    className="input-field"
+                    placeholder="Gewicht in kg, z.B. 4.5"
+                    value={newWeight}
+                    onChange={(e) => setNewWeight(e.target.value)}
+                    required
+                  />
+                  <input
+                    type="date"
+                    className="input-field"
+                    value={newWeightDate}
+                    onChange={(e) => setNewWeightDate(e.target.value)}
+                    required
+                  />
+                  <p className="form-note">
+                    Hinweis: Rückdatierte Einträge sind erlaubt.
+                  </p>
+                  <button type="submit" className="btn-primary btn-block">Gewicht speichern</button>
+                </form>
+                {successMsg && (
+                  <motion.p
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="success-message"
+                  >
+                    {successMsg}
+                  </motion.p>
+                )}
 
-              <div className="card">
-                <h4 style={{ color: 'var(--text-secondary)' }}>Einträge gesamt</h4>
-                <h2 style={{ margin: 0 }}>{weights.length}</h2>
+                <div className="weight-entry-section">
+                  <h4 className="weight-entry-title">Gewichtseintrag bearbeiten</h4>
+                  {isEditingFromChart ? (
+                    <div className="weight-entry-row">
+                      <span className="weight-entry-date">{formatDate(editingEntryDate)}</span>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0.01"
+                        className="input-field weight-entry-input"
+                        value={editingEntryWeight}
+                        onChange={(e) => setEditingEntryWeight(e.target.value)}
+                      />
+                      <div className="weight-entry-actions">
+                        <button type="button" className="btn-secondary" onClick={saveEditedWeightEntry}>Speichern</button>
+                        <button type="button" className="btn-secondary" onClick={cancelEditWeightEntry}>Abbrechen</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="weight-entry-empty">Klicke auf einen Punkt im Diagramm, um den Eintrag zu bearbeiten.</p>
+                  )}
+
+                  <p className="weight-entry-order">Neueste Einträge zuerst</p>
+                  <div className="weight-entry-list" style={{ marginTop: '0.65rem' }}>
+                    {recentWeights.map((entry) => (
+                      <div
+                        key={entry.date}
+                        className={`weight-entry-row ${editingEntryDate === entry.date ? 'weight-entry-row-active' : ''}`}
+                      >
+                        <span className="weight-entry-date">{formatDate(entry.date)}</span>
+                        <span className="weight-entry-value">{entry.weight} kg</span>
+                        <div className="weight-entry-actions">
+                          <button
+                            type="button"
+                            className="btn-secondary weight-entry-edit-btn"
+                            onClick={() => beginEditWeightEntry(entry)}
+                            aria-label={`Eintrag vom ${formatDate(entry.date)} bearbeiten`}
+                            title="Eintrag bearbeiten"
+                          >
+                            ✏️
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="card" style={{ marginTop: '2rem' }}>
-            <h3 style={{ marginTop: 0 }}>Abzeichen</h3>
-            <p style={{ color: 'var(--text-secondary)', marginTop: 0 }}>
+          <div className="paw-separator" aria-hidden="true">🐾 🐾 🐾</div>
+
+          <div className="card badges-card">
+            <h3>Abzeichen</h3>
+            <p className="badges-intro">
               Schalte Abzeichen frei, indem du regelmäßig Einträge machst und das Zielgewicht erreichst.
             </p>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
+            <div className="badge-grid">
               {badges.map((badge) => (
                 <div
                   key={badge.id}
-                  style={{
-                    border: `1px solid ${badge.rare ? '#f59e0b' : (badge.unlocked ? 'var(--accent-primary)' : 'var(--border-color)')}`,
-                    background: badge.unlocked
-                      ? (badge.rare ? 'rgba(245, 158, 11, 0.12)' : 'rgba(16, 185, 129, 0.08)')
-                      : 'var(--surface-color)',
-                    borderRadius: '12px',
-                    padding: '1rem',
-                    opacity: badge.unlocked ? 1 : 0.65
-                  }}
+                  className={`badge-card ${badge.rare ? 'rare' : ''} ${badge.unlocked ? 'unlocked' : 'locked'}`}
                 >
                   {badge.rare && (
-                    <p style={{ margin: '0 0 0.4rem 0', fontSize: '0.75rem', fontWeight: 700, color: '#b45309' }}>
+                    <p className="badge-rare-label">
                       SELTEN
                     </p>
                   )}
-                  <div style={{ fontSize: '1.5rem' }}>{badge.icon}</div>
-                  <h4 style={{ margin: '0.5rem 0 0.3rem 0' }}>{badge.title}</h4>
-                  <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.9rem' }}>{badge.description}</p>
-                  <p style={{ margin: '0.6rem 0 0 0', fontWeight: 700, color: badge.unlocked ? 'var(--accent-primary)' : 'var(--text-secondary)' }}>
+                  <div className="badge-icon">{badge.icon}</div>
+                  <h4>{badge.title}</h4>
+                  <p className="badge-desc">{badge.description}</p>
+                  <p className="badge-status">
                     {badge.unlocked ? 'Freigeschaltet' : 'Noch gesperrt'}
                   </p>
                 </div>

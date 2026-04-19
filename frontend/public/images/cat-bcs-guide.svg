@@ -1,14 +1,15 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="420" viewBox="0 0 1200 420" role="img" aria-labelledby="title desc">
-  <title id="title">Body Condition Score Katzen 1 bis 9</title>
-  <desc id="desc">Vereinfachte, selbst erstellte und frei nutzbare Grafik zur BCS-Einschaetzung bei Katzen.</desc>
+﻿<svg xmlns="http://www.w3.org/2000/svg" width="820" height="670" viewBox="0 0 1200 980" role="img" aria-labelledby="title desc" style="max-width:100%; height:auto; display:block;">
+  <title id="title">Body Condition Score (BCS) für Katzen</title>
+  <desc id="desc">Vereinfachte BCS-Infografik für Katzen in Bereichen 1 bis 2, 3 bis 4, 5, 6 bis 7 und 8 bis 9.</desc>
 
   <defs>
     <style>
-      .title { font: 700 30px 'Segoe UI', Arial, sans-serif; fill: #0f172a; }
-      .sub { font: 500 15px 'Segoe UI', Arial, sans-serif; fill: #334155; }
-      .score { font: 700 16px 'Segoe UI', Arial, sans-serif; fill: #0f172a; }
-      .note { font: 500 13px 'Segoe UI', Arial, sans-serif; fill: #475569; }
-      .small { font: 500 11px 'Segoe UI', Arial, sans-serif; fill: #64748b; }
+      .title { font: 700 44px 'Segoe UI', Arial, sans-serif; fill: #0f172a; }
+      .subtitle { font: 500 21px 'Segoe UI', Arial, sans-serif; fill: #334155; }
+      .card-title { font: 700 32px 'Segoe UI', Arial, sans-serif; fill: #0f172a; }
+      .card-label { font: 700 29px 'Segoe UI', Arial, sans-serif; fill: #111827; }
+      .card-detail { font: 500 20px 'Segoe UI', Arial, sans-serif; fill: #334155; }
+      .footer { font: 500 21px 'Segoe UI', Arial, sans-serif; fill: #475569; }
     </style>
 
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
@@ -16,87 +17,115 @@
       <stop offset="100%" stop-color="#eef2ff"/>
     </linearGradient>
 
-    <g id="cat">
-      <ellipse cx="0" cy="0" rx="33" ry="20" fill="currentColor"/>
-      <circle cx="31" cy="-7" r="11" fill="currentColor"/>
-      <polygon points="36,-17 32,-29 42,-19" fill="currentColor"/>
-      <polygon points="23,-16 19,-28 29,-19" fill="currentColor"/>
-      <rect x="-24" y="15" width="7" height="18" rx="3" fill="currentColor"/>
-      <rect x="-5" y="15" width="7" height="18" rx="3" fill="currentColor"/>
-      <rect x="12" y="15" width="7" height="18" rx="3" fill="currentColor"/>
-      <rect x="28" y="15" width="7" height="18" rx="3" fill="currentColor"/>
-      <path d="M-35 -2 Q-52 -10 -62 -2" stroke="currentColor" stroke-width="6" fill="none" stroke-linecap="round"/>
+    <g id="cat-thin">
+      <path d="M-41 -2 C-34 -18 -8 -23 17 -17 C28 -14 31 -5 26 3 C18 11 -3 14 -23 10 C-33 8 -40 4 -41 -2 Z" fill="currentColor"/>
+      <path d="M-23 -10 L-19 9 M-11 -11 L-7 10 M1 -11 L5 9" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" opacity="0.55"/>
+      <circle cx="44" cy="-10" r="15" fill="currentColor"/>
+      <polygon points="53,-22 49,-34 45,-22" fill="currentColor"/>
+      <polygon points="35,-22 39,-34 43,-22" fill="currentColor"/>
+      <rect x="-28" y="8" width="9" height="34" rx="4" fill="currentColor"/>
+      <rect x="-12" y="8" width="9" height="34" rx="4" fill="currentColor"/>
+      <rect x="0" y="8" width="9" height="34" rx="4" fill="currentColor"/>
+      <rect x="12" y="8" width="9" height="34" rx="4" fill="currentColor"/>
+      <path d="M-39 -2 C-56 -26 -76 -42 -84 -30 C-90 -16 -83 -3 -69 -20" stroke="currentColor" stroke-width="7" fill="none" stroke-linecap="round"/>
+    </g>
+
+    <g id="cat-lean">
+      <path d="M-42 0 C-36 -14 -9 -18 24 -14 C36 -11 40 0 38 9 C34 17 12 20 -16 18 C-31 16 -40 9 -42 0 Z" fill="currentColor"/>
+      <circle cx="44" cy="-10" r="15" fill="currentColor"/>
+      <polygon points="53,-22 49,-34 45,-22" fill="currentColor"/>
+      <polygon points="35,-22 39,-34 43,-22" fill="currentColor"/>
+      <rect x="-30" y="14" width="9" height="32" rx="4" fill="currentColor"/>
+      <rect x="-10" y="14" width="9" height="32" rx="4" fill="currentColor"/>
+      <rect x="4" y="14" width="9" height="32" rx="4" fill="currentColor"/>
+      <rect x="18" y="14" width="9" height="32" rx="4" fill="currentColor"/>
+      <path d="M-39 -2 C-56 -26 -76 -42 -84 -30 C-90 -16 -83 -3 -69 -20" stroke="currentColor" stroke-width="7" fill="none" stroke-linecap="round"/>
+    </g>
+
+    <g id="cat-ideal">
+      <path d="M-43 1 C-37 -12 -8 -16 26 -12 C39 -9 43 2 42 10 C39 18 16 21 -13 20 C-30 18 -41 10 -43 1 Z" fill="currentColor"/>
+      <circle cx="44" cy="-10" r="15" fill="currentColor"/>
+      <polygon points="53,-22 49,-34 45,-22" fill="currentColor"/>
+      <polygon points="35,-22 39,-34 43,-22" fill="currentColor"/>
+      <rect x="-30" y="14" width="9" height="32" rx="4" fill="currentColor"/>
+      <rect x="-10" y="14" width="9" height="32" rx="4" fill="currentColor"/>
+      <rect x="6" y="14" width="9" height="32" rx="4" fill="currentColor"/>
+      <rect x="20" y="14" width="9" height="32" rx="4" fill="currentColor"/>
+      <path d="M-39 -2 C-56 -26 -76 -42 -84 -30 C-90 -16 -83 -3 -69 -20" stroke="currentColor" stroke-width="7" fill="none" stroke-linecap="round"/>
+    </g>
+
+    <g id="cat-over">
+      <path d="M-45 3 C-39 -8 -7 -13 30 -10 C45 -7 50 6 51 15 C50 24 25 28 -8 29 C-29 27 -42 17 -45 3 Z" fill="currentColor"/>
+      <circle cx="44" cy="-10" r="15" fill="currentColor"/>
+      <polygon points="53,-22 49,-34 45,-22" fill="currentColor"/>
+      <polygon points="35,-22 39,-34 43,-22" fill="currentColor"/>
+      <rect x="-34" y="14" width="9" height="32" rx="4" fill="currentColor"/>
+      <rect x="-8" y="14" width="9" height="32" rx="4" fill="currentColor"/>
+      <rect x="16" y="14" width="9" height="32" rx="4" fill="currentColor"/>
+      <rect x="38" y="14" width="9" height="32" rx="4" fill="currentColor"/>
+      <path d="M-39 -2 C-56 -26 -76 -42 -84 -30 C-90 -16 -83 -3 -69 -20" stroke="currentColor" stroke-width="7" fill="none" stroke-linecap="round"/>
+    </g>
+
+    <g id="cat-obese">
+      <path d="M-46 6 C-39 -5 -5 -11 33 -8 C50 -5 58 12 61 22 C61 33 33 40 -6 42 C-31 40 -44 26 -46 6 Z" fill="currentColor"/>
+      <circle cx="44" cy="-10" r="15" fill="currentColor"/>
+      <path d="M3 18 C16 18 28 23 31 31 C28 38 16 41 1 40" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" opacity="0.95"/>
+      <polygon points="53,-22 49,-34 45,-22" fill="currentColor"/>
+      <polygon points="35,-22 39,-34 43,-22" fill="currentColor"/>
+      <rect x="-34" y="14" width="9" height="32" rx="4" fill="currentColor"/>
+      <rect x="-8" y="14" width="9" height="32" rx="4" fill="currentColor"/>
+      <rect x="16" y="14" width="9" height="32" rx="4" fill="currentColor"/>
+      <rect x="38" y="14" width="9" height="32" rx="4" fill="currentColor"/>
+      <path d="M-39 -2 C-56 -26 -76 -42 -84 -30 C-90 -16 -83 -3 -69 -20" stroke="currentColor" stroke-width="7" fill="none" stroke-linecap="round"/>
     </g>
   </defs>
 
-  <rect width="1200" height="420" fill="url(#bg)" rx="18"/>
+  <rect width="1200" height="980" fill="url(#bg)" rx="24"/>
 
-  <text x="40" y="56" class="title">Body Condition Score (BCS) fuer Katzen: 1 bis 9</text>
-  <text x="40" y="84" class="sub">Selbsterstellte, lizenzfreie Orientierungsgrafik (keine tiermedizinische Diagnose)</text>
+  <text x="58" y="74" class="title">Body Condition Score (BCS)</text>
+  <text x="58" y="116" class="title" style="font-size:36px; font-weight:700;">Katzen: Bereichs-Darstellung</text>
+  <text x="58" y="150" class="subtitle">Angelehnt an klinische Referenzgrafiken</text>
 
-  <g transform="translate(45,120)">
-    <rect x="0" y="0" width="121" height="180" rx="12" fill="#fee2e2" stroke="#fecaca"/>
-    <text x="14" y="28" class="score">BCS 1</text>
-    <g transform="translate(58,92) scale(0.74,0.72)" style="color:#b91c1c"><use href="#cat"/></g>
-    <text x="12" y="154" class="note">sehr duenn</text>
+  <g transform="translate(70,182)">
+    <rect x="0" y="0" width="340" height="285" rx="18" fill="#fee2e2" stroke="#fecaca" stroke-width="2"/>
+    <text x="26" y="56" class="card-title">BCS 1-2</text>
+    <g transform="translate(170,145)" style="color:#b91c1c"><use href="#cat-thin"/></g>
+    <text x="26" y="230" class="card-label">stark untergewichtig</text>
+    <text x="26" y="262" class="card-detail">kachektisch bis sehr dünn</text>
   </g>
 
-  <g transform="translate(172,120)">
-    <rect x="0" y="0" width="121" height="180" rx="12" fill="#fee2e2" stroke="#fecaca"/>
-    <text x="14" y="28" class="score">BCS 2</text>
-    <g transform="translate(58,92) scale(0.8,0.77)" style="color:#be123c"><use href="#cat"/></g>
-    <text x="14" y="154" class="note">duenn</text>
+  <g transform="translate(430,182)">
+    <rect x="0" y="0" width="340" height="285" rx="18" fill="#fef3c7" stroke="#fde68a" stroke-width="2"/>
+    <text x="26" y="56" class="card-title">BCS 3-4</text>
+    <g transform="translate(170,145)" style="color:#b45309"><use href="#cat-lean"/></g>
+    <text x="26" y="230" class="card-label">untergewichtig</text>
+    <text x="26" y="262" class="card-detail">unter dem Idealbereich</text>
   </g>
 
-  <g transform="translate(299,120)">
-    <rect x="0" y="0" width="121" height="180" rx="12" fill="#fef3c7" stroke="#fde68a"/>
-    <text x="14" y="28" class="score">BCS 3</text>
-    <g transform="translate(58,92) scale(0.86,0.84)" style="color:#c2410c"><use href="#cat"/></g>
-    <text x="14" y="154" class="note">eher schlank</text>
+  <g transform="translate(790,182)">
+    <rect x="0" y="0" width="340" height="285" rx="18" fill="#dcfce7" stroke="#86efac" stroke-width="2"/>
+    <text x="26" y="56" class="card-title">BCS 5</text>
+    <g transform="translate(170,145)" style="color:#166534"><use href="#cat-ideal"/></g>
+    <text x="26" y="230" class="card-label">Idealgewicht</text>
+    <text x="26" y="262" class="card-detail">klinischer Zielbereich</text>
   </g>
 
-  <g transform="translate(426,120)">
-    <rect x="0" y="0" width="121" height="180" rx="12" fill="#fef9c3" stroke="#fde047"/>
-    <text x="14" y="28" class="score">BCS 4</text>
-    <g transform="translate(58,92) scale(0.93,0.90)" style="color:#a16207"><use href="#cat"/></g>
-    <text x="14" y="154" class="note">leicht schlank</text>
+  <g transform="translate(250,492)">
+    <rect x="0" y="0" width="340" height="285" rx="18" fill="#fde68a" stroke="#fcd34d" stroke-width="2"/>
+    <text x="26" y="56" class="card-title">BCS 6-7</text>
+    <g transform="translate(170,145)" style="color:#92400e"><use href="#cat-over"/></g>
+    <text x="26" y="230" class="card-label">übergewichtig</text>
+    <text x="26" y="262" class="card-detail">frühes bis moderates Überfett</text>
   </g>
 
-  <g transform="translate(553,120)">
-    <rect x="0" y="0" width="121" height="180" rx="12" fill="#dcfce7" stroke="#86efac"/>
-    <text x="14" y="28" class="score">BCS 5</text>
-    <g transform="translate(58,92) scale(1.0,1.0)" style="color:#166534"><use href="#cat"/></g>
-    <text x="14" y="154" class="note">ideal</text>
+  <g transform="translate(610,492)">
+    <rect x="0" y="0" width="340" height="285" rx="18" fill="#fecaca" stroke="#fca5a5" stroke-width="2"/>
+    <text x="26" y="56" class="card-title">BCS 8-9</text>
+    <g transform="translate(170,145)" style="color:#991b1b"><use href="#cat-obese"/></g>
+    <text x="26" y="230" class="card-label">adipös (BCS 8-9)</text>
+    <text x="26" y="262" class="card-detail">ausgeprägtes Überfett</text>
   </g>
 
-  <g transform="translate(680,120)">
-    <rect x="0" y="0" width="121" height="180" rx="12" fill="#ecfccb" stroke="#bef264"/>
-    <text x="14" y="28" class="score">BCS 6</text>
-    <g transform="translate(58,92) scale(1.06,1.04)" style="color:#4d7c0f"><use href="#cat"/></g>
-    <text x="14" y="154" class="note">leicht ueber</text>
-  </g>
-
-  <g transform="translate(807,120)">
-    <rect x="0" y="0" width="121" height="180" rx="12" fill="#fde68a" stroke="#fcd34d"/>
-    <text x="14" y="28" class="score">BCS 7</text>
-    <g transform="translate(58,92) scale(1.14,1.10)" style="color:#92400e"><use href="#cat"/></g>
-    <text x="14" y="154" class="note">uebergewichtig</text>
-  </g>
-
-  <g transform="translate(934,120)">
-    <rect x="0" y="0" width="121" height="180" rx="12" fill="#fed7aa" stroke="#fdba74"/>
-    <text x="14" y="28" class="score">BCS 8</text>
-    <g transform="translate(58,92) scale(1.22,1.16)" style="color:#9a3412"><use href="#cat"/></g>
-    <text x="14" y="154" class="note">stark ueber</text>
-  </g>
-
-  <g transform="translate(1061,120)">
-    <rect x="0" y="0" width="121" height="180" rx="12" fill="#fecaca" stroke="#fca5a5"/>
-    <text x="14" y="28" class="score">BCS 9</text>
-    <g transform="translate(58,92) scale(1.30,1.22)" style="color:#991b1b"><use href="#cat"/></g>
-    <text x="14" y="154" class="note">adipoes</text>
-  </g>
-
-  <text x="40" y="336" class="small">BCS 4-5 gilt bei den meisten erwachsenen Katzen als Zielbereich. Die Darstellung ist bewusst vereinfacht.</text>
-  <text x="40" y="356" class="small">Copyright: Cat Slim Down Projektteam - frei nutzbar innerhalb dieses Projekts.</text>
+  <text x="70" y="864" class="footer">Hinweis: Diese Grafik ist eine Orientierung. BCS wird klinisch durch Betrachten und Abtasten beurteilt.</text>
+  <text x="70" y="900" class="footer">Faustregel: BCS 5 ist ideal, BCS 4 bis 6 kann je nach Körperbau noch akzeptabel sein.</text>
 </svg>

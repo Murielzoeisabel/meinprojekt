@@ -7,11 +7,11 @@
   margin-bottom: 1.2rem;
   padding: 1.35rem 1.4rem;
   border-radius: 22px;
-  border: 1px solid rgba(159, 203, 69, 0.4);
+  border: 1px solid rgba(54, 199, 168, 0.36);
   background:
-    radial-gradient(circle at 85% 20%, rgba(245, 158, 11, 0.18), transparent 42%),
-    linear-gradient(125deg, rgba(255, 251, 235, 0.9), rgba(214, 236, 170, 0.35));
-  box-shadow: 0 16px 30px rgba(90, 120, 30, 0.12);
+    radial-gradient(circle at 85% 20%, rgba(255, 122, 69, 0.22), transparent 42%),
+    linear-gradient(125deg, rgba(247, 255, 252, 0.9), rgba(203, 245, 233, 0.4));
+  box-shadow: 0 16px 30px rgba(22, 103, 81, 0.14);
 }
 
 .nutrition-hero h1 {
@@ -32,8 +32,8 @@
 
 .nutrition-quicknav {
   margin-bottom: 1rem;
-  background: linear-gradient(140deg, rgba(16, 185, 129, 0.1), rgba(59, 130, 246, 0.07));
-  border: 1px solid rgba(16, 185, 129, 0.25);
+  background: linear-gradient(140deg, rgba(54, 199, 168, 0.14), rgba(255, 191, 102, 0.12));
+  border: 1px solid rgba(54, 199, 168, 0.28);
 }
 
 .nutrition-quicknav-head {
@@ -56,7 +56,7 @@
 
 .nutrition-tool {
   width: 100%;
-  border: 1px solid rgba(16, 185, 129, 0.24);
+  border: 1px solid rgba(54, 199, 168, 0.28);
   border-radius: 14px;
   background: rgba(255, 255, 255, 0.58);
   padding: 0.85rem;
@@ -69,8 +69,8 @@
 }
 
 .nutrition-tool:hover {
-  border-color: rgba(16, 185, 129, 0.5);
-  box-shadow: 0 12px 20px rgba(16, 185, 129, 0.1);
+  border-color: rgba(255, 122, 69, 0.42);
+  box-shadow: 0 12px 20px rgba(255, 122, 69, 0.14);
 }
 
 .nutrition-tool > span {
@@ -81,7 +81,7 @@
   align-items: center;
   justify-content: center;
   color: var(--accent-primary);
-  background: rgba(16, 185, 129, 0.13);
+  background: rgba(54, 199, 168, 0.16);
 }
 
 .nutrition-tool strong {
@@ -96,8 +96,8 @@
 
 .nutrition-love-note {
   margin-bottom: 1rem;
-  border: 1px solid rgba(16, 185, 129, 0.27);
-  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(54, 199, 168, 0.31);
+  background: rgba(54, 199, 168, 0.12);
 }
 
 .nutrition-love-note > div {
@@ -119,8 +119,8 @@
 
 .nutrition-quality {
   margin-bottom: 1rem;
-  border: 1px solid rgba(16, 185, 129, 0.25);
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(251, 191, 36, 0.07));
+  border: 1px solid rgba(54, 199, 168, 0.3);
+  background: linear-gradient(135deg, rgba(54, 199, 168, 0.12), rgba(255, 191, 102, 0.1));
 }
 
 .nutrition-quality-head {
@@ -169,8 +169,8 @@
 }
 
 .nutrition-analyzer-btn {
-  border: 1px solid rgba(16, 185, 129, 0.34);
-  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(54, 199, 168, 0.4);
+  background: rgba(54, 199, 168, 0.18);
   color: var(--text-primary);
   border-radius: 999px;
   padding: 0.58rem 0.95rem;
@@ -183,8 +183,8 @@
 
 .nutrition-analyzer-btn:hover {
   transform: translateY(-2px);
-  border-color: rgba(16, 185, 129, 0.6);
-  box-shadow: 0 10px 18px rgba(16, 185, 129, 0.15);
+  border-color: rgba(255, 122, 69, 0.56);
+  box-shadow: 0 10px 18px rgba(255, 122, 69, 0.18);
 }
 
 .nutrition-analyzer {
@@ -209,9 +209,9 @@
   border-radius: 12px;
   font-size: 0.95rem;
   font-weight: 700;
-  color: #166534;
-  border: 1px solid rgba(34, 197, 94, 0.35);
-  background: linear-gradient(135deg, rgba(34, 197, 94, 0.16), rgba(251, 191, 36, 0.13));
+  color: #0f4c3d;
+  border: 1px solid rgba(54, 199, 168, 0.36);
+  background: linear-gradient(135deg, rgba(54, 199, 168, 0.2), rgba(255, 191, 102, 0.16));
 }
 
 .nutrition-upload-hint svg {
@@ -219,8 +219,8 @@
 }
 
 .nutrition-upload-btn {
-  border: 1px solid rgba(59, 130, 246, 0.34);
-  background: rgba(59, 130, 246, 0.12);
+  border: 1px solid rgba(255, 122, 69, 0.34);
+  background: rgba(255, 122, 69, 0.12);
   color: var(--text-primary);
   border-radius: 999px;
   padding: 0.5rem 0.85rem;
@@ -291,8 +291,8 @@
 
 .nutrition-analyzer textarea:focus {
   outline: none;
-  border-color: rgba(16, 185, 129, 0.55);
-  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.14);
+  border-color: rgba(54, 199, 168, 0.58);
+  box-shadow: 0 0 0 3px rgba(54, 199, 168, 0.16);
 }
 
 .nutrition-analyzer-actions {
@@ -394,9 +394,9 @@
 }
 
 .ingredient-ok {
-  background: rgba(34, 197, 94, 0.12);
-  border-color: rgba(34, 197, 94, 0.25);
-  color: #166534;
+  background: rgba(54, 199, 168, 0.16);
+  border-color: rgba(54, 199, 168, 0.36);
+  color: #0f4c3d;
 }
 
 .ingredient-flagged {
@@ -462,8 +462,30 @@
 }
 
 .nutrition-combo-card {
-  border: 1px solid rgba(59, 130, 246, 0.23);
-  background: linear-gradient(140deg, rgba(59, 130, 246, 0.1), rgba(16, 185, 129, 0.05));
+  border: 1px solid rgba(255, 122, 69, 0.25);
+  background: linear-gradient(140deg, rgba(255, 122, 69, 0.12), rgba(54, 199, 168, 0.08));
+}
+
+.nutrition-principle-card {
+  display: grid;
+  gap: 0.6rem;
+  border: 1px solid rgba(54, 199, 168, 0.3);
+}
+
+.nutrition-principle-head {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.nutrition-principle-head h3 {
+  margin: 0;
+}
+
+.nutrition-principle-card p {
+  margin: 0;
+  color: var(--text-secondary);
+  line-height: 1.65;
 }
 
 .nutrition-principles {
@@ -522,8 +544,8 @@
 }
 
 .nutrition-formula {
-  border: 1px solid rgba(59, 130, 246, 0.22);
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.09), rgba(16, 185, 129, 0.06));
+  border: 1px solid rgba(255, 122, 69, 0.24);
+  background: linear-gradient(135deg, rgba(255, 122, 69, 0.11), rgba(54, 199, 168, 0.08));
 }
 
 .nutrition-formula p {
@@ -533,7 +555,7 @@
 }
 
 .nutrition-formula div {
-  border: 1px dashed rgba(59, 130, 246, 0.35);
+  border: 1px dashed rgba(255, 122, 69, 0.4);
   border-radius: 12px;
   padding: 0.7rem;
   background: rgba(255, 255, 255, 0.5);
@@ -548,8 +570,19 @@
 
 .nutrition-warning {
   margin-bottom: 1rem;
-  background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(239, 68, 68, 0.06));
-  border: 1px solid rgba(245, 158, 11, 0.28);
+  background: linear-gradient(135deg, rgba(255, 191, 102, 0.18), rgba(255, 122, 69, 0.1));
+  border: 1px solid rgba(255, 122, 69, 0.3);
+}
+
+.nutrition-warning-head {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin-bottom: 0.65rem;
+}
+
+.nutrition-warning-head h3 {
+  margin: 0;
 }
 
 .nutrition-warning-chips {
@@ -560,15 +593,29 @@
 
 .nutrition-warning-chips span {
   background: rgba(255, 255, 255, 0.68);
-  border: 1px solid rgba(245, 158, 11, 0.28);
+  border: 1px solid rgba(255, 122, 69, 0.28);
   border-radius: 999px;
   padding: 0.3rem 0.7rem;
   font-size: 0.86rem;
 }
 
 .nutrition-closing {
-  background: linear-gradient(130deg, rgba(16, 185, 129, 0.11), rgba(59, 130, 246, 0.08));
-  border: 1px solid rgba(16, 185, 129, 0.22);
+  background: linear-gradient(130deg, rgba(54, 199, 168, 0.14), rgba(255, 122, 69, 0.09));
+  border: 1px solid rgba(54, 199, 168, 0.28);
+}
+
+[data-theme='dark'] .nutrition-upload-hint {
+  color: #d8fff2;
+}
+
+[data-theme='dark'] .nutrition-tool,
+[data-theme='dark'] .nutrition-quality-list,
+[data-theme='dark'] .nutrition-analyzer textarea,
+[data-theme='dark'] .nutrition-analyzer-result,
+[data-theme='dark'] .nutrition-compare-grid > div,
+[data-theme='dark'] .nutrition-formula div,
+[data-theme='dark'] .nutrition-warning-chips span {
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .nutrition-closing > div {

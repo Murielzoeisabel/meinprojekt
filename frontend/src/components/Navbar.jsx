@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import './Navbar.css';
 
 const navItems = [
-  { path: '/', label: 'Dashboard', icon: <Home size={20} /> },
+  { path: '/', label: 'Übersicht', icon: <Home size={20} /> },
   { path: '/cats', label: 'Katzen', icon: <Cat size={20} /> },
   { path: '/stats', label: 'Statistik', icon: <Activity size={20} /> },
   { path: '/fitness', label: 'Fitness', icon: <HeartPulse size={20} /> },
@@ -31,8 +31,6 @@ const Navbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const nutritionRoutes = ['/nutrition', '/meal-templates', '/recipes', '/calories'];
-
   const toggleTheme = () => {
     const newTheme = theme === 'light' ? 'dark' : 'light';
     setTheme(newTheme);
@@ -43,23 +41,19 @@ const Navbar = () => {
     document.documentElement.setAttribute('data-theme', theme);
   }, [theme]);
 
-  useEffect(() => {
-    if (!nutritionRoutes.includes(location.pathname)) {
-      setIsNutritionOpen(false);
-    }
-  }, [location.pathname]);
-
   return (
-    <nav className="navbar" style={{ overflowY: 'auto' }}>
-      <div className="navbar-logo" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+    <nav className="navbar">
+      <div className="navbar-logo">
+        <div className="navbar-brand">
           <Cat size={28} color="var(--accent-primary)" className="floating-comic" />
-          <h2 style={{ fontSize: '1.2rem', margin: 0 }}>Cat Slim Down</h2>
+          <h2>Cat Slim Down</h2>
         </div>
         <button 
           onClick={toggleTheme} 
-          style={{ background: 'var(--surface-color)', padding: '8px', borderRadius: '50%', color: 'var(--text-primary)', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', outline: 'none' }}
-          title={theme === 'light' ? "Zum Dark Mode wechseln" : "Zum Light Mode wechseln"}
+          className="theme-toggle"
+          type="button"
+          title={theme === 'light' ? 'Zum Dunkelmodus wechseln' : 'Zum Hellmodus wechseln'}
+          aria-label={theme === 'light' ? 'Dunkelmodus aktivieren' : 'Hellmodus aktivieren'}
         >
           {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
         </button>
@@ -92,6 +86,7 @@ const Navbar = () => {
                 <NavLink
                   to={item.path}
                   className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+                  onClick={() => setIsNutritionOpen(false)}
                 >
                   {item.icon}
                   <span>{item.label}</span>
@@ -105,6 +100,7 @@ const Navbar = () => {
                       key={child.path}
                       to={child.path}
                       className={({ isActive }) => `nav-sublink ${isActive ? 'active' : ''}`}
+                      onClick={() => setIsNutritionOpen(true)}
                     >
                       {child.icon}
                       <span>{child.label}</span>

@@ -106,10 +106,6 @@ const Community = () => {
   }, [reactionStats]);
 
   useEffect(() => {
-    setProfileImage(loadProfileImage());
-  }, []);
-
-  useEffect(() => {
     const syncProfileImage = () => setProfileImage(loadProfileImage());
     window.addEventListener('focus', syncProfileImage);
     window.addEventListener('profile-updated', syncProfileImage);
@@ -179,7 +175,7 @@ const Community = () => {
       return { title: 'Support-Profi', subtitle: `${supportGiven} Unterstützungen vergeben` };
     }
     if (supportGiven >= 20) {
-      return { title: 'Community-Supporter', subtitle: `${supportGiven} Unterstützungen vergeben` };
+      return { title: 'Community-Unterstützer', subtitle: `${supportGiven} Unterstützungen vergeben` };
     }
     if (supportGiven >= 10) {
       return { title: 'Mutmacher', subtitle: `${supportGiven} Unterstützungen vergeben` };
@@ -355,7 +351,7 @@ const Community = () => {
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', marginBottom: '0.4rem', color: 'var(--accent-primary)', fontWeight: 700, position: 'relative' }}>
           <Sparkles size={16} />
-          Community Forum
+          Community-Forum
         </div>
 
         <h1 style={{ margin: '0 0 0.45rem 0', position: 'relative' }}>Gemeinsam leichter ans Ziel</h1>

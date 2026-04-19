@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import AnimatedPage from '../components/AnimatedPage';
-import { getCats, getWeights, addWeight } from '../services/api';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { getCats, getWeights } from '../services/api';
 import { motion } from 'framer-motion';
 import NoCatsFeedback from '../components/NoCatsFeedback';
+import './DashboardStats.css';
 
 void motion;
 
@@ -16,15 +17,19 @@ const DrawnCatAnimation = () => (
     aria-label="Gezeichnete, animierte Katze"
     style={{ display: 'block' }}
   >
-    <motion.ellipse
-      cx="140"
-      cy="145"
-      rx="88"
-      ry="12"
-      fill="rgba(63, 77, 46, 0.16)"
-      animate={{ rx: [86, 90, 86] }}
+    <motion.g
+      animate={{ scaleX: [0.98, 1.02, 0.98] }}
       transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
-    />
+      style={{ transformOrigin: '140px 145px' }}
+    >
+      <ellipse
+        cx="140"
+        cy="145"
+        rx="88"
+        ry="12"
+        fill="rgba(63, 77, 46, 0.16)"
+      />
+    </motion.g>
 
     <motion.g
       animate={{ y: [0, -1.2, 0], x: [0, 1.2, 0] }}
@@ -96,21 +101,7 @@ const Dashboard = () => {
   const [cats, setCats] = useState([]);
   const [selectedCatId, setSelectedCatId] = useState('');
   const [weightHistory, setWeightHistory] = useState([]);
-  const [newWeight, setNewWeight] = useState('');
-  const [newWeightDate, setNewWeightDate] = useState(new Date().toISOString().split('T')[0]);
-  const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
-
-  const formatDate = (value) => {
-    if (!value) return '-';
-    const parsedDate = new Date(value);
-    if (Number.isNaN(parsedDate.getTime())) return value;
-    return new Intl.DateTimeFormat('de-DE', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    }).format(parsedDate);
-  };
 
   useEffect(() => {
     getCats()
@@ -135,34 +126,6 @@ const Dashboard = () => {
     }
   }, [selectedCatId]);
 
-  const handleWeightSubmit = async (e) => {
-    e.preventDefault();
-    if (!newWeight || !selectedCatId || !newWeightDate) return;
-
-    try {
-      setErrorMsg('');
-      await addWeight({ catId: selectedCatId, weight: newWeight, date: newWeightDate });
-      const updatedHistory = await getWeights(selectedCatId);
-      setWeightHistory(updatedHistory);
-      setNewWeight('');
-
-      const latestEntry = updatedHistory.length > 0
-        ? [...updatedHistory].sort((a, b) => new Date(a.date) - new Date(b.date)).at(-1)
-        : null;
-
-      setCats(prevCats => prevCats.map(c =>
-        c.id.toString() === selectedCatId
-          ? { ...c, currentWeight: latestEntry ? parseFloat(latestEntry.weight) : c.currentWeight }
-          : c
-      ));
-
-      setSuccessMsg('Gewicht erfolgreich gespeichert!');
-      setTimeout(() => setSuccessMsg(''), 3000);
-    } catch {
-      setErrorMsg('Gewicht konnte nicht gespeichert werden.');
-    }
-  };
-
   const selectedCat = cats.find(c => c.id.toString() === selectedCatId);
   const currentWeight = selectedCat?.currentWeight !== null && selectedCat?.currentWeight !== undefined
     ? selectedCat.currentWeight.toFixed(2)
@@ -175,21 +138,82 @@ const Dashboard = () => {
     ? (weightHistory.reduce((acc, curr) => acc + curr.weight, 0) / weightHistory.length).toFixed(2)
     : '-';
 
+  const moodPool = [
+    { mood: 'Verspielt', icon: '😻', hint: '5 Minuten Extra-Spielzeit mit Federangel.' },
+    { mood: 'Kuschelmodus', icon: '😺', hint: 'Ruhige Streicheleinheit und danach ein Mini-Spiel.' },
+    { mood: 'Jagdlaune', icon: '🐯', hint: 'Heute passen Suchspiele mit Snacks perfekt.' },
+    { mood: 'Zen-Katze', icon: '🐈', hint: 'Sanfte Aktivierung mit langsamen Bewegungsreizen.' },
+  ];
+
+  const moodToday = moodPool[new Date().getDay() % moodPool.length];
+
+  const sortedWeightHistory = [...weightHistory].sort((a, b) => new Date(a.date) - new Date(b.date));
+  const weightTrendTip = (() => {
+    if (sortedWeightHistory.length < 2) return null;
+
+    const latest = sortedWeightHistory.at(-1);
+    const previous = sortedWeightHistory.at(-2);
+    const latestWeight = Number(latest?.weight);
+    const previousWeight = Number(previous?.weight);
+
+    if (Number.isNaN(latestWeight) || Number.isNaN(previousWeight)) return null;
+
+    const gainKg = latestWeight - previousWeight;
+    if (gainKg <= 0) return null;
+
+    const gainedGrams = Math.round(gainKg * 1000);
+    const latestDate = new Date(latest.date);
+    const previousDate = new Date(previous.date);
+    const diffInDays = Math.max(1, Math.round((latestDate - previousDate) / (1000 * 60 * 60 * 24)));
+
+    const shortWindowDays = 7;
+    const smallGainThresholdGrams = 120;
+    const fluctuationRange = 'ca. 1-3%';
+    const fluctuationExample = 'etwa 40-120 g bei einer 4-kg-Katze';
+
+    const thirdLatest = sortedWeightHistory.at(-3);
+    const hasConsistentRise = thirdLatest
+      ? latestWeight > previousWeight && previousWeight > Number(thirdLatest.weight)
+      : false;
+
+    if (diffInDays <= shortWindowDays && gainedGrams <= smallGainThresholdGrams) {
+      return {
+        variant: 'analysis-neutral',
+        title: 'Kleine Zunahme - erstmal ruhig bleiben',
+        text: `In einer Woche und bei nur ${gainedGrams} g Plus kann das noch normal sein. Das Gewicht schwankt im Tagesverlauf durch Futter, Wasser und Verdauung oft um ${fluctuationRange} (${fluctuationExample}). Am besten immer auf derselben Waage und zur gleichen Uhrzeit einmal pro Woche wiegen und den Verlauf 1-2 Wochen weiter beobachten.`
+      };
+    }
+
+    if (hasConsistentRise) {
+      return {
+        variant: 'analysis-warning',
+        title: 'Gewicht steigt gerade kontinuierlich',
+        text: `Es gab zuletzt wiederholt Zunahmen (aktuell +${gainedGrams} g). Bitte einmal pro Woche zur gleichen Uhrzeit wiegen, Futterportionen und Leckerlis prüfen und mehr Aktivität einbauen. Wenn der Trend anhält, tierärztlich abklären lassen.`
+      };
+    }
+
+    return {
+      variant: 'analysis-warning',
+      title: 'Leichte Gewichtszunahme erkannt',
+      text: `Zuletzt ging das Gewicht um ${gainedGrams} g nach oben. Das kann kurzfristig noch im normalen Tagesbereich liegen, deshalb am besten einmal pro Woche und möglichst immer zur gleichen Uhrzeit wiegen. Wenn die Kurve weiter steigt, Futtermenge anpassen und bei Bedarf tierärztlich Rücksprache halten.`
+    };
+  })();
+
   return (
     <AnimatedPage>
       {errorMsg && (
-        <div className="card" style={{ marginBottom: '1rem', borderColor: 'rgba(239, 68, 68, 0.45)', color: 'var(--danger)' }}>
+        <div className="card alert-error">
           {errorMsg}
         </div>
       )}
-      <div style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'var(--surface-elevated)', padding: '1.5rem', borderRadius: '20px', boxShadow: 'var(--card-shadow)' }}>
+      <div className="card dashboard-hero">
         <div>
-          <h1 style={{ fontSize: '2.5rem', color: 'var(--text-secondary)' }}>
+          <h1 className="dashboard-title">
             Cat Slim Down <span className="floating-comic">👋</span>
           </h1>
-          <p className="page-subtitle" style={{ marginBottom: 0, color: 'var(--text-primary)', fontWeight: 500 }}>Willkommen zurück! Bereit für ein bisschen Training?</p>
+          <p className="dashboard-subtitle">Willkommen zurück! Bereit für ein bisschen Training?</p>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: '280px' }}>
+        <div className="dashboard-hero-illustration">
           <motion.div whileHover={{ scale: 1.03 }} transition={{ duration: 0.2 }}>
             <DrawnCatAnimation />
           </motion.div>
@@ -199,99 +223,73 @@ const Dashboard = () => {
       {cats.length === 0 ? (
         <NoCatsFeedback />
       ) : (
-        <div className="card" style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <h3 style={{ margin: 0 }}>Katze auswählen:</h3>
-          <select 
-            className="input-field" 
-            style={{ width: '250px', margin: 0 }}
-            value={selectedCatId} 
-            onChange={(e) => setSelectedCatId(e.target.value)}
-          >
-            {cats.map(cat => (
-              <option key={cat.id} value={cat.id}>{cat.name}</option>
-            ))}
-          </select>
+        <div className="card selector-card">
+          <div className="selector-profile-preview" aria-hidden={!selectedCat?.photo}>
+            {selectedCat?.photo ? (
+              <img
+                src={selectedCat.photo}
+                alt={selectedCat.name ? `Profilbild von ${selectedCat.name}` : 'Profilbild der ausgewählten Katze'}
+                className="selector-profile-image"
+              />
+            ) : (
+              <div className="selector-profile-placeholder">🐱</div>
+            )}
+          </div>
+
+          <div className="selector-controls">
+            <h3>Katze auswählen:</h3>
+            <select 
+              className="input-field selector-input"
+              value={selectedCatId} 
+              onChange={(e) => setSelectedCatId(e.target.value)}
+            >
+              {cats.map(cat => (
+                <option key={cat.id} value={cat.id}>{cat.name}</option>
+              ))}
+            </select>
+          </div>
         </div>
       )}
 
       {cats.length > 0 && (
         <>
           {selectedCat && (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
-              <motion.div className="card card-hover-lift" whileHover={{ scale: 1.015 }}>
-                <h4 style={{ color: 'var(--text-secondary)' }}>Aktuelles Gewicht</h4>
+            <div className="kpi-grid">
+              <motion.div className="card card-hover-lift kpi-card" whileHover={{ scale: 1.015 }}>
+                <h4>Aktuelles Gewicht</h4>
                 <h2>{currentWeight} kg</h2>
               </motion.div>
-              <motion.div className="card card-hover-lift" whileHover={{ scale: 1.015 }}>
-                <h4 style={{ color: 'var(--text-secondary)' }}>Zielgewicht</h4>
+              <motion.div className="card card-hover-lift kpi-card" whileHover={{ scale: 1.015 }}>
+                <h4>Zielgewicht</h4>
                 <h2>{targetWeight} kg</h2>
               </motion.div>
-              <motion.div className="card card-hover-lift" whileHover={{ scale: 1.015 }}>
-                <h4 style={{ color: 'var(--text-secondary)' }}>Durchschnitts-Gewicht</h4>
+              <motion.div className="card card-hover-lift kpi-card" whileHover={{ scale: 1.015 }}>
+                <h4>Durchschnitts-Gewicht</h4>
                 <h2>{avgWeight} kg</h2>
               </motion.div>
             </div>
           )}
 
-          <div className="two-col-layout">
-            <div className="card" style={{ height: '400px' }}>
-              <h3>Gewichtsverlauf</h3>
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={weightHistory} margin={{ top: 20, right: 30, left: 0, bottom: 20 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-color)" />
-                  <XAxis dataKey="date" stroke="var(--text-secondary)" tickFormatter={formatDate} />
-                  <YAxis stroke="var(--text-secondary)" domain={['dataMin - 0.5', 'dataMax + 0.5']} />
-                  <Tooltip 
-                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: 'var(--card-shadow)' }}
-                    labelFormatter={(label) => formatDate(label)}
-                    formatter={(value) => [`${value} kg`, 'Gewicht']}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="weight" 
-                    stroke="var(--accent-primary)" 
-                    strokeWidth={3}
-                    activeDot={{ r: 8 }} 
-                    animationDuration={1500}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
+          <div className="card mood-card card-hover-lift">
+            <div className="mood-head">
+              <h3>Mood-Miau</h3>
+              <span className="mood-icon" aria-hidden="true">{moodToday.icon}</span>
             </div>
+            <p className="mood-value">{moodToday.mood}</p>
+            <p className="mood-hint">{moodToday.hint}</p>
+          </div>
 
-            <div className="card" style={{ height: 'max-content' }}>
-              <h3>Neues Gewicht eintragen</h3>
-              <form onSubmit={handleWeightSubmit}>
-                <input 
-                  type="number"
-                  step="0.01"
-                  className="input-field"
-                  placeholder="Gewicht in kg, z.B. 4.5"
-                  value={newWeight}
-                  onChange={(e) => setNewWeight(e.target.value)}
-                  required
-                />
-                <input
-                  type="date"
-                  className="input-field"
-                  value={newWeightDate}
-                  onChange={(e) => setNewWeightDate(e.target.value)}
-                  required
-                />
-                <p style={{ marginTop: '-0.4rem', marginBottom: '0.8rem', color: 'var(--text-secondary)', fontSize: '0.82rem' }}>
-                  Hinweis: Rückdatierte Einträge sind erlaubt.
-                </p>
-                <button type="submit" className="btn-primary" style={{ width: '100%' }}>Gewicht speichern</button>
-              </form>
-              {successMsg && (
-                <motion.p 
-                  initial={{ opacity: 0, y: 10 }} 
-                  animate={{ opacity: 1, y: 0 }} 
-                  style={{ color: 'var(--accent-primary)', marginTop: '1rem', fontWeight: 500 }}
-                >
-                  {successMsg}
-                </motion.p>
-              )}
+          {weightTrendTip && (
+            <div className={`card analysis-card ${weightTrendTip.variant}`}>
+              <h3>{weightTrendTip.title}</h3>
+              <p>{weightTrendTip.text}</p>
             </div>
+          )}
+
+          <div className="paw-separator" aria-hidden="true">🐾 🐾 🐾</div>
+
+          <div className="card form-card">
+            <Link to="/stats" className="btn-primary btn-block">Zur Statistik & Gewicht eintragen</Link>
           </div>
         </>
       )}

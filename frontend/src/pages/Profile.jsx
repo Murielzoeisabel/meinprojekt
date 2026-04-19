@@ -24,25 +24,19 @@ const HUMAN_AVATAR_PRESETS = [
 ];
 
 const Profile = () => {
-  const [name, setName] = useState('Katzenfreund');
+  const [name, setName] = useState(() => {
+    const storedName = localStorage.getItem(PROFILE_NAME_KEY);
+    return storedName && storedName.trim() ? storedName.trim() : 'Katzenfreund';
+  });
   const [email, setEmail] = useState('katze@beispiel.de');
-  const [profileImage, setProfileImage] = useState(HUMAN_AVATAR_PRESETS[0]);
+  const [profileImage, setProfileImage] = useState(() => {
+    const storedProfileImage = localStorage.getItem(PROFILE_IMAGE_KEY);
+    return storedProfileImage && storedProfileImage.trim() ? storedProfileImage : HUMAN_AVATAR_PRESETS[0];
+  });
   const [cats, setCats] = useState([]);
   const [selectedCatId, setSelectedCatId] = useState('');
   const [weights, setWeights] = useState([]);
   const [saveMessage, setSaveMessage] = useState('');
-
-  useEffect(() => {
-    const storedName = localStorage.getItem(PROFILE_NAME_KEY);
-    if (storedName && storedName.trim()) {
-      setName(storedName.trim());
-    }
-
-    const storedProfileImage = localStorage.getItem(PROFILE_IMAGE_KEY);
-    if (storedProfileImage && storedProfileImage.trim()) {
-      setProfileImage(storedProfileImage);
-    }
-  }, []);
 
   useEffect(() => {
     getCats().then((data) => {
@@ -205,7 +199,7 @@ const Profile = () => {
       <div className="card" style={{ maxWidth: '500px' }}>
         <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           <div>
-            <label style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Profilbild</label>
+            <label htmlFor="profile-image-upload" style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Profilbild</label>
             <p style={{ marginTop: '0.25rem', marginBottom: '0.75rem', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
               Wähle ein Icon oder lade ein eigenes Bild hoch.
             </p>
@@ -229,7 +223,7 @@ const Profile = () => {
               ))}
             </div>
 
-            <input type="file" accept="image/*" onChange={handleAvatarUpload} className="input-field" style={{ marginBottom: '0.6rem' }} />
+            <input id="profile-image-upload" type="file" accept="image/*" onChange={handleAvatarUpload} className="input-field" style={{ marginBottom: '0.6rem' }} />
             {profileImage && (
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                 <img src={profileImage} alt="Aktuelles Profilbild" style={{ width: '56px', height: '56px', borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--accent-primary)' }} />
@@ -238,12 +232,12 @@ const Profile = () => {
             )}
           </div>
           <div>
-            <label style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Dein Name</label>
-            <input type="text" className="input-field" value={name} onChange={e => setName(e.target.value)} style={{ marginBottom: 0 }} />
+            <label htmlFor="profile-name" style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Dein Name</label>
+            <input id="profile-name" type="text" className="input-field" value={name} onChange={e => setName(e.target.value)} style={{ marginBottom: 0 }} />
           </div>
           <div>
-            <label style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>E-Mail Adresse</label>
-            <input type="email" className="input-field" value={email} onChange={e => setEmail(e.target.value)} style={{ marginBottom: 0 }} />
+            <label htmlFor="profile-email" style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>E-Mail Adresse</label>
+            <input id="profile-email" type="email" className="input-field" value={email} onChange={e => setEmail(e.target.value)} style={{ marginBottom: 0 }} />
           </div>
           <button type="submit" className="btn-primary" style={{ marginTop: '1rem', width: '100%' }}>Speichern</button>
           {saveMessage && (
@@ -262,8 +256,9 @@ const Profile = () => {
           <NoCatsFeedback compact />
         ) : (
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
-            <label style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Katze:</label>
+            <label htmlFor="profile-cat-select" style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Katze:</label>
             <select
+              id="profile-cat-select"
               className="input-field"
               style={{ width: '260px', marginBottom: 0 }}
               value={selectedCatId}

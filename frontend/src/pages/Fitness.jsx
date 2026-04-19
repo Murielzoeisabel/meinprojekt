@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import AnimatedPage from '../components/AnimatedPage';
 import { motion } from 'framer-motion';
 import { getCats, addCalories } from '../services/api';
-import NoCatsFeedback from '../components/NoCatsFeedback';
 
 void motion;
 
@@ -24,6 +23,7 @@ const Fitness = () => {
   }, []);
 
   const selectedCat = cats.find(cat => cat.id.toString() === selectedCatId);
+  const hasCats = cats.length > 0;
   
   // Kalorienbasis für 4kg Katze - angepasst after Katzengewicht
   const adjustCalories = (baseCals) => {
@@ -68,7 +68,7 @@ const Fitness = () => {
   const exercises = [
     { 
       id: 'laser',
-      title: 'Laser Pointer Jagd', 
+      title: 'Laserpointer-Jagd', 
       mins: 15, 
       cals: 45, 
       desc: 'Fördert intensive Sprints und schnelle Richtungswechsel.',
@@ -104,7 +104,7 @@ const Fitness = () => {
       mins: 10, 
       cals: 15, 
       desc: 'Mentale Auslastung und leichte Bewegung mit Trick-Training.',
-      tips: 'Tipp: Kurze Sessions (5-10 min), dafür öfter trainieren.'
+      tips: 'Tipp: Kurze Einheiten (5-10 min), dafür öfter trainieren.'
     },
     { 
       id: 'stairs',
@@ -116,7 +116,7 @@ const Fitness = () => {
     },
     { 
       id: 'featherwand',
-      title: 'Feather Wand Sessions', 
+      title: 'Federstab-Einheiten', 
       mins: 15, 
       cals: 50, 
       desc: 'Mit Federn spielen – sehr effektiv bei Sprungtraining.',
@@ -124,7 +124,7 @@ const Fitness = () => {
     },
     { 
       id: 'toys',
-      title: 'Interactive Toys', 
+      title: 'Interaktive Spielzeuge', 
       mins: 12, 
       cals: 30, 
       desc: 'Automatische oder interaktive Spielzeuge für selbstständiges Spiel.',
@@ -520,14 +520,17 @@ const Fitness = () => {
           {errorMsg}
         </div>
       )}
-      <h1>🎾 Fitness & Übungen</h1>
-      <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>
-        Entdecke verschiedene Übungen, um deine Katze fit und gesund zu halten. Hover über eine Karte um die Übung animiert zu sehen!
-      </p>
+      <div className="cat-page-hero">
+        <div>
+          <h1>🎾 Fitness & Übungen</h1>
+          <p className="page-subtitle">
+            Entdecke verschiedene Übungen, um deine Katze fit und gesund zu halten. Fahre über eine Karte, um die Übung animiert zu sehen.
+          </p>
+        </div>
+        <div className="cat-page-hero-art" aria-hidden="true">🐱🏃</div>
+      </div>
 
-      {cats.length === 0 ? (
-        <NoCatsFeedback />
-      ) : (
+      {hasCats ? (
         <div className="card" style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
           <h3 style={{ margin: 0 }}>Katze auswählen:</h3>
           <select
@@ -546,40 +549,53 @@ const Fitness = () => {
             Wähle deine Katze aus, um den exakten Kalorienverbrauch pro Übung zu sehen.
           </p>
         </div>
+      ) : (
+        <div
+          className="card"
+          style={{ marginBottom: '2rem', borderColor: 'rgba(255, 122, 69, 0.4)', background: 'rgba(255, 122, 69, 0.1)' }}
+        >
+          <h3 style={{ margin: '0 0 0.4rem 0' }}>Übungen sind schon nutzbar</h3>
+          <p style={{ margin: 0, color: 'var(--text-secondary)' }}>
+            Du kannst alle Fitnessübungen bereits ansehen und durchführen. Die Kalorienangaben und das Speichern im Tracker
+            werden aktiviert, sobald mindestens eine Katze hinterlegt ist.
+          </p>
+        </div>
       )}
-      {cats.length > 0 && (
-        <>
-          {quickAddMessage && (
-            <p style={{ marginTop: '-1rem', marginBottom: '1.2rem', color: 'var(--accent-primary)', fontWeight: 600 }}>
-              {quickAddMessage}
-            </p>
-          )}
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '2rem' }}>
-            {exercises.map((ex, i) => (
-              <motion.div
-                key={i}
-                onMouseEnter={() => setHoveredCard(i)}
-                onMouseLeave={() => setHoveredCard(null)}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.1 }}
-                whileHover={{
-                  scale: 1.08,
-                  boxShadow: '0 20px 50px rgba(159, 203, 69, 0.18)',
-                  y: -10
-                }}
-                className="card"
-                style={{
-                  height: '100%',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  position: 'relative',
-                  overflow: 'hidden',
-                  cursor: 'pointer',
-                  transition: 'all 0.3s ease'
-                }}
-              >
+      <div className="paw-separator" aria-hidden="true">🐾 🐾 🐾</div>
+
+      <>
+        {quickAddMessage && (
+          <p style={{ marginTop: '-1rem', marginBottom: '1.2rem', color: 'var(--accent-primary)', fontWeight: 600 }}>
+            {quickAddMessage}
+          </p>
+        )}
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '2rem' }}>
+          {exercises.map((ex, i) => (
+            <motion.div
+              key={i}
+              onMouseEnter={() => setHoveredCard(i)}
+              onMouseLeave={() => setHoveredCard(null)}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.1 }}
+              whileHover={{
+                scale: 1.08,
+                boxShadow: '0 20px 50px rgba(159, 203, 69, 0.18)',
+                y: -10
+              }}
+              className="card"
+              style={{
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                position: 'relative',
+                overflow: 'hidden',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease'
+              }}
+            >
                 {/* Animated background gradient */}
                 {hoveredCard === i && (
                   <motion.div
@@ -604,9 +620,9 @@ const Fitness = () => {
                     {ex.desc}
                   </p>
 
-                  <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', color: 'var(--accent-primary)', fontWeight: 'bold', fontSize: '0.95rem' }}>
+                  <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', color: 'var(--accent-primary)', fontWeight: 'bold', fontSize: '0.95rem', flexWrap: 'wrap' }}>
                     <span>⏱ {ex.mins} Min</span>
-                    <span>🔥 ~{adjustCalories(ex.cals)} kcal</span>
+                    <span>{hasCats ? `🔥 ~${adjustCalories(ex.cals)} kcal` : '🔥 Kalorienanzeige nach Katzenauswahl'}</span>
                   </div>
 
                   <button
@@ -616,7 +632,7 @@ const Fitness = () => {
                     disabled={!selectedCatId}
                     style={{ marginBottom: '1rem', width: '100%' }}
                   >
-                    Schnell hinzufügen: -{adjustCalories(ex.cals)} kcal
+                    {hasCats ? `Schnell hinzufügen: -${adjustCalories(ex.cals)} kcal` : 'Katze anlegen, um Kalorien zu speichern'}
                   </button>
 
                   <p
@@ -653,35 +669,36 @@ const Fitness = () => {
                     {getExerciseAnimation(ex.id, hoveredCard === i)}
                   </div>
                 </div>
-              </motion.div>
-            ))}
-          </div>
+            </motion.div>
+          ))}
+        </div>
+
+        <div className="paw-separator" aria-hidden="true">🐾 🐾 🐾</div>
 
           {/* Info Box */}
-          <motion.div
-            style={{
-              marginTop: '3rem',
-              background: 'var(--surface-color)',
-              border: '2px solid var(--accent-primary)',
-              borderRadius: '16px',
-              padding: '1.5rem',
-              color: 'var(--text-secondary)'
-            }}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-          >
-            <h3 style={{ color: 'var(--accent-primary)', marginTop: 0 }}>💡 Fitness-Tipps für Katzen</h3>
-            <ul style={{ margin: '1rem 0', paddingLeft: '1.5rem' }}>
-              <li>Starte mit 3-4 Trainingseinheiten pro Woche</li>
-              <li>Kombiniere verschiedene Übungen für maximale Abwechslung</li>
-              <li>Trainiere am besten morgens oder abends (natürliche Aktivitätszeiten)</li>
-              <li>Achte auf ausreichend Wasser und Ruhepausen</li>
-              <li>Nutze das Fitness-Tracking, um Fortschritte zu verfolgen 📊</li>
-            </ul>
-          </motion.div>
-        </>
-      )}
+        <motion.div
+          style={{
+            marginTop: '3rem',
+            background: 'var(--surface-color)',
+            border: '2px solid var(--accent-primary)',
+            borderRadius: '16px',
+            padding: '1.5rem',
+            color: 'var(--text-secondary)'
+          }}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+        >
+          <h3 style={{ color: 'var(--accent-primary)', marginTop: 0 }}>💡 Fitness-Tipps für Katzen</h3>
+          <ul style={{ margin: '1rem 0', paddingLeft: '1.5rem' }}>
+            <li>Starte mit 3-4 Trainingseinheiten pro Woche</li>
+            <li>Kombiniere verschiedene Übungen für maximale Abwechslung</li>
+            <li>Trainiere am besten morgens oder abends (natürliche Aktivitätszeiten)</li>
+            <li>Achte auf ausreichend Wasser und Ruhepausen</li>
+            <li>Nutze das Fitness-Tracking, um Fortschritte zu verfolgen 📊</li>
+          </ul>
+        </motion.div>
+      </>
     </AnimatedPage>
   );
 };
