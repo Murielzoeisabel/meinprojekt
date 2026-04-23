@@ -1,14 +1,14 @@
 "use client";
 
-import { useRouter } from 'next/navigation';
+import { useNavigate } from 'react-router-dom';
 
 export default function CatSelector({ cats, selectedId }: { cats: any[], selectedId: number }) {
-  const router = useRouter();
+  const navigate = useNavigate();
 
   return (
     <select 
       value={selectedId}
-      onChange={(e) => router.push(`/?catId=${e.target.value}`)}
+      onChange={(e) => navigate(`/?catId=${e.target.value}`)}
       className="p-2 border-2 border-green-500 rounded-lg text-green-800 bg-white font-medium cursor-pointer focus:outline-none focus:ring-2 focus:ring-green-400"
     >
       {cats.map(cat => (

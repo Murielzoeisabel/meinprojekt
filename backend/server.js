@@ -1,14 +1,24 @@
+require('dotenv').config();
+
 const express = require('express');
 const cors = require('cors');
+const cookieParser = require('cookie-parser');
 const fs = require('fs');
 const path = require('path');
 const createCatsRouter = require('./routes/cats');
+const createAuthRouter = require('./routes/auth');
+const authenticate = require('./middleware/authenticate');
 const prisma = require('./prisma/client');
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3001;
+const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || 'http://localhost:5173';
 
-app.use(cors());
+app.use(cors({
+  origin: FRONTEND_ORIGIN,
+  credentials: true
+}));
+app.use(cookieParser());
 app.use(express.json({ limit: '8mb' }));
 
 const COMMUNITY_DATA_PATH = path.join(__dirname, 'data', 'community.json');
@@ -330,7 +340,11 @@ const communityData = readCommunityData();
 let communityPosts = [...communityData.posts];
 let communityMessages = [...communityData.messages];
 
-app.use('/api/cats', createCatsRouter({
+app.use('/api/auth', createAuthRouter({
+  sendApiError
+}));
+
+app.use('/api/cats', authenticate, createCatsRouter({
   parsePositiveInt,
   sendApiError,
   validateCatPayload,
@@ -338,6 +352,7 @@ app.use('/api/cats', createCatsRouter({
 }));
 
 // --- API ROUTES: WEIGHTS ---
+app.use('/api/weights', authenticate);
 app.get('/api/weights/:catId', async (req, res) => {
   try {
     const catId = parsePositiveInt(req.params.catId);
@@ -345,7 +360,10 @@ app.get('/api/weights/:catId', async (req, res) => {
       return res.status(400).json({ error: 'Ungueltige Cat-ID.' });
     }
 
-    const cat = await prisma.cat.findUnique({ where: { id: catId }, select: { id: true } });
+    const cat = await prisma.cat.findFirst({
+      where: { id: catId, userId: req.user.userId },
+      select: { id: true }
+    });
     if (!cat) {
       return res.status(404).json({ error: 'Cat nicht gefunden.' });
     }
@@ -375,7 +393,10 @@ app.post('/api/weights', async (req, res) => {
       return res.status(400).json({ error: 'Ungueltige Cat-ID.' });
     }
 
-    const cat = await prisma.cat.findUnique({ where: { id }, select: { id: true } });
+    const cat = await prisma.cat.findFirst({
+      where: { id, userId: req.user.userId },
+      select: { id: true }
+    });
     if (!cat) {
       return res.status(404).json({ error: 'Cat nicht gefunden.' });
     }
@@ -423,6 +444,7 @@ app.post('/api/weights', async (req, res) => {
 });
 
 // --- API ROUTES: CALORIES ---
+app.use('/api/calories', authenticate);
 app.get('/api/calories/:catId', async (req, res) => {
   try {
     const catId = parsePositiveInt(req.params.catId);
@@ -430,7 +452,10 @@ app.get('/api/calories/:catId', async (req, res) => {
       return res.status(400).json({ error: 'Ungueltige Cat-ID.' });
     }
 
-    const cat = await prisma.cat.findUnique({ where: { id: catId }, select: { id: true } });
+    const cat = await prisma.cat.findFirst({
+      where: { id: catId, userId: req.user.userId },
+      select: { id: true }
+    });
     if (!cat) {
       return res.status(404).json({ error: 'Cat nicht gefunden.' });
     }
@@ -464,7 +489,10 @@ app.post('/api/calories', async (req, res) => {
       return res.status(400).json({ error: 'Ungueltige Cat-ID.' });
     }
 
-    const cat = await prisma.cat.findUnique({ where: { id }, select: { id: true } });
+    const cat = await prisma.cat.findFirst({
+      where: { id, userId: req.user.userId },
+      select: { id: true }
+    });
     if (!cat) {
       return res.status(404).json({ error: 'Cat nicht gefunden.' });
     }
@@ -532,6 +560,7 @@ app.post('/api/calories', async (req, res) => {
 });
 
 // --- API ROUTES: COMMUNITY ---
+app.use('/api/community', authenticate);
 app.get('/api/community/posts', async (req, res) => {
   try {
     const posts = await prisma.communityPost.findMany({
@@ -562,6 +591,7 @@ app.post('/api/community/posts', async (req, res) => {
 
     const createdPost = await prisma.communityPost.create({
       data: {
+        userId: req.user.userId,
         author: String(author).trim(),
         text: String(text).trim(),
         photo: photo && String(photo).trim()
@@ -592,7 +622,10 @@ app.delete('/api/community/posts/:id', async (req, res) => {
       return res.status(400).json({ error: 'Ungueltige Post-ID.' });
     }
 
-    const existing = await prisma.communityPost.findUnique({ where: { id }, select: { id: true } });
+    const existing = await prisma.communityPost.findFirst({
+      where: { id, userId: req.user.userId },
+      select: { id: true }
+    });
     if (!existing) {
       return res.status(404).json({ error: 'Post nicht gefunden.' });
     }
@@ -670,6 +703,7 @@ app.post('/api/community/messages', async (req, res) => {
 
     const createdMessage = await prisma.communityMessage.create({
       data: {
+        userId: req.user.userId,
         userName: user && String(user).trim() ? String(user).trim() : 'Du',
         avatar: avatar && String(avatar).trim() ? String(avatar).trim() : null,
         text: String(text).trim()

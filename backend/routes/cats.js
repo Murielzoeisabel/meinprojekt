@@ -1,4 +1,5 @@
 const express = require('express');
+const bcrypt = require('bcrypt');
 const prisma = require('../prisma/client');
 
 const createCatsRouter = ({
@@ -14,6 +15,11 @@ const createCatsRouter = ({
     MITTEL: 'mittel',
     GROSS: 'gross'
   };
+
+  const getOwnedCatWhere = (id, userId) => ({
+    id,
+    userId
+  });
 
   const resolveCatOwnerId = async (requestedUserId) => {
     if (requestedUserId !== undefined) {
@@ -44,7 +50,8 @@ const createCatsRouter = ({
       update: {},
       create: {
         email: 'default@cat-slim-down.local',
-        name: 'Default User'
+        name: 'Default User',
+        passwordHash: await bcrypt.hash('default-user-only', 12)
       },
       select: { id: true }
     });
@@ -54,23 +61,7 @@ const createCatsRouter = ({
 
   router.get('/', async (req, res) => {
     try {
-      const { userId } = req.query;
-      let where;
-
-      if (userId !== undefined) {
-        const parsedUserId = parsePositiveInt(userId);
-        if (parsedUserId === null) {
-          return sendApiError(
-            res,
-            400,
-            'INVALID_QUERY_USER_ID',
-            'Query-Parameter "userId" muss eine positive Ganzzahl sein.',
-            { field: 'userId' }
-          );
-        }
-
-        where = { userId: parsedUserId };
-      }
+      const where = { userId: req.user.userId };
 
       const catsFromDatabase = await prisma.cat.findMany({
         where,
@@ -108,26 +99,8 @@ const createCatsRouter = ({
         return sendApiError(res, 400, 'INVALID_CAT_ID', 'Pfadparameter "id" muss eine positive Ganzzahl sein.', { field: 'id' });
       }
 
-      const { userId } = req.query;
-      const where = { id };
-
-      if (userId !== undefined) {
-        const parsedUserId = parsePositiveInt(userId);
-        if (parsedUserId === null) {
-          return sendApiError(
-            res,
-            400,
-            'INVALID_QUERY_USER_ID',
-            'Query-Parameter "userId" muss eine positive Ganzzahl sein.',
-            { field: 'userId' }
-          );
-        }
-
-        where.userId = parsedUserId;
-      }
-
       const cat = await prisma.cat.findFirst({
-        where,
+        where: getOwnedCatWhere(id, req.user.userId),
         include: {
           weightEntries: {
             orderBy: { date: 'asc' }
@@ -160,9 +133,15 @@ const createCatsRouter = ({
         return sendApiError(res, 400, validationError.code, validationError.message, validationError.details);
       }
 
-      const parsedUserId = await resolveCatOwnerId(req.body.userId);
-      if (parsedUserId === null) {
-        return sendApiError(res, 400, 'INVALID_USER_ID', 'Feld "userId" muss eine positive Ganzzahl sein.', { field: 'userId' });
+      if (req.body.userId !== undefined) {
+        const parsedUserId = parsePositiveInt(req.body.userId);
+        if (parsedUserId === null) {
+          return sendApiError(res, 400, 'INVALID_USER_ID', 'Feld "userId" muss eine positive Ganzzahl sein.', { field: 'userId' });
+        }
+
+        if (parsedUserId !== req.user.userId) {
+          return sendApiError(res, 403, 'FORBIDDEN', 'Auf diesen Benutzer kann nicht zugegriffen werden.');
+        }
       }
 
       const normalizedBreed = req.body.breed || 'Mischling';
@@ -180,7 +159,7 @@ const createCatsRouter = ({
 
       const createdCat = await prisma.cat.create({
         data: {
-          userId: parsedUserId,
+          userId: req.user.userId,
           name,
           age: req.body.age !== undefined ? Number(req.body.age) : null,
           breed: normalizedBreed,
@@ -224,7 +203,9 @@ const createCatsRouter = ({
         return sendApiError(res, 400, validationError.code, validationError.message, validationError.details);
       }
 
-      const existingCat = await prisma.cat.findUnique({ where: { id } });
+      const existingCat = await prisma.cat.findFirst({
+        where: getOwnedCatWhere(id, req.user.userId)
+      });
       if (!existingCat) {
         return sendApiError(res, 404, 'CAT_NOT_FOUND', `Keine Cat mit id=${id} gefunden.`);
       }
@@ -256,16 +237,11 @@ const createCatsRouter = ({
           return sendApiError(res, 400, 'INVALID_USER_ID', 'Feld "userId" muss eine positive Ganzzahl sein.', { field: 'userId' });
         }
 
-        const targetUser = await prisma.user.findUnique({
-          where: { id: parsedUserId },
-          select: { id: true }
-        });
-
-        if (!targetUser) {
-          return sendApiError(res, 400, 'INVALID_USER_ID', 'Feld "userId" verweist auf keinen existierenden User.', { field: 'userId' });
+        if (parsedUserId !== req.user.userId) {
+          return sendApiError(res, 403, 'FORBIDDEN', 'Auf diesen Benutzer kann nicht zugegriffen werden.');
         }
 
-        nextUserId = targetUser.id;
+        nextUserId = req.user.userId;
       }
 
       const updatedCat = await prisma.cat.update({
@@ -310,7 +286,9 @@ const createCatsRouter = ({
         return sendApiError(res, 400, 'INVALID_CAT_ID', 'Pfadparameter "id" muss eine positive Ganzzahl sein.', { field: 'id' });
       }
 
-      const existingCat = await prisma.cat.findUnique({ where: { id } });
+      const existingCat = await prisma.cat.findFirst({
+        where: getOwnedCatWhere(id, req.user.userId)
+      });
       if (!existingCat) {
         return sendApiError(res, 404, 'CAT_NOT_FOUND', `Keine Cat mit id=${id} gefunden.`);
       }
@@ -332,8 +310,8 @@ const createCatsRouter = ({
         return sendApiError(res, 400, 'INVALID_CAT_ID', 'Pfadparameter "id" muss eine positive Ganzzahl sein.', { field: 'id' });
       }
 
-      const cat = await prisma.cat.findUnique({
-        where: { id },
+      const cat = await prisma.cat.findFirst({
+        where: getOwnedCatWhere(id, req.user.userId),
         include: {
           weightEntries: {
             orderBy: { date: 'asc' }
@@ -366,7 +344,10 @@ const createCatsRouter = ({
         return sendApiError(res, 400, 'INVALID_CAT_ID', 'Pfadparameter "id" muss eine positive Ganzzahl sein.', { field: 'id' });
       }
 
-      const catExists = await prisma.cat.findUnique({ where: { id }, select: { id: true } });
+      const catExists = await prisma.cat.findFirst({
+        where: getOwnedCatWhere(id, req.user.userId),
+        select: { id: true }
+      });
       if (!catExists) {
         return sendApiError(res, 404, 'CAT_NOT_FOUND', `Keine Cat mit id=${id} gefunden.`);
       }

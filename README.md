@@ -322,3 +322,26 @@ User, Cats, Gewichtseinträge und Community-Posts.
 Redis wäre für kurzlebige Daten wie Sessions, Caching-Ergebnisse oder temporäre Zähler sinnvoll, da diese Daten schnell verfügbar sein müssen, aber nicht dauerhaft gespeichert werden.
 
 Für Bilder und größere Uploads ist langfristig ein Cloud Object Store wie S3 geeigneter, damit die Datenbank entlastet wird und sich auf relationale Daten konzentrieren kann.
+
+# Studio Session 5
+
+# Lücken in der API
+
+Im aktuellen Stand sind die Cats-Endpunkte ohne Login/Token aufrufbar. Ein anonymer Nutzer kann daher Dinge tun, die er nicht dürfte:
+
+1. Er kann mit GET /api/cats alle Katzen-Datensätze aller Nutzer auslesen (inklusive Gewichtsverläufe), sobald kein userId-Filter gesetzt ist.
+2. Er kann mit GET /api/cats/:id gezielt fremde Datensätze per ID abrufen und durch Ausprobieren von IDs Daten anderer Nutzer enumerieren.
+3. Er kann mit DELETE /api/cats/:id beliebige Katzen löschen, auch wenn sie einem anderen Nutzer gehören, da keine Authentifizierung und keine Besitzprüfung erfolgt.
+
+# Authenticate-Middleware
+
+Wenn jemand den JWT-Payload manuell verändert, zum Beispiel die userId auf eine fremde ID setzt, funktioniert das nicht. Der JWT ist serverseitig mit dem Secret aus der .env-Datei signiert. Sobald der Payload verändert wird, passt die Signatur nicht mehr zum Token, und jwt.verify lehnt ihn ab. Die Middleware setzt req.user deshalb nur dann, wenn der Token unverändert und echt signiert ist; sonst kommt direkt 401.
+
+# OWASP-Audit
+
+| OWASP-Punkt | Status | Code-Stelle | Fix / Hinweis |
+| --- | --- | --- | --- |
+| A01 Broken Access Control | teilweise abgedeckt | [backend/server.js](backend/server.js), [backend/routes/auth.js](backend/routes/auth.js) | Cats, Weights, Calories und Community sind authentifiziert; Community-Posts werden jetzt zusätzlich nur vom Besitzer gelöscht. |
+| A02 Cryptographic Failures | abgedeckt | [backend/routes/auth.js](backend/routes/auth.js), [backend/prisma/schema.prisma](backend/prisma/schema.prisma) | Passwörter werden mit bcrypt gehasht und der JWT-Secret kommt aus `.env`. |
+| A03 Injection | abgedeckt / beobachtbar | [backend/server.js](backend/server.js) | Runtime-Zugriffe laufen über Prisma, es gibt keine rohe SQL-Konkatenation; XSS-Risiko bleibt clientseitig davon abhängig, wie Daten gerendert werden. |
+| A07 Authentication Failures | verbessert | [backend/routes/auth.js](backend/routes/auth.js) | Einheitliche Login-Fehlermeldung bleibt erhalten; zusätzlich gibt es nun stärkere Passwortregeln und ein einfaches Rate-Limit für Login-Versuche. |

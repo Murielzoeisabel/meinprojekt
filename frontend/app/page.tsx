@@ -1,13 +1,14 @@
 ﻿import WeightForm from './components/WeightForm';
+import authFetch from '../authFetch';
 
 async function getCats() {
-  const res = await fetch('http://localhost:3000/api/cats', { cache: 'no-store' });
+  const res = await authFetch('/cats', { cache: 'no-store' });
   if (!res.ok) throw new Error('Fehler beim Laden der Katzen');
   return res.json();
 }
 
 async function getCatWeightData(id: number) {
-  const res = await fetch(`http://localhost:3000/api/cats/${id}/weight`, { cache: 'no-store' });
+  const res = await authFetch(`/cats/${id}/weightentries`, { cache: 'no-store' });
   if (!res.ok) throw new Error('Fehler beim Laden der Gewichtsdaten');
   return res.json();
 }

@@ -12,6 +12,7 @@ const FloatingChat = () => {
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const endRef = useRef(null);
+  const replyTimeoutRef = useRef(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -23,15 +24,28 @@ const FloatingChat = () => {
     e.preventDefault();
     if (!input.trim()) return;
 
-    setMessages([...messages, { text: input, sender: 'user' }]);
+    const userMessage = input.trim();
+    setMessages((prev) => [...prev, { text: userMessage, sender: 'user' }]);
     setInput('');
     setIsTyping(true);
 
-    setTimeout(() => {
+    if (replyTimeoutRef.current) {
+      clearTimeout(replyTimeoutRef.current);
+    }
+
+    replyTimeoutRef.current = setTimeout(() => {
       setIsTyping(false);
-      setMessages(prev => [...prev, { text: "Gute Frage! Als KI rate ich dir, langsam vorzugehen. Ein Gewichtsverlust von 1-2% pro Woche ist ideal. Hochwertiges Nassfutter und etwas Bewegung helfen super!", sender: 'ai' }]);
+      setMessages((prev) => [...prev, { text: "Gute Frage! Als KI rate ich dir, langsam vorzugehen. Ein Gewichtsverlust von 1-2% pro Woche ist ideal. Hochwertiges Nassfutter und etwas Bewegung helfen super!", sender: 'ai' }]);
     }, 1500);
   };
+
+  useEffect(() => {
+    return () => {
+      if (replyTimeoutRef.current) {
+        clearTimeout(replyTimeoutRef.current);
+      }
+    };
+  }, []);
 
   return (
     <>

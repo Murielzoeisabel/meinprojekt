@@ -1,7 +1,7 @@
 "use client"; // Client Component
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation'; // Wichtig: next/navigation im App Router!
+import authFetch from '../../authFetch';
 
 export default function WeightForm({ catId }: { catId: number }) {
   const [weight, setWeight] = useState('');
@@ -14,7 +14,7 @@ export default function WeightForm({ catId }: { catId: number }) {
     setIsSubmitting(true);
 
     try {
-      const res = await fetch(`http://localhost:3000/api/cats/${catId}/weight`, {
+      const res = await authFetch(`/cats/${catId}/weightentries`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ weight: parseFloat(weight) }),

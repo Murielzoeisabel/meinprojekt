@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import AnimatedPage from '../components/AnimatedPage';
 import { Camera, UploadCloud, AlertTriangle, CheckCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -11,13 +11,26 @@ const FoodAnalyzer = () => {
   const navigate = useNavigate();
   const [analyzing, setAnalyzing] = useState(false);
   const [result, setResult] = useState(null);
+  const analysisTimeoutRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (analysisTimeoutRef.current) {
+        clearTimeout(analysisTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleUpload = () => {
     setAnalyzing(true);
     setResult(null);
 
     // Mock Analyse Dauert
-    setTimeout(() => {
+    if (analysisTimeoutRef.current) {
+      clearTimeout(analysisTimeoutRef.current);
+    }
+
+    analysisTimeoutRef.current = setTimeout(() => {
       setAnalyzing(false);
       setResult({
         healthy: false,
