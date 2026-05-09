@@ -8,3 +8,8 @@ backend/.env
 backend/prisma/dev.db
 backend/prisma/dev.db-journal
 node_modules
+
+# Cypress
+frontend/cypress/screenshots/
+frontend/cypress/videos/
+frontend/cypress-test-results.txt

@@ -531,7 +531,7 @@ const CatList = () => {
           <h1>Deine Katzen</h1>
           <p style={{ color: 'var(--text-secondary)' }}>Verwalte die Profile deiner Lieblinge.</p>
         </div>
-        <button className="btn-primary" onClick={() => setShowAddForm(!showAddForm)}>
+        <button className="btn-primary" onClick={() => setShowAddForm(!showAddForm)} data-cy="add-cat-btn">
           <Plus size={20} /> {showAddForm ? 'Abbrechen' : 'Katze hinzufügen'}
         </button>
       </div>
@@ -577,7 +577,7 @@ const CatList = () => {
             </div>
             <div>
               <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Name</label>
-              <input type="text" className="input-field" value={newCat.name} onChange={e => setNewCat({...newCat, name: e.target.value})} required style={{ marginBottom: 0 }} />
+              <input type="text" className="input-field" data-cy="add-cat-name" value={newCat.name} onChange={e => setNewCat({...newCat, name: e.target.value})} required style={{ marginBottom: 0 }} />
             </div>
             <div>
               <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Alter (Jahre)</label>
@@ -783,7 +783,7 @@ const CatList = () => {
               </div>
             )}
 
-            <button type="submit" className="btn-primary" style={{ padding: '0.75rem 0' }} disabled={isAddSaving}>
+            <button type="submit" className="btn-primary" style={{ padding: '0.75rem 0' }} disabled={isAddSaving} data-cy="add-cat-submit-btn">
               {isAddSaving ? 'Speichert...' : 'Speichern'}
             </button>
           </form>

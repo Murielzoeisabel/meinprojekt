@@ -345,3 +345,43 @@ Wenn jemand den JWT-Payload manuell verändert, zum Beispiel die userId auf eine
 | A02 Cryptographic Failures | abgedeckt | [backend/routes/auth.js](backend/routes/auth.js), [backend/prisma/schema.prisma](backend/prisma/schema.prisma) | Passwörter werden mit bcrypt gehasht und der JWT-Secret kommt aus `.env`. |
 | A03 Injection | abgedeckt / beobachtbar | [backend/server.js](backend/server.js) | Runtime-Zugriffe laufen über Prisma, es gibt keine rohe SQL-Konkatenation; XSS-Risiko bleibt clientseitig davon abhängig, wie Daten gerendert werden. |
 | A07 Authentication Failures | verbessert | [backend/routes/auth.js](backend/routes/auth.js) | Einheitliche Login-Fehlermeldung bleibt erhalten; zusätzlich gibt es nun stärkere Passwortregeln und ein einfaches Rate-Limit für Login-Versuche. |
+
+# Studio Session 6: Testing
+
+# Test-Pyramide für CatSlimDown
+
+Die Testsuite folgt der Test-Pyramide mit drei Ebenen. Unten: viele schnelle Unit-Tests, in der Mitte: Integrationstests, oben: wenige E2E-Tests.
+
+| Ebene | Was testen wir bei uns? | Tool |
+|-------|--------------------------|------|
+| **Unit** | Email-Validierung (isValidEmail), Passwort-Anforderungen (min. 10 Zeichen, Buchstaben + Zahlen), Input-Normalisierung (trim, toLowerCase), Gewichtsberechnung | Vitest |
+| **Integration** | POST /auth/register → User in DB + JWT-Token, POST /auth/login → Authentifizierung, GET /cats?userId=X → nur eigene Katzen, POST /cats → neue Katze speichern, PUT /cats/:id → Katze aktualisieren, DELETE /cats/:id → Katze löschen, GET /cats/:id/weight-entries → Gewichtsverlauf | Vitest |
+| **E2E** | Login-Flow (Register, Login, Session bleibt), neue Katze erstellen im Frontend → im Dashboard sichtbar, Gewichtsverlauf erfassen → Chart aktualisiert sich, Community-Post erstellen | Cypress |
+
+## Zwei kritischste Dinge
+
+Falls diese kaputt gehen, funktioniert das ganze Projekt nicht:
+
+1. **Authentication & JWT-Token**
+   - Problem: Ohne funktionierende Auth kann niemand auf sein Konto/seine Katzen zugreifen
+   - Betroffen: Register, Login, Token-Validierung in Middleware
+   - Impact: App ist komplett unbenutzbar
+
+2. **Datenbank-Persistierung von Cats**
+   - Problem: Wenn Katzen nicht mehr gespeichert/geladen werden, ist das Kernfeature weg
+   - Betroffen: POST /cats, GET /cats, PUT /cats, DELETE /cats
+   - Impact: Nutzerdaten gehen verloren oder sind nicht mehr abrufbar
+
+---
+
+## Zwei Prompt-Iterationen beim Testen
+
+### Iteration 1: Agent generiert Unit Tests
+**Prompt:** "Schreib Vitest Tests für meine `catHealthCalculations.js` - Normalfall, Grenzfall, Fehlerfall"
+
+Der Agent hat mir 39 Tests geschrieben! Aber es gab ein paar Probleme: Age 0 wurde als falsch behandelt, und Floating-Point-Precision. Nach meinen Fixes waren alle Tests grün.
+
+### Iteration 2: Agent schreibt Sad-Path E2E Tests
+**Prompt:** "Schreib Cypress Tests für Fehlerszenarien - falsches Passwort, leere Felder, geschützte Routes"
+
+Der Agent hat 6 Sad-Path Tests generiert und verwendete direkt `data-cy` Attribute. Das ist viel stabiler als CSS-Selektoren!

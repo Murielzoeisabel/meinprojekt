@@ -34,7 +34,7 @@ const Register = () => {
       <h1 id="register-heading" className="auth-title">Neues Konto erstellen</h1>
       <p className="auth-subtitle">Registriere dich mit E-Mail und Passwort.</p>
 
-      {errorMessage && <p className="auth-error" role="alert">{errorMessage}</p>}
+      {errorMessage && <p className="auth-error" role="alert" data-cy="register-error-message">{errorMessage}</p>}
 
       <form className="auth-form" onSubmit={handleSubmit}>
         <label htmlFor="register-email">E-Mail</label>
@@ -44,6 +44,7 @@ const Register = () => {
           type="email"
           autoComplete="email"
           required
+          data-cy="register-email-input"
           value={email}
           onChange={(event) => setEmail(event.target.value)}
         />
@@ -57,12 +58,13 @@ const Register = () => {
           required
           minLength={10}
           pattern="(?=.*[A-Za-z])(?=.*\\d).{10,}"
+          data-cy="register-password-input"
           value={password}
           onChange={(event) => setPassword(event.target.value)}
         />
 
         <div className="auth-actions">
-          <button type="submit" className="btn-primary" disabled={isSubmitting}>
+          <button type="submit" className="btn-primary" disabled={isSubmitting} data-cy="register-submit-btn">
             {isSubmitting ? 'Registrierung...' : 'Registrieren'}
           </button>
         </div>

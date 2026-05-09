@@ -35,7 +35,7 @@ const Login = ({ onLoginSuccess }) => {
       <h1 id="login-heading" className="auth-title">Willkommen zurück</h1>
       <p className="auth-subtitle">Melde dich mit E-Mail und Passwort an.</p>
 
-      {errorMessage && <p className="auth-error" role="alert">{errorMessage}</p>}
+      {errorMessage && <p className="auth-error" role="alert" data-cy="login-error-message">{errorMessage}</p>}
 
       <form className="auth-form" onSubmit={handleSubmit}>
         <label htmlFor="login-email">E-Mail</label>
@@ -45,6 +45,7 @@ const Login = ({ onLoginSuccess }) => {
           type="email"
           autoComplete="email"
           required
+          data-cy="login-email-input"
           value={email}
           onChange={(event) => setEmail(event.target.value)}
         />
@@ -56,12 +57,13 @@ const Login = ({ onLoginSuccess }) => {
           type="password"
           autoComplete="current-password"
           required
+          data-cy="login-password-input"
           value={password}
           onChange={(event) => setPassword(event.target.value)}
         />
 
         <div className="auth-actions">
-          <button type="submit" className="btn-primary" disabled={isSubmitting}>
+          <button type="submit" className="btn-primary" disabled={isSubmitting} data-cy="login-submit-btn">
             {isSubmitting ? 'Anmeldung...' : 'Login'}
           </button>
         </div>
