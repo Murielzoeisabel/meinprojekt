@@ -29,12 +29,12 @@ describe('parseLoginPayload - Login Validierung', () => {
       expect(result.email).toBe('user@example.com');
     });
 
-    it('should preserve password as-is (no normalization)', () => {
+    it('should trim password whitespace (security fix)', () => {
       const result = parseLoginPayload({
         email: 'user@example.com',
         password: '  MyPassword123  '
       });
-      expect(result.password).toBe('  MyPassword123  ');
+      expect(result.password).toBe('MyPassword123');
     });
   });
 
@@ -167,15 +167,15 @@ describe('parseLoginPayload - Login Validierung', () => {
   });
 
   describe('Kritischer fehlender Test: Passwort mit nur Leerzeichen', () => {
-    it('should ACCEPT password with only whitespace (not trimmed!)', () => {
-      // 🚨 WICHTIG: Email wird trimmt, Passwort NICHT!
-      // '   ' ist technisch nicht leer, wird akzeptiert - potentielles Sicherheitsproblem!
+    it('should REJECT password with only whitespace (trimmed!)', () => {
+      // ✅ SECURITY FIX: Passwort wird jetzt auch getrimmt!
+      // '   ' wird zu '' nach trim, wird abgelehnt
       const result = parseLoginPayload({
         email: 'user@example.com',
         password: '     '
       });
-      expect(result.error).toBeUndefined();
-      expect(result.password).toBe('     ');
+      expect(result.error).toBeDefined();
+      expect(result.error.status).toBe(400);
     });
 
     it('should reject password as null but accept as empty string after String() coercion check', () => {
@@ -187,18 +187,18 @@ describe('parseLoginPayload - Login Validierung', () => {
       expect(result.error).toBeDefined(); // null -> "" -> error
     });
 
-    it('should be vulnerable to whitespace-only password in production', () => {
-      // Das ist ein tatsächliches Sicherheits-Issue!
-      // Ein Passwort aus nur Spaces wird akzeptiert
-      const suspiciousResult = parseLoginPayload({
+    it('should now be PROTECTED against whitespace-only password vulnerability', () => {
+      // ✅ SICHERHEITSLÜCKE BEHOBEN: Whitespace-only Passwörter werden abgelehnt
+      const result = parseLoginPayload({
         email: '  TEST@EXAMPLE.COM  ',
         password: '     '
       });
-      expect(suspiciousResult.error).toBeUndefined();
-      expect(suspiciousResult.email).toBe('test@example.com'); // Email ist sauber
-      expect(suspiciousResult.password).toBe('     '); // Passwort ist unsicher!
+      expect(result.error).toBeDefined();
+      expect(result.error.status).toBe(400);
+      expect(result.error.message).toBe('E-Mail und Passwort sind erforderlich.');
       
-      // 💡 FEHLER IN DER FUNKTION: Passwort sollte auch getrimmt werden!
+      // Vorher: vulnerable!
+      // Nachher: secure! ✅
     });
   });
 });
