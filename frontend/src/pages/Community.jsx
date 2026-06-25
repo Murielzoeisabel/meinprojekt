@@ -14,6 +14,7 @@ import {
 void motion;
 
 const REACTION_STATS_KEY = 'community-reaction-stats-v1';
+const SUPER_SWEET_REACTIONS_KEY = 'community-super-sweet-reactions-v1';
 const PROFILE_NAME_KEY = 'cat-slim-down-profile-name';
 const PROFILE_IMAGE_KEY = 'cat-slim-down-profile-image';
 const CHAT_EMOJIS = ['😺', '😻', '🎉', '💪', '👏', '❤️', '🔥', '🥳', '🐾', '👍'];
@@ -31,6 +32,22 @@ const loadReactionStats = () => {
     };
   } catch {
     return { givenLikes: 0, givenThumbs: 0 };
+  }
+};
+
+const loadSuperSweetReactions = () => {
+  try {
+    const raw = localStorage.getItem(SUPER_SWEET_REACTIONS_KEY);
+    if (!raw) return [];
+
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+
+    return parsed
+      .map((value) => Number(value))
+      .filter((value) => Number.isInteger(value) && value > 0);
+  } catch {
+    return [];
   }
 };
 
@@ -80,6 +97,7 @@ const Community = () => {
   const [name, setName] = useState(loadProfileName);
   const [profileImage, setProfileImage] = useState(loadProfileImage);
   const [reactionStats, setReactionStats] = useState(loadReactionStats);
+  const [superSweetReactions, setSuperSweetReactions] = useState(loadSuperSweetReactions);
   const [errorMsg, setErrorMsg] = useState('');
   const [postDraft, setPostDraft] = useState({
     author: '',
@@ -104,6 +122,10 @@ const Community = () => {
   useEffect(() => {
     localStorage.setItem(REACTION_STATS_KEY, JSON.stringify(reactionStats));
   }, [reactionStats]);
+
+  useEffect(() => {
+    localStorage.setItem(SUPER_SWEET_REACTIONS_KEY, JSON.stringify(superSweetReactions));
+  }, [superSweetReactions]);
 
   useEffect(() => {
     const syncProfileImage = () => setProfileImage(loadProfileImage());
@@ -226,9 +248,16 @@ const Community = () => {
   };
 
   const reactToPost = async (postId, type) => {
+    if (type === 'like' && superSweetReactions.includes(postId)) {
+      return;
+    }
+
     try {
       setErrorMsg('');
       await reactToCommunityPost(postId, type);
+      if (type === 'like') {
+        setSuperSweetReactions((prev) => (prev.includes(postId) ? prev : [...prev, postId]));
+      }
       setReactionStats((prev) => ({
         givenLikes: prev.givenLikes + (type === 'like' ? 1 : 0),
         givenThumbs: prev.givenThumbs + (type === 'thumbsUp' ? 1 : 0)
@@ -238,6 +267,8 @@ const Community = () => {
       setErrorMsg('Reaktion konnte nicht gespeichert werden.');
     }
   };
+
+  const isSuperSweetActive = (postId) => superSweetReactions.includes(postId);
 
   const handlePostDraftChange = (field) => (event) => {
     setPostDraft((prev) => ({ ...prev, [field]: event.target.value }));
@@ -542,8 +573,14 @@ const Community = () => {
                 <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
                   <button
                     className="btn-secondary"
-                    style={{ padding: '0.45rem 0.9rem' }}
+                    style={{
+                      padding: '0.45rem 0.9rem',
+                      background: isSuperSweetActive(post.id) ? 'var(--accent-primary)' : undefined,
+                      color: isSuperSweetActive(post.id) ? 'white' : undefined,
+                      borderColor: isSuperSweetActive(post.id) ? 'var(--accent-primary)' : undefined
+                    }}
                     onClick={() => reactToPost(post.id, 'like')}
+                    disabled={isSuperSweetActive(post.id)}
                   >
                     <Cat size={15} /> Super süß ({post.gefaelltMir ?? post.likes ?? 0})
                   </button>

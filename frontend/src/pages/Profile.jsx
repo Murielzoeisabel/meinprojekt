@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import AnimatedPage from '../components/AnimatedPage';
-import { getCats, getWeights } from '../services/api';
+import { changePassword, getCats, getCurrentUser, getWeights, updateProfile } from '../services/api';
 import { Camera } from 'lucide-react';
 import NoCatsFeedback from '../components/NoCatsFeedback';
 
@@ -24,11 +24,9 @@ const HUMAN_AVATAR_PRESETS = [
 ];
 
 const Profile = () => {
-  const [name, setName] = useState(() => {
-    const storedName = localStorage.getItem(PROFILE_NAME_KEY);
-    return storedName && storedName.trim() ? storedName.trim() : 'Katzenfreund';
-  });
-  const [email, setEmail] = useState('katze@beispiel.de');
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [memberSince, setMemberSince] = useState('');
   const [profileImage, setProfileImage] = useState(() => {
     const storedProfileImage = localStorage.getItem(PROFILE_IMAGE_KEY);
     return storedProfileImage && storedProfileImage.trim() ? storedProfileImage : HUMAN_AVATAR_PRESETS[0];
@@ -37,6 +35,45 @@ const Profile = () => {
   const [selectedCatId, setSelectedCatId] = useState('');
   const [weights, setWeights] = useState([]);
   const [saveMessage, setSaveMessage] = useState('');
+  const [passwordForm, setPasswordForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
+  const [passwordMessage, setPasswordMessage] = useState('');
+
+  const formatMemberSince = (value) => {
+    if (!value) return 'Nicht verfügbar';
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return 'Nicht verfügbar';
+
+    return new Intl.DateTimeFormat('de-DE', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    }).format(parsed);
+  };
+
+  useEffect(() => {
+    let cancelled = false;
+
+    getCurrentUser()
+      .then((response) => {
+        if (cancelled) return;
+        const user = response?.user || response || {};
+        setEmail(user.email || '');
+        setMemberSince(formatMemberSince(user.createdAt));
+        const resolvedName = user.name && user.name.trim() ? user.name.trim() : 'Katzenfreund';
+        setName(resolvedName);
+        localStorage.setItem(PROFILE_NAME_KEY, resolvedName);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setEmail('');
+          setMemberSince('Nicht verfügbar');
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     getCats().then((data) => {
@@ -56,11 +93,49 @@ const Profile = () => {
 
   const handleSave = (e) => {
     e.preventDefault();
-    localStorage.setItem(PROFILE_NAME_KEY, name.trim() || 'Katzenfreund');
-    localStorage.setItem(PROFILE_IMAGE_KEY, profileImage);
-    window.dispatchEvent(new Event('profile-updated'));
-    setSaveMessage('Profil erfolgreich gespeichert!');
-    setTimeout(() => setSaveMessage(''), 2500);
+    const trimmedName = name.trim() || 'Katzenfreund';
+
+    updateProfile({ name: trimmedName })
+      .then(() => {
+        localStorage.setItem(PROFILE_NAME_KEY, trimmedName);
+        localStorage.setItem(PROFILE_IMAGE_KEY, profileImage);
+        window.dispatchEvent(new Event('profile-updated'));
+        setSaveMessage('Profil erfolgreich gespeichert!');
+        setTimeout(() => setSaveMessage(''), 2500);
+      })
+      .catch(() => {
+        setSaveMessage('Profil konnte nicht gespeichert werden.');
+        setTimeout(() => setSaveMessage(''), 2500);
+      });
+  };
+
+  const handlePasswordChange = async (e) => {
+    e.preventDefault();
+
+    if (!passwordForm.currentPassword || !passwordForm.newPassword) {
+      setPasswordMessage('Bitte aktuelles und neues Passwort eingeben.');
+      return;
+    }
+
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      setPasswordMessage('Neue Passwörter stimmen nicht überein.');
+      return;
+    }
+
+    try {
+      setPasswordMessage('');
+      await changePassword({
+        currentPassword: passwordForm.currentPassword,
+        newPassword: passwordForm.newPassword
+      });
+
+      setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      setPasswordMessage('Passwort erfolgreich geändert!');
+      setTimeout(() => setPasswordMessage(''), 2500);
+    } catch (error) {
+      const message = error?.data?.error || error?.data?.message || 'Passwort konnte nicht geändert werden.';
+      setPasswordMessage(message);
+    }
   };
 
   const handleAvatarUpload = (e) => {
@@ -234,14 +309,68 @@ const Profile = () => {
           <div>
             <label htmlFor="profile-name" style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Dein Name</label>
             <input id="profile-name" type="text" className="input-field" value={name} onChange={e => setName(e.target.value)} style={{ marginBottom: 0 }} />
+            <p style={{ marginTop: '0.35rem', marginBottom: 0, color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+              Dieser Name wird im Profil und im Chat verwendet.
+            </p>
           </div>
           <div>
             <label htmlFor="profile-email" style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>E-Mail Adresse</label>
-            <input id="profile-email" type="email" className="input-field" value={email} onChange={e => setEmail(e.target.value)} style={{ marginBottom: 0 }} />
+            <input id="profile-email" type="email" className="input-field" value={email} readOnly disabled style={{ marginBottom: 0, opacity: 0.85 }} />
+            <p style={{ marginTop: '0.35rem', marginBottom: 0, color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+              Diese E-Mail stammt aus deiner Registrierung und kann nicht geändert werden.
+            </p>
+          </div>
+          <div>
+            <label htmlFor="profile-member-since" style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Mitglied seit</label>
+            <input id="profile-member-since" type="text" className="input-field" value={memberSince || 'Wird geladen...'} readOnly disabled style={{ marginBottom: 0, opacity: 0.85 }} />
           </div>
           <button type="submit" className="btn-primary" style={{ marginTop: '1rem', width: '100%' }}>Speichern</button>
           {saveMessage && (
             <p style={{ margin: 0, color: 'var(--accent-primary)', fontWeight: 600 }}>{saveMessage}</p>
+          )}
+        </form>
+      </div>
+
+      <div className="card" style={{ maxWidth: '500px', marginTop: '2rem' }}>
+        <h3 style={{ marginTop: 0 }}>Passwort ändern</h3>
+        <form onSubmit={handlePasswordChange} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <div>
+            <label htmlFor="current-password" style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Aktuelles Passwort</label>
+            <input
+              id="current-password"
+              type="password"
+              className="input-field"
+              value={passwordForm.currentPassword}
+              onChange={(event) => setPasswordForm((prev) => ({ ...prev, currentPassword: event.target.value }))}
+              style={{ marginBottom: 0 }}
+            />
+          </div>
+          <div>
+            <label htmlFor="new-password" style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Neues Passwort</label>
+            <input
+              id="new-password"
+              type="password"
+              className="input-field"
+              value={passwordForm.newPassword}
+              onChange={(event) => setPasswordForm((prev) => ({ ...prev, newPassword: event.target.value }))}
+              placeholder="Mindestens 10 Zeichen, Buchstaben und Zahlen"
+              style={{ marginBottom: 0 }}
+            />
+          </div>
+          <div>
+            <label htmlFor="confirm-password" style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Neues Passwort bestätigen</label>
+            <input
+              id="confirm-password"
+              type="password"
+              className="input-field"
+              value={passwordForm.confirmPassword}
+              onChange={(event) => setPasswordForm((prev) => ({ ...prev, confirmPassword: event.target.value }))}
+              style={{ marginBottom: 0 }}
+            />
+          </div>
+          <button type="submit" className="btn-primary" style={{ width: '100%' }}>Passwort speichern</button>
+          {passwordMessage && (
+            <p style={{ margin: 0, color: 'var(--accent-primary)', fontWeight: 600 }}>{passwordMessage}</p>
           )}
         </form>
       </div>

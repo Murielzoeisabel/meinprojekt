@@ -8,6 +8,131 @@ import './Nutrition.css';
 
 void motion;
 
+const GERMAN_LABEL_HINTS = [
+  'zutaten',
+  'zusammensetzung',
+  'analytische bestandteile',
+  'futtermittel',
+  'alleinfuttermittel',
+  'ergänzungsfuttermittel',
+  'protein',
+  'rohprotein',
+  'rohfett',
+  'rohfaser',
+  'feuchtigkeit',
+  'taurin',
+  'mineralstoffe',
+  'vitamine',
+  'deutschland',
+  'hergestellt',
+  'fütterungsempfehlung',
+  'futter',
+  'katze'
+];
+
+const INGREDIENT_INCLUDE_HINTS = [
+  'zutaten',
+  'zusammensetzung',
+  'analytische bestandteile',
+  'rohprotein',
+  'rohfett',
+  'rohfaser',
+  'feuchtigkeit',
+  'taurin',
+  'mineralstoffe',
+  'vitamine',
+  'fleisch',
+  'tierische nebenerzeugnisse',
+  'huhn',
+  'pute',
+  'truthahn',
+  'rind',
+  'lachs',
+  'lamm',
+  'ente',
+  'forelle',
+  'geflügel',
+  '%'
+];
+
+const INGREDIENT_EXCLUDE_HINTS = [
+  'chargennummer',
+  'partie',
+  'batch',
+  'lot',
+  'kennnummer',
+  'herstellernummer',
+  'mindesthaltbar',
+  'mindestens haltbar',
+  'haltbar bis',
+  'aufdruck',
+  'aufbewahren',
+  'kühl',
+  'kühlschrank',
+  'geöffnet',
+  'öffnen',
+  'frisch',
+  'fütterungsempfehlung',
+  'empfehlung',
+  'recommendation',
+  'made in',
+  'ingredients',
+  'composition',
+  'analytical constituents',
+  'complete feed',
+  'complementary feed',
+  'ingrédients',
+  'constituants analytiques',
+  'aliment complet',
+  'aliment complémentaire',
+  'ingredientes',
+  'composición',
+  'componentes analíticos',
+  'ingredienti',
+  'componenti analitici'
+];
+
+const hasAnyHint = (text, hints) => hints.some((hint) => text.includes(hint));
+
+const looksLikeIngredientEntry = (line) => {
+  const text = String(line || '').trim().toLowerCase();
+
+  if (!text) {
+    return false;
+  }
+
+  if (hasAnyHint(text, INGREDIENT_EXCLUDE_HINTS)) {
+    return false;
+  }
+
+  return hasAnyHint(text, INGREDIENT_INCLUDE_HINTS);
+};
+
+const looksLikeGermanLabelLine = (line) => {
+  const text = line.toLowerCase();
+
+  if (!text) {
+    return false;
+  }
+
+  const germanScore = GERMAN_LABEL_HINTS.reduce((score, hint) => score + (text.includes(hint) ? 1 : 0), 0);
+  const germanSignal = germanScore > 0 || /[äöüß]/i.test(text) || /\b(und|mit|ohne|aus|für|von|als|der|die|das)\b/i.test(text);
+
+  return germanSignal;
+};
+
+const normalizeLabelText = (rawText) => rawText
+  .split(/\r?\n/)
+  .map((line) => line.trim())
+  .filter(Boolean)
+  .filter(looksLikeGermanLabelLine)
+  .map((line) => line.replace(/\s+/g, ' '));
+
+const extractGermanLabelText = (rawText) => {
+  const germanLines = normalizeLabelText(rawText);
+  return germanLines.length > 0 ? germanLines.join('\n') : rawText;
+};
+
 const Nutrition = () => {
   const navigate = useNavigate();
   const [labelInput, setLabelInput] = useState('');
@@ -103,6 +228,7 @@ const Nutrition = () => {
       .split(/[,;\n]/)
       .map((item) => item.trim())
       .filter(Boolean)
+      .filter(looksLikeIngredientEntry)
       .map((item) => ({
         name: item,
         flagged: ingredientRiskWords.some((word) => item.toLowerCase().includes(word)),
@@ -194,7 +320,7 @@ const Nutrition = () => {
     setOcrProgress(0);
 
     try {
-      const result = await recognize(file, 'deu+eng', {
+      const result = await recognize(file, 'deu', {
         logger: (message) => {
           if (message.status === 'recognizing text' && typeof message.progress === 'number') {
             setOcrProgress(Math.round(message.progress * 100));
@@ -202,15 +328,18 @@ const Nutrition = () => {
         },
       });
 
-      const extracted = result.data.text.replace(/\s+/g, ' ').trim();
+      const extracted = extractGermanLabelText(result.data.text)
+        .replace(/\s+/g, ' ')
+        .trim();
       if (!extracted) {
         setOcrError('Kein lesbarer Text erkannt. Bitte Foto schärfer aufnehmen oder manuell einfügen.');
         setAnalysis(null);
         return;
       }
 
-      setLabelInput(extracted);
-      setAnalysis(buildAnalysis(extracted));
+      const sanitized = normalizeLabelText(extracted).join('\n');
+      setLabelInput(sanitized);
+      setAnalysis(buildAnalysis(sanitized));
     } catch {
       setOcrError('Die Texterkennung ist fehlgeschlagen. Du kannst die Inhaltsstoffe weiterhin manuell einfügen.');
     } finally {

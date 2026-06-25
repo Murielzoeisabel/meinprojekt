@@ -56,6 +56,14 @@ export const loginUser = (payload) => jsonRequest('/auth/login', {
 });
 
 export const getCurrentUser = () => request('/auth/me', { skipAuthRedirect: true });
+export const updateProfile = (payload) => jsonRequest('/auth/me', {
+  method: 'PATCH',
+  body: payload
+});
+export const changePassword = (payload) => jsonRequest('/auth/password', {
+  method: 'POST',
+  body: payload
+});
 export const logoutUser = () => request('/auth/logout', { method: 'POST' });
 
 export const getCats = () => request('/cats');

@@ -15,7 +15,6 @@ const Stats = () => {
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [editingEntryDate, setEditingEntryDate] = useState('');
-  const [editingEntryWeight, setEditingEntryWeight] = useState('');
   const sortedWeights = [...weights].sort((a, b) => new Date(a.date) - new Date(b.date));
 
   useEffect(() => {
@@ -57,13 +56,15 @@ const Stats = () => {
   const beginEditWeightEntry = (entry) => {
     if (!entry?.date) return;
     setEditingEntryDate(entry.date);
-    setEditingEntryWeight(String(entry.weight));
+    setNewWeight(String(entry.weight));
+    setNewWeightDate(entry.date);
     setErrorMsg('');
   };
 
   const cancelEditWeightEntry = () => {
     setEditingEntryDate('');
-    setEditingEntryWeight('');
+    setNewWeight('');
+    setNewWeightDate(new Date().toISOString().split('T')[0]);
   };
 
   const refreshWeights = async () => {
@@ -74,7 +75,30 @@ const Stats = () => {
 
   const handleWeightSubmit = async (e) => {
     e.preventDefault();
-    if (!newWeight || !selectedCatId || !newWeightDate) return;
+    if (!newWeight || !selectedCatId) return;
+
+    if (editingEntryDate) {
+      const parsedWeight = Number(newWeight);
+      if (Number.isNaN(parsedWeight) || parsedWeight <= 0) {
+        setErrorMsg('Bitte ein gültiges Gewicht größer als 0 eingeben.');
+        return;
+      }
+
+      try {
+        setErrorMsg('');
+        await addWeight({ catId: selectedCatId, weight: parsedWeight, date: editingEntryDate });
+        await refreshWeights();
+        setSuccessMsg(`Gewichtseintrag vom ${formatDate(editingEntryDate)} wurde aktualisiert.`);
+        setTimeout(() => setSuccessMsg(''), 3000);
+        cancelEditWeightEntry();
+      } catch {
+        setErrorMsg('Gewichtseintrag konnte nicht aktualisiert werden.');
+      }
+
+      return;
+    }
+
+    if (!newWeightDate) return;
 
     try {
       setErrorMsg('');
@@ -88,35 +112,17 @@ const Stats = () => {
     }
   };
 
-  const saveEditedWeightEntry = async () => {
-    if (!selectedCatId || !editingEntryDate) return;
-    const parsedWeight = Number(editingEntryWeight);
-    if (Number.isNaN(parsedWeight) || parsedWeight <= 0) {
-      setErrorMsg('Bitte ein gültiges Gewicht größer als 0 eingeben.');
-      return;
-    }
-
-    try {
-      setErrorMsg('');
-      await addWeight({ catId: selectedCatId, weight: parsedWeight, date: editingEntryDate });
-      await refreshWeights();
-      setSuccessMsg(`Gewichtseintrag vom ${formatDate(editingEntryDate)} wurde aktualisiert.`);
-      setTimeout(() => setSuccessMsg(''), 3000);
-      cancelEditWeightEntry();
-    } catch {
-      setErrorMsg('Gewichtseintrag konnte nicht aktualisiert werden.');
-    }
-  };
-
   const calculateTrend = () => {
     if (sortedWeights.length < 2) return { status: 'stabil', diff: 0, direction: '' };
-    const first = sortedWeights[0].weight;
-    const last = sortedWeights[sortedWeights.length - 1].weight;
-    const diff = last - first;
-    
-    if (diff > 0.1) return { status: 'steigend', diff: diff.toFixed(2), direction: '+' };
-    if (diff < -0.1) return { status: 'fallend', diff: Math.abs(diff).toFixed(2), direction: '-' };
-    return { status: 'stabil', diff: 0, direction: '' };
+    const first = Number(sortedWeights[0].weight);
+    const last = Number(sortedWeights[sortedWeights.length - 1].weight);
+    const diffRaw = last - first;
+    const diff = Number(diffRaw.toFixed(2));
+
+    // Treat changes of 0.10 kg or more as meaningful (previously used > 0.1)
+    if (diff >= 0.1) return { status: 'steigend', diff: diff.toFixed(2), direction: '+' };
+    if (diff <= -0.1) return { status: 'fallend', diff: Math.abs(diff).toFixed(2), direction: '-' };
+    return { status: 'stabil', diff: diff.toFixed(2), direction: diff > 0 ? '+' : '' };
   };
 
   const trend = calculateTrend();
@@ -410,7 +416,7 @@ const Stats = () => {
                     type="number"
                     step="0.01"
                     className="input-field"
-                    placeholder="Gewicht in kg, z.B. 4.5"
+                    placeholder={isEditingFromChart ? 'Gewicht zum Bearbeiten oben ändern' : 'Gewicht in kg, z.B. 4.5'}
                     value={newWeight}
                     onChange={(e) => setNewWeight(e.target.value)}
                     required
@@ -420,12 +426,17 @@ const Stats = () => {
                     className="input-field"
                     value={newWeightDate}
                     onChange={(e) => setNewWeightDate(e.target.value)}
+                    disabled={isEditingFromChart}
                     required
                   />
                   <p className="form-note">
-                    Hinweis: Rückdatierte Einträge sind erlaubt.
+                    {isEditingFromChart
+                      ? 'Du bearbeitest den ausgewählten Eintrag. Änderungen oben eingeben und dann speichern.'
+                      : 'Hinweis: Rückdatierte Einträge sind erlaubt.'}
                   </p>
-                  <button type="submit" className="btn-primary btn-block">Gewicht speichern</button>
+                  <button type="submit" className="btn-primary btn-block">
+                    {isEditingFromChart ? 'Gewicht aktualisieren' : 'Gewicht speichern'}
+                  </button>
                 </form>
                 {successMsg && (
                   <motion.p
@@ -442,16 +453,8 @@ const Stats = () => {
                   {isEditingFromChart ? (
                     <div className="weight-entry-row">
                       <span className="weight-entry-date">{formatDate(editingEntryDate)}</span>
-                      <input
-                        type="number"
-                        step="0.01"
-                        min="0.01"
-                        className="input-field weight-entry-input"
-                        value={editingEntryWeight}
-                        onChange={(e) => setEditingEntryWeight(e.target.value)}
-                      />
+                      <span className="weight-entry-value">{newWeight} kg</span>
                       <div className="weight-entry-actions">
-                        <button type="button" className="btn-secondary" onClick={saveEditedWeightEntry}>Speichern</button>
                         <button type="button" className="btn-secondary" onClick={cancelEditWeightEntry}>Abbrechen</button>
                       </div>
                     </div>

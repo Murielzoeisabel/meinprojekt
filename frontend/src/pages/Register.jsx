@@ -57,7 +57,7 @@ const Register = () => {
           autoComplete="new-password"
           required
           minLength={10}
-          pattern="(?=.*[A-Za-z])(?=.*\\d).{10,}"
+          pattern="(?=.*[A-Za-z])(?=.*[0-9]).{10,}"
           data-cy="register-password-input"
           value={password}
           onChange={(event) => setPassword(event.target.value)}

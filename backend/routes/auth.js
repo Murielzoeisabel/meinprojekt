@@ -35,7 +35,7 @@ const parseRegisterPayload = (body) => {
     };
   }
 
-  const fallbackName = email.split('@')[0] || 'User';
+  const fallbackName = 'Katzenfreund';
   const name = nameFromBody || fallbackName;
 
   return { email, password, name };
@@ -50,6 +50,26 @@ const parseLoginPayload = (body) => {
   }
 
   return { email, password };
+};
+
+const parsePasswordChangePayload = (body) => {
+  const currentPassword = String(body?.currentPassword || '');
+  const newPassword = String(body?.newPassword || '');
+
+  if (!currentPassword || !newPassword) {
+    return { error: { status: 400, message: 'Aktuelles und neues Passwort sind erforderlich.' } };
+  }
+
+  if (newPassword.length < 10 || !/[A-Za-z]/.test(newPassword) || !/\d/.test(newPassword)) {
+    return {
+      error: {
+        status: 400,
+        message: 'Das neue Passwort muss mindestens 10 Zeichen lang sein und Buchstaben sowie Zahlen enthalten.'
+      }
+    };
+  }
+
+  return { currentPassword, newPassword };
 };
 
 const getLoginAttemptState = (ip) => {
@@ -196,7 +216,8 @@ const createAuthRouter = ({ sendApiError }) => {
         select: {
           id: true,
           email: true,
-          name: true
+          name: true,
+          createdAt: true
         }
       });
 
@@ -207,6 +228,70 @@ const createAuthRouter = ({ sendApiError }) => {
       return res.json({ user });
     } catch {
       return sendApiError(res, 401, 'UNAUTHORIZED', 'Nicht eingeloggt.');
+    }
+  });
+
+  router.patch('/me', authenticate, async (req, res) => {
+    try {
+      const name = req.body?.name === undefined ? '' : String(req.body.name).trim();
+
+      if (!name) {
+        return sendApiError(res, 400, 'INVALID_PROFILE_PAYLOAD', 'Name ist erforderlich.');
+      }
+
+      const updatedUser = await prisma.user.update({
+        where: { id: req.user.userId },
+        data: { name },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          createdAt: true
+        }
+      });
+
+      return res.json({ user: updatedUser });
+    } catch (error) {
+      console.error('Fehler bei /api/auth/me (PATCH):', error);
+      return sendApiError(res, 500, 'PROFILE_UPDATE_FAILED', 'Profil konnte nicht gespeichert werden.');
+    }
+  });
+
+  router.post('/password', authenticate, async (req, res) => {
+    try {
+      const parsed = parsePasswordChangePayload(req.body);
+      if (parsed.error) {
+        return sendApiError(res, parsed.error.status, 'INVALID_PASSWORD_CHANGE_PAYLOAD', parsed.error.message);
+      }
+
+      const { currentPassword, newPassword } = parsed;
+      const user = await prisma.user.findUnique({
+        where: { id: req.user.userId },
+        select: {
+          id: true,
+          passwordHash: true
+        }
+      });
+
+      if (!user) {
+        return sendApiError(res, 401, 'UNAUTHORIZED', 'Nicht eingeloggt.');
+      }
+
+      const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.passwordHash);
+      if (!isCurrentPasswordValid) {
+        return sendApiError(res, 401, 'INVALID_CURRENT_PASSWORD', 'Aktuelles Passwort ist falsch.');
+      }
+
+      const passwordHash = await bcrypt.hash(newPassword, 12);
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { passwordHash }
+      });
+
+      return res.status(200).json({ success: true });
+    } catch (error) {
+      console.error('Fehler bei /api/auth/password:', error);
+      return sendApiError(res, 500, 'PASSWORD_CHANGE_FAILED', 'Passwort konnte nicht geändert werden.');
     }
   });
 
