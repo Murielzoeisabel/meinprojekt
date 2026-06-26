@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import AnimatedPage from '../components/AnimatedPage';
 import { getCats, addCat, updateCat, deleteCat, addWeight } from '../services/api';
+import { resetWeightReminder } from '../utils/reminder';
 import { motion } from 'framer-motion';
 import { Trash2, Plus, Camera } from 'lucide-react';
 
@@ -282,6 +283,7 @@ const CatList = () => {
       if (hasCurrentWeight) {
         try {
           await addWeight({ catId: createdCat.id, weight: parsedCurrentWeight });
+          resetWeightReminder();
           initialWeightSaved = true;
         } catch {
           initialWeightSaved = false;
@@ -485,6 +487,7 @@ const CatList = () => {
         const oldWeight = cat.currentWeight !== null && cat.currentWeight !== undefined ? parseFloat(cat.currentWeight) : null;
         if (oldWeight === null || Math.abs(oldWeight - nextCurrentWeight) > 0.0001) {
           await addWeight({ catId: cat.id, weight: nextCurrentWeight });
+          resetWeightReminder();
         }
         updatedCurrentWeight = nextCurrentWeight;
       }

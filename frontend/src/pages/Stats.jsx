@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import AnimatedPage from '../components/AnimatedPage';
 import { getCats, getWeights, addWeight } from '../services/api';
+import { resetWeightReminder } from '../utils/reminder';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { motion } from 'framer-motion';
 import NoCatsFeedback from '../components/NoCatsFeedback';
@@ -87,6 +88,7 @@ const Stats = () => {
       try {
         setErrorMsg('');
         await addWeight({ catId: selectedCatId, weight: parsedWeight, date: editingEntryDate });
+        resetWeightReminder();
         await refreshWeights();
         setSuccessMsg(`Gewichtseintrag vom ${formatDate(editingEntryDate)} wurde aktualisiert.`);
         setTimeout(() => setSuccessMsg(''), 3000);
@@ -103,6 +105,7 @@ const Stats = () => {
     try {
       setErrorMsg('');
       await addWeight({ catId: selectedCatId, weight: newWeight, date: newWeightDate });
+      resetWeightReminder();
       await refreshWeights();
       setNewWeight('');
       setSuccessMsg('Gewicht erfolgreich gespeichert!');

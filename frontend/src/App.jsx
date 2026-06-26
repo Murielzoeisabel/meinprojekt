@@ -1,7 +1,9 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import Navbar from './components/Navbar';
-import { getCurrentUser } from './services/api';
+import { getCurrentUser, logoutUser } from './services/api';
+import { LogOut } from 'lucide-react';
+import { checkAndTriggerReminder } from './utils/reminder';
 
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const CatList = lazy(() => import('./pages/CatList'));
@@ -50,6 +52,24 @@ function App() {
   const [isAuthCheckLoading, setIsAuthCheckLoading] = useState(true);
   const isAuthPage = location.pathname === '/login' || location.pathname === '/register';
 
+  const handleLogout = async () => {
+    try {
+      await logoutUser();
+    } catch (e) {
+      console.error('Logout failed:', e);
+    } finally {
+      setIsAuthenticated(false);
+    }
+  };
+
+  useEffect(() => {
+    checkAndTriggerReminder();
+    const interval = setInterval(() => {
+      checkAndTriggerReminder();
+    }, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
   useEffect(() => {
     let isMounted = true;
 
@@ -97,6 +117,12 @@ function App() {
       <ScrollToTop />
       {!isAuthPage && isAuthenticated && <Navbar />}
       <main id="main-content" className="main-content" tabIndex={-1}>
+        {!isAuthPage && isAuthenticated && (
+          <button onClick={handleLogout} className="logout-btn" type="button" aria-label="Abmelden">
+            <LogOut size={18} />
+            <span>Abmelden</span>
+          </button>
+        )}
         <Suspense fallback={<PageLoader />}>
           <Routes>
             <Route
