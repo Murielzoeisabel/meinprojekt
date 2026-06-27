@@ -3,6 +3,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
+const { Server } = require('socket.io');
 const fs = require('fs');
 const path = require('path');
 const createCatsRouter = require('./routes/cats');
@@ -20,6 +21,16 @@ app.use(cors({
 }));
 app.use(cookieParser());
 app.use(express.json({ limit: '8mb' }));
+
+// --- SERVER-SENT EVENTS (SSE) SETUP ---
+const sseClients = new Set();
+
+const broadcastEvent = (eventType, data = {}) => {
+  const payload = `event: ${eventType}\ndata: ${JSON.stringify(data)}\n\n`;
+  for (const client of sseClients) {
+    client.write(payload);
+  }
+};
 
 const COMMUNITY_DATA_PATH = path.join(__dirname, 'data', 'community.json');
 const CAT_STATE_PATH = path.join(__dirname, 'data', 'cats-state.json');
@@ -348,7 +359,9 @@ app.use('/api/cats', authenticate, createCatsRouter({
   parsePositiveInt,
   sendApiError,
   validateCatPayload,
-  getSuggestedIdealWeight
+  getSuggestedIdealWeight,
+  sseClients,
+  FRONTEND_ORIGIN
 }));
 
 // --- API ROUTES: WEIGHTS ---
@@ -604,6 +617,8 @@ app.post('/api/community/posts', async (req, res) => {
       }
     });
 
+    broadcastEvent('new-post', createdPost);
+
     return res.status(201).json({
       ...createdPost,
       gefaelltMir: createdPost.likes,
@@ -631,6 +646,9 @@ app.delete('/api/community/posts/:id', async (req, res) => {
     }
 
     await prisma.communityPost.delete({ where: { id } });
+
+    broadcastEvent('delete-post', { id });
+
     return res.json({ success: true });
   } catch (error) {
     console.error('Fehler beim Loeschen eines Community-Posts:', error);
@@ -662,6 +680,8 @@ app.post('/api/community/posts/:id/reactions', async (req, res) => {
         ? { likes: { increment: 1 } }
         : { hearts: { increment: 1 } }
     });
+
+    broadcastEvent('new-reaction', updatedPost);
 
     return res.json({
       ...updatedPost,
@@ -718,6 +738,8 @@ app.post('/api/community/messages', async (req, res) => {
       createdAt: createdMessage.createdAt
     };
 
+    broadcastEvent('new-message', messagePayload);
+
     return res.status(201).json(messagePayload);
   } catch (error) {
     console.error('Fehler beim Erstellen einer Community-Nachricht:', error);
@@ -744,4 +766,37 @@ app.use((err, req, res, next) => {
   return sendApiError(res, 500, 'INTERNAL_SERVER_ERROR', 'Interner Serverfehler.');
 });
 
-app.listen(PORT, () => console.log(`✓ Backend läuft auf http://localhost:${PORT}`));
+const server = app.listen(PORT, () => console.log(`✓ Backend läuft auf http://localhost:${PORT}`));
+
+// --- SOCKET.IO SETUP ---
+const io = new Server(server, {
+  cors: {
+    origin: FRONTEND_ORIGIN,
+    methods: ["GET", "POST"],
+    credentials: true
+  }
+});
+
+io.on('connection', (socket) => {
+  console.log('✓ Socket-Client verbunden:', socket.id);
+
+  socket.on('new-message', (data) => {
+    socket.broadcast.emit('new-message', data);
+  });
+
+  socket.on('new-post', (data) => {
+    socket.broadcast.emit('new-post', data);
+  });
+
+  socket.on('delete-post', (data) => {
+    socket.broadcast.emit('delete-post', data);
+  });
+
+  socket.on('new-reaction', (data) => {
+    socket.broadcast.emit('new-reaction', data);
+  });
+
+  socket.on('disconnect', () => {
+    console.log('✗ Socket-Client getrennt:', socket.id);
+  });
+});

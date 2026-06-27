@@ -6,7 +6,9 @@ const createCatsRouter = ({
   parsePositiveInt,
   sendApiError,
   validateCatPayload,
-  getSuggestedIdealWeight
+  getSuggestedIdealWeight,
+  sseClients,
+  FRONTEND_ORIGIN
 }) => {
   const router = express.Router();
 
@@ -58,6 +60,22 @@ const createCatsRouter = ({
 
     return fallbackUser.id;
   };
+
+  router.get('/events', (req, res) => {
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('Access-Control-Allow-Origin', FRONTEND_ORIGIN || 'http://localhost:5173');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+
+    res.write('data: connected\n\n');
+
+    sseClients.add(res);
+
+    req.on('close', () => {
+      sseClients.delete(res);
+    });
+  });
 
   router.get('/', async (req, res) => {
     try {

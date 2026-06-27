@@ -1,387 +1,105 @@
-# CatSlimDown
-# Katzengewichtstracker
+# CatSlimDown - Katzengewichtstracker
 
-Cat Slim Down ist eine digitale Begleitung für gesundes Katzengewicht: eine App, in der Katzenbesitzer Gewicht, Entwicklung und Gewohnheiten ihrer Tiere einfach dokumentieren und nachvollziehen können, um Fortschritte früh zu erkennen und den Alltag rund um Fütterung, Bewegung und Gesundheit besser zu steuern.
-
-# Studio Session 1
-
-# User Story
-
-Als Nutzer möchte ich den Gewichtsverlauf meiner Katze übersichtlich sehen, damit ich ihr helfen kann ein gesundes Zielgewicht zu erreichen.
-
-# Generierung der Features
-
-In der ersten Iteration habe ich ein Diagramm generieren lassen, das den Gewichtsverlauf der Katze anzeigt und das es einem ermöglicht Werte einzutragen. In der zweiten Iteration habe ich noch eine Seite hinzugefügt, in der man seine Katzen verwalten kann und Fotos der Katze hochladen kann.
-In vielen weiteren Iterationen habe ich noch Fitnesstipps, Rezeptideen, ein Community-Forum, ein Abzeichen-System und weitere Features ergänzt.
-
-# Studio Session 2
-
-# Beobachtungsaufgabe Next.js
-
-Mit deaktiviertem JavaScript war meine Vite-App im Wesentlichen nur weiß bzw. ohne nutzbaren Inhalt sichtbar, während die Next.js-Seite weiterhin Inhalte zeigte; das ist für mein Projekt okay, weil es als interaktive App gedacht ist und nicht als SEO-orientierte, öffentlich indexierte Content-Seite.
-
-# Je ein Feature in Client/Server Component
-
-Server-Component:
-Als Nutzer möchte ich beim Öffnen der Seite sofort meine Katzen und den letzten Gewichtsverlauf sehen, ohne Ladespinner, damit ich direkt loslegen kann.
-
-Client-Component:
-Als Nutzer möchte ich neue Gewichtseinträge direkt hinzufügen können, ohne Seitenreload, damit die Eingabe schnell und flüssig bleibt.
-
-# Architekturentscheidung (Next.js vs. Vite)
-
-Ich habe mich bewusst für Vite entschieden, da die Website interaktiv ist und einen eher app-artigen Ablauf hat. Eine schnelle Client-Interaktion liegt im Fokus. Next.js würde nur dann Vorteile bringen, wenn ich öffentlich auffindbare Inhalte hätte, die von Suchmaschinen sauber idexiert werden sollten. Trotz meines Community-Forums entscheide ich mich für Vite, weil das Forum hauptsächlich innerhalb der App, im Login-Bereich genutzt wird und Interaktivität wichtiger ist als die Suchmaschinenoptimierung. 
-
-# Studio Session 3
-
-# Ressourcen und API-Struktur
-
-Haupt-Ressourcen:
-
--users
--cats
--weightentries
--posts
--reactions
--badges
--foodanalyses
--calorieentries
-
-Content-Ressourcen (read only):
-
--tips
--recipes
-
-Hierarchie:
-
-Ein User: 
-hat cats
-erstellt posts
-bekommt badges
-hat calorieentries
-
-Eine Cat:
-hat weightentries
-
-Ein Post:
-hat Reactions
-
-Eine Foodanalyse
-gehört zu einem user
-basiert auf einem Bild-Upload
-
-Gewählte API-Struktur:
-
-Ich habe mich für ein flaches Design mit Query-Parametern entschieden, da es flexibel, leicht erweiterbar und gut für die Verwendung im Frontend geeignet ist. Beziehungen zwischen den Ressourcen werden über IDs dargestellt, z.B: 
-
--/cats?userID=123
--/weight-entries?catID=456
--/posts?userID=123
-
-Zusätzlich nutze ich pragmatisches Nesting mit maximal einer Ebene, wenn es die Lesbarkeit verbessert, z.B.:
-
--/cats/{id}/weight-entries
--/posts/{id}/reactions
-
-Auf tiefere Verschachtelungen verzichte ich bewusst, da diese die Komplexität erhöhen und schwer wartbar sind.
-
-# Generierung der CRUD API
-
-Für die Hauptressource cats habe ich die CRUD-API in zwei Prompt-Iterationen erstellt und verbessert.
-In der ersten Iteration habe ich die fünf Basisoperationen erzeugen lassen: GET alle Cats, GET Cat per ID, POST neue Cat, PUT Cat ersetzen und DELETE Cat löschen.
-Im zweiten Prompt habe ich die Anforderungen präzisiert, insbesondere die Fehlerbehandlung und die exakten HTTP-Statuscodes. Dabei wurde festgelegt: 201 bei erfolgreichem Create, 204 bei erfolgreichem Delete, 404 bei nicht gefundener Ressource und 400 bei ungültigen oder fehlenden Pflichtfeldern.
-Zusätzlich wurden konsistente JSON-Fehlermeldungen für Validierungs- und Not-Found-Fälle umgesetzt.
-Damit sind die API-Endpunkte nicht nur funktional, sondern auch HTTP-konform und klar testbar dokumentiert.
-
-# API-Tests (ohne Frontend)
-
-Die Cats-API wurde manuell mit Postman/Hoppscotch getestet.
-
-Basis-URL:
-- http://localhost:3001
-
-Verwendete Collection:
-- backend/Cats-API.postman_collection.json
-
-# 1) GET /api/cats
-
-Erfolgsfall:
-- Request: GET /api/cats
-- Erwartet: 200 OK
-- Ergebnis: 200 OK
-- Beleg: Erfolgsfall (200):
-![GET cats 200](screenshots/get-cats-200.png)
-
-Fehlerfall:
-- Request: GET /api/cats?userId=abc
-- Erwartet: 400 Bad Request
-- Ergebnis: 400 Bad Request
-- Beleg: Fehlerfall (400 bei ungueltigem userId):
-![GET cats invalid userId 400](screenshots/get-cats-invalid-userid-400.png)
-
-
-# 2) GET /api/cats/:id
-
-Erfolgsfall:
-- Request: GET /api/cats/1
-- Erwartet: 200 OK
-- Ergebnis: 200 OK
-- Beleg: Erfolgsfall (200):
-![GET cat by id 200](screenshots/get-cat-by-id-200.png)
-
-Fehlerfall:
-- Request: GET /api/cats/999999
-- Erwartet: 404 Not Found
-- Ergebnis: 404 Not Found
-- Beleg: Fehlerfall (404):
-![GET cat by id 404](screenshots/get-cat-by-id-404.png)
-
-
-# 3) POST /api/cats
-
-Erfolgsfall:
-- Request: POST /api/cats mit gueltigem Body
-- Erwartet: 201 Created
-- Ergebnis: 201 Created
-- Beleg: Erfolgsfall (201):
-![POST cat 201](screenshots/post-cat-201.png)
-
-Fehlerfall:
-- Request: POST /api/cats mit fehlendem Pflichtfeld name
-- Erwartet: 400 Bad Request
-- Ergebnis: 400 Bad Request
-- Beleg: Fehlerfall (400, name fehlt):
-![POST cat missing name 400](screenshots/post-cat-missing-name-400.png)
-
-
-# 4) PUT /api/cats/:id
-
-Erfolgsfall:
-- Request: PUT /api/cats/1 mit gueltigem Body
-- Erwartet: 200 OK
-- Ergebnis: 200 OK
-- Beleg: Erfolgsfall (200):
-![PUT cat 200](screenshots/put-cat-200.png)
-
-Fehlerfall:
-- Request: PUT /api/cats/1 mit ungueltigen Daten (z. B. name leer)
-- Erwartet: 400 Bad Request
-- Ergebnis: 400 Bad Request
-- Beleg: Fehlerfall (400, ungueltige Daten):
-![PUT cat invalid data 400](screenshots/put-cat-invalid-data-400.png)
-
-
-# 5) DELETE /api/cats/:id
-
-Erfolgsfall:
-- Request: DELETE /api/cats/2
-- Erwartet: 204 No Content
-- Ergebnis: 204 No Content
-- Beleg:![DELETE cat 204](screenshots/delete-cat-204.png)
-
-Fehlerfall:
-- Request: DELETE /api/cats/999999
-- Erwartet: 404 Not Found
-- Ergebnis: 404 Not Found
-- Beleg:Fehlerfall (404):
-![DELETE cat 404](screenshots/delete-cat-404.png)
-
-# Studio Session 4
-
-# Datenschema
-
-### users
-
-| Feld | Typ | Constraint |
-| --- | --- | --- |
-| id | int | PK |
-| email | string | NOT NULL, UNIQUE |
-| name | string | NOT NULL |
-| avatarUrl | string | optional |
-| createdAt | datetime | NOT NULL |
-
-### cats
-
-| Feld | Typ | Constraint |
-| --- | --- | --- |
-| id | int | PK |
-| userId | int | FK -> users.id, NOT NULL |
-| name | string | NOT NULL |
-| age | int | optional |
-| breed | string | NOT NULL |
-| size | enum | NOT NULL (klein, mittel, gross) |
-| idealWeight | float | NOT NULL |
-| photo | string | optional |
-| createdAt | datetime | NOT NULL |
-
-### weight_entries
-
-| Feld | Typ | Constraint |
-| --- | --- | --- |
-| id | int | PK |
-| catId | int | FK -> cats.id, NOT NULL |
-| date | date | NOT NULL |
-| weight | float | NOT NULL |
-
-### calorie_entries
-
-| Feld | Typ | Constraint |
-| --- | --- | --- |
-| id | int | PK |
-| catId | int | FK -> cats.id, NOT NULL |
-| date | date | NOT NULL |
-| consumed | float | NOT NULL |
-| burned | float | NOT NULL |
-| basalBurned | float | NOT NULL |
-
-### community_posts
-
-| Feld | Typ | Constraint |
-| --- | --- | --- |
-| id | int | PK |
-| userId | int | FK -> users.id, optional |
-| author | string | NOT NULL |
-| text | string | NOT NULL |
-| photo | string | optional |
-| beforeWeight | float | optional |
-| nowWeight | float | optional |
-| likes | int | NOT NULL, default 0 |
-| hearts | int | NOT NULL, default 0 |
-| createdAt | datetime | NOT NULL |
-
-### post_reactions
-
-| Feld | Typ | Constraint |
-| --- | --- | --- |
-| id | int | PK |
-| postId | int | FK -> community_posts.id, NOT NULL |
-| userId | int | FK -> users.id, NOT NULL |
-| type | enum | NOT NULL (like, thumbsUp) |
-| createdAt | datetime | NOT NULL |
-
-### community_messages
-
-| Feld | Typ | Constraint |
-| --- | --- | --- |
-| id | int | PK |
-| userId | int | FK -> users.id, optional |
-| userName | string | NOT NULL |
-| avatar | string | optional |
-| text | string | NOT NULL |
-| createdAt | datetime | NOT NULL |
-
-# Beziehungen
-
-- users 1:n cats
-- cats 1:n weight_entries
-- cats 1:n calorie_entries
-- community_posts 1:n post_reactions
-- users 1:n post_reactions
-- users n:m community_posts ueber post_reactions 
-
-# Pflichtfelder
-
-- users: email, name, createdAt
-- cats: userId, name, breed, size, idealWeight, createdAt
-- weight_entries: catId, date, weight
-- calorie_entries: catId, date, consumed, burned, basalBurned
-- community_posts: author, text, likes, hearts, createdAt
-- post_reactions: postId, userId, type, createdAt
-- community_messages: userName, text, createdAt
-
-# Ersetzen der Mock-Daten-Handler
-
-Für die Umstellung von Mock-Daten auf Prisma habe ich den Endpoint GET/api/cats in zwei Prompt-Iterationen umgesetzt.
-
-Erste Iteration:
-
-Ersetze den GET /api/cats-Handler. Bisher: res.json(cats). Neu: Alle Tasks aus der Datenbank laden mit prisma und als JSON zurückgeben. Fehlerbehandlung mit try/catch und 500-Status.
-
-Zweite Iteration:
-
-Ergänze den GET /api/cats-Handler um einen optionalen Query-Parameter userId mit where-Bedingung in Prisma. Wenn userId gesetzt ist, sollen nur die Cats dieses Users geladen werden; wenn kein userId gesetzt ist, weiterhin alle Cats zurückgeben. Bei ungültigem userId soll der Endpoint 400 Bad Request mit einer klaren Fehlermeldung zurückgeben.
-
-# Persistenz-Test
-
-Nach dem Senden des Eintrag POST /api/cats erhielt ich wie erwartet die Antwort Status 201 Created.
-
-Beleg: ![POST cat](screenshots/post-cat.png)
-
-Anschließend wurde der Server gestoppt und wieder neu gestartet, um zu überprüfen, ob der Eintrag noch vorhanden ist. Dann wurde der Eintrag GET/api/cats gesendet und ich erhielt die Antwort Status 200 OK.
-
-Beleg: ![GET cat](screenshots/get-cat.png)
-
-Der Test war erfolgreich, da der neu angelegte Eintrag nach dem Neustart weiterhin vorhanden war.
-
-# Architekturentscheidung
-
-Aus architektonischer Sicht sollten vor allem strukturierte und beziehungsreiche Daten in der Datenbank gespeichert werden,
-zum Beispiel:
-User, Cats, Gewichtseinträge und Community-Posts.
-
-Redis wäre für kurzlebige Daten wie Sessions, Caching-Ergebnisse oder temporäre Zähler sinnvoll, da diese Daten schnell verfügbar sein müssen, aber nicht dauerhaft gespeichert werden.
-
-Für Bilder und größere Uploads ist langfristig ein Cloud Object Store wie S3 geeigneter, damit die Datenbank entlastet wird und sich auf relationale Daten konzentrieren kann.
-
-# Studio Session 5
-
-# Lücken in der API
-
-Im aktuellen Stand sind die Cats-Endpunkte ohne Login/Token aufrufbar. Ein anonymer Nutzer kann daher Dinge tun, die er nicht dürfte:
-
-1. Er kann mit GET /api/cats alle Katzen-Datensätze aller Nutzer auslesen (inklusive Gewichtsverläufe), sobald kein userId-Filter gesetzt ist.
-2. Er kann mit GET /api/cats/:id gezielt fremde Datensätze per ID abrufen und durch Ausprobieren von IDs Daten anderer Nutzer enumerieren.
-3. Er kann mit DELETE /api/cats/:id beliebige Katzen löschen, auch wenn sie einem anderen Nutzer gehören, da keine Authentifizierung und keine Besitzprüfung erfolgt.
-
-# Authenticate-Middleware
-
-Wenn jemand den JWT-Payload manuell verändert, zum Beispiel die userId auf eine fremde ID setzt, funktioniert das nicht. Der JWT ist serverseitig mit dem Secret aus der .env-Datei signiert. Sobald der Payload verändert wird, passt die Signatur nicht mehr zum Token, und jwt.verify lehnt ihn ab. Die Middleware setzt req.user deshalb nur dann, wenn der Token unverändert und echt signiert ist; sonst kommt direkt 401.
-
-# OWASP-Audit
-
-| OWASP-Punkt | Status | Code-Stelle | Fix / Hinweis |
-| --- | --- | --- | --- |
-| A01 Broken Access Control | teilweise abgedeckt | [backend/server.js](backend/server.js), [backend/routes/auth.js](backend/routes/auth.js) | Cats, Weights, Calories und Community sind authentifiziert; Community-Posts werden jetzt zusätzlich nur vom Besitzer gelöscht. |
-| A02 Cryptographic Failures | abgedeckt | [backend/routes/auth.js](backend/routes/auth.js), [backend/prisma/schema.prisma](backend/prisma/schema.prisma) | Passwörter werden mit bcrypt gehasht und der JWT-Secret kommt aus `.env`. |
-| A03 Injection | abgedeckt / beobachtbar | [backend/server.js](backend/server.js) | Runtime-Zugriffe laufen über Prisma, es gibt keine rohe SQL-Konkatenation; XSS-Risiko bleibt clientseitig davon abhängig, wie Daten gerendert werden. |
-| A07 Authentication Failures | verbessert | [backend/routes/auth.js](backend/routes/auth.js) | Einheitliche Login-Fehlermeldung bleibt erhalten; zusätzlich gibt es nun stärkere Passwortregeln und ein einfaches Rate-Limit für Login-Versuche. |
-
-# Studio Session 6: Testing
-
-# Test-Pyramide für CatSlimDown
-
-Die Testsuite folgt der Test-Pyramide mit drei Ebenen. Unten: viele schnelle Unit-Tests, in der Mitte: Integrationstests, oben: wenige E2E-Tests.
-
-| Ebene | Was testen wir bei uns? | Tool |
-|-------|--------------------------|------|
-| **Unit** | Email-Validierung (isValidEmail), Passwort-Anforderungen (min. 10 Zeichen, Buchstaben + Zahlen), Input-Normalisierung (trim, toLowerCase), Gewichtsberechnung | Vitest |
-| **Integration** | POST /auth/register → User in DB + JWT-Token, POST /auth/login → Authentifizierung, GET /cats?userId=X → nur eigene Katzen, POST /cats → neue Katze speichern, PUT /cats/:id → Katze aktualisieren, DELETE /cats/:id → Katze löschen, GET /cats/:id/weight-entries → Gewichtsverlauf | Vitest |
-| **E2E** | Login-Flow (Register, Login, Session bleibt), neue Katze erstellen im Frontend → im Dashboard sichtbar, Gewichtsverlauf erfassen → Chart aktualisiert sich, Community-Post erstellen | Cypress |
-
-## Zwei kritischste Dinge
-
-Falls diese kaputt gehen, funktioniert das ganze Projekt nicht:
-
-1. **Authentication & JWT-Token**
-   - Problem: Ohne funktionierende Auth kann niemand auf sein Konto/seine Katzen zugreifen
-   - Betroffen: Register, Login, Token-Validierung in Middleware
-   - Impact: App ist komplett unbenutzbar
-
-2. **Datenbank-Persistierung von Cats**
-   - Problem: Wenn Katzen nicht mehr gespeichert/geladen werden, ist das Kernfeature weg
-   - Betroffen: POST /cats, GET /cats, PUT /cats, DELETE /cats
-   - Impact: Nutzerdaten gehen verloren oder sind nicht mehr abrufbar
+**CatSlimDown** ist eine digitale Begleitung für ein gesundes Katzengewicht. Mit dieser Anwendung können Katzenbesitzer das Gewicht, die Entwicklung und die Gewohnheiten ihrer Katzen einfach dokumentieren und nachvollziehen, um Fortschritte zu erkennen und Fütterung, Bewegung sowie Gesundheit optimal zu steuern.
 
 ---
 
-## Zwei Prompt-Iterationen beim Testen
+## 🚀 Features
 
-### Iteration 1: Agent generiert Unit Tests
-**Prompt:** "Schreib Vitest Tests für meine `catHealthCalculations.js` - Normalfall, Grenzfall, Fehlerfall"
+* **Interaktives Dashboard:** Gewichtsverlauf übersichtlich als Diagramm visualisieren.
+* **Katzenverwaltung:** Profile für mehrere Katzen mit Rasse, Alter, Fotos und Zielgewicht anlegen.
+* **Kalorien- & Aktivitäts-Tracker:** Futtermenge und verbrannte Energie dokumentieren.
+* **Community-Forum & Chat:** Austausch mit anderen Katzenbesitzern und gegenseitige Motivation.
+* **Fitness- & Ernährungs-Tipps:** Personalisierte Empfehlungen für eine gesunde Katze.
 
-Der Agent hat mir 39 Tests geschrieben! Aber es gab ein paar Probleme: Age 0 wurde als falsch behandelt, und Floating-Point-Precision. Nach meinen Fixes waren alle Tests grün.
+---
 
-### Iteration 2: Agent schreibt Sad-Path E2E Tests
-**Prompt:** "Schreib Cypress Tests für Fehlerszenarien - falsches Passwort, leere Felder, geschützte Routes"
+## 🛠️ Technologie-Stack
 
-Der Agent hat 6 Sad-Path Tests generiert und verwendete direkt `data-cy` Attribute. Das ist viel stabiler als CSS-Selektoren!
+* **Frontend:** React, Vite, CSS (Vanilla)
+* **Backend:** Node.js, Express
+* **Datenbank & ORM:** SQLite, Prisma ORM
+* **Testing:** Vitest (Unit- & Integrationstests), Cypress (End-to-End-Tests)
+
+---
+
+## 📂 Projektstruktur
+
+```text
+meinprojekt/
+├── backend/            # Express Server, Prisma Schema & Seed-Daten
+├── frontend/           # React Single Page Application (Vite)
+├── screenshots/        # Belege für Tests und API-Aufrufe
+├── DOKUMENTATION.md    # Ausführliche Architekturdokumentation (User Stories, API-Design, Schemas)
+├── PROMPTS.md          # Dokumentation der verwendeten LLM-Prompts & Iterationsschritte
+└── README.md           # Dieser Quickstart-Guide
+```
+
+---
+
+## 💻 Installation & Setup
+
+### Voraussetzungen
+Stelle sicher, dass **Node.js** (v18+) und **npm** installiert sind.
+
+### 1. Repository klonen & vorbereiten
+Installiere die Abhängigkeiten für das Backend und das Frontend:
+
+```bash
+# Backend-Abhängigkeiten installieren
+cd backend
+npm install
+
+# Frontend-Abhängigkeiten installieren
+cd ../frontend
+npm install
+```
+
+### 2. Datenbank initialisieren (Backend)
+Erstelle die lokale SQLite-Datenbank und führe die Migrationen sowie den Seed aus:
+
+```bash
+cd backend
+npx prisma migrate dev --name init
+npx prisma db seed
+```
+
+### 3. Entwicklungsserver starten
+
+#### Backend starten:
+```bash
+cd backend
+npm run dev
+# Der Server läuft standardmäßig auf http://localhost:3001
+```
+
+#### Frontend starten:
+```bash
+cd frontend
+npm run dev
+# Die App läuft standardmäßig auf http://localhost:5173
+```
+
+---
+
+## 🧪 Tests ausführen
+
+### Unit- & Integrationstests (Vitest)
+```bash
+cd backend
+npm run test
+```
+
+### End-to-End-Tests (Cypress)
+Stelle sicher, dass sowohl Frontend als auch Backend laufen, und starte dann Cypress:
+```bash
+cd frontend
+npx cypress open
+```
+
+---
+
+## 📚 Weiterführende Dokumentation
+
+* **Architektur & Entscheidungen:** Detaillierte Beschreibungen der Datenstrukturen, APIs und OWASP-Audits findest du in der [Architekturdokumentation (DOKUMENTATION.md)](file:///C:/Users/murie/Documents/Studium/4.Semester/Web-Architecture/meinprojekt/DOKUMENTATION.md).
+* **LLM-Prompts:** Die exakten Prompts und Iterationsschritte zur Generierung der Features und Tests sind in der [Prompt-Dokumentation (PROMPTS.md)](file:///C:/Users/murie/Documents/Studium/4.Semester/Web-Architecture/meinprojekt/PROMPTS.md) festgehalten.

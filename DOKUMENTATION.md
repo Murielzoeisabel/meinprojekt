@@ -337,7 +337,7 @@ Die Testsuite folgt der Test-Pyramide mit drei Ebenen. Unten: viele schnelle Uni
 | **Integration** | POST /auth/register → User in DB + JWT-Token, POST /auth/login → Authentifizierung, GET /cats?userId=X → nur eigene Katzen, POST /cats → neue Katze speichern, PUT /cats/:id → Katze aktualisieren, DELETE /cats/:id → Katze löschen, GET /cats/:id/weight-entries → Gewichtsverlauf | Vitest |
 | **E2E** | Login-Flow (Register, Login, Session bleibt), neue Katze erstellen im Frontend → im Dashboard sichtbar, Gewichtsverlauf erfassen → Chart aktualisiert sich, Community-Post erstellen | Cypress |
 
-## Zwei kritischste Dinge
+# Zwei kritischste Dinge
 
 Falls diese kaputt gehen, funktioniert das ganze Projekt nicht:
 
@@ -350,6 +350,61 @@ Falls diese kaputt gehen, funktioniert das ganze Projekt nicht:
    - Problem: Wenn Katzen nicht mehr gespeichert/geladen werden, ist das Kernfeature weg
    - Betroffen: POST /cats, GET /cats, PUT /cats, DELETE /cats
    - Impact: Nutzerdaten gehen verloren oder sind nicht mehr abrufbar
+
+# Studio Session 7: Real-time Web
+
+# Echtzeit-Bedarf der App
+
+| Frage | Antwort |
+| --- | --- |
+| **Gibt es Daten in eurer App, die sich ändern können, während ein anderer Nutzer die Seite offen hat?** | Ja, im Community-Forum (neue Posts, Likes, Reaktionen) sowie in der Live-Chat-Komponente können sich Daten ändern, während ein anderer Nutzer online ist. |
+| **Müssen Änderungen sofort sichtbar sein – oder reicht ein Reload?** | Für den Live-Chat müssen Nachrichten sofort sichtbar sein, da sonst kein flüssiges Gespräch möglich ist. Für Posts, Likes oder neue Gewichtseinträge würde ein manueller Reload oder Polling ausreichen. |
+| **Ist die Kommunikation einseitig (Server → Client) oder bidirektional (beide senden)?** | Für den Live-Chat ist die Kommunikation bidirektional (Clients senden Nachrichten an den Server, Server verteilt sie an alle verbundenen Clients). Für reine Status-Updates (z. B. neue Likes im Forum) wäre einseitige Kommunikation (Server $\rightarrow$ Client) ausreichend. |
+| **Wie viele Clients könnten gleichzeitig verbunden sein?** | Da es sich um ein Übungsprojekt handelt, sind meist nur wenige Clients (1-10) gleichzeitig online. Für ein Produktivszenario müsste die Lösung auf Hunderte zeitgleiche Verbindungen skalieren. |
+
+# Begründete Technologieentscheidung
+
+Ich entscheide mich für **WebSockets (mittels socket.io)** für die Live-Chat-Komponente, da hier eine bidirektionale Echtzeit-Zwei-Wege-Kommunikation erforderlich ist. Für alle anderen Bereiche (wie das Eintragen des Gewichts der Katze) ist Echtzeit-Kommunikation aus Produktivsicht **nicht notwendig** (hier reicht Request-Response / Reload aus), weshalb eine eventuelle Implementierung in diesen Bereichen als reine Lernübung gekennzeichnet wird.
+
+# Server-Sent Events (SSE): Einseitige Live-Updates
+
+Ich habe einen SSE-Mechanismus implementiert, damit Änderungen (z. B. neue Nachrichten, Posts oder Reaktionen) in Echtzeit an alle verbundenen Clients gestreamt werden, wodurch die Listen ohne Seiten-Reload sofort aktualisiert werden.
+
+
+# WebSockets mit socket.io: Bidirektionale Kommunikation
+
+Ich habe Socket.io integriert, um eine echte bidirektionale Echtzeit-Zwei-Wege-Kommunikation für die Community-Bereiche (Chat & Forum) zu ermöglichen. Im Gegensatz zu SSE können hiermit Updates direkt im Frontend-State eingepflegt werden, ohne dass die Liste komplett neu vom DB-Server abgerufen werden muss.
+
+# SSE vs. WebSockets – Direktvergleich
+
+| Kriterium | SSE | WebSockets |
+| --- | --- | --- |
+| **Richtung** | Server → Client | Bidirektional |
+| **Komplexität im Code** | Gering | Mittel |
+| **Reconnect bei Verbindungsabbruch** | Automatisch (Browser) | Manuell / socket.io übernimmt |
+| **Geeignet für euer Projekt** | ❌ Nicht optimal | ✅ Ja, sehr geeignet |
+| **Warum?** | Da das Haupt-Echtzeit-Feature ein Live-Gruppen-Chat ist, wäre ein einseitiger Stream (Server → Client) unvollständig. Für das Senden von Nachrichten müsste der Client weiterhin klassische HTTP POST-Requests nutzen. | Da der Chat und das Forum echte Zwei-Wege-Interaktion erfordern, ermöglicht socket.io sowohl schnelles Senden als auch sofortiges Verteilen per Broadcast ohne REST-API-Overhead. |
+
+### Verhalten bei Server-Neustart
+
+**Was passiert in eurer aktuellen Implementierung, wenn der Server neu startet – verlieren verbundene Clients ihre Verbindung, und wie verhält sich die App dann?**
+
+1. **Verbindungsverlust**:
+   Ja, sobald der Backend-Server beendet oder neu gestartet wird, wird die zugrundeliegende TCP-Verbindung geschlossen. Alle geöffneten Browser-Tabs verlieren sofort ihre aktive Verbindung zu dem SSE-Endpoint (`/api/events`) und dem socket.io-Port.
+
+2. **Verhalten der App**:
+   - **Bei Server-Sent Events (SSE)**: Das native `EventSource`-Objekt im Browser bemerkt den Verbindungsabbruch und wechselt in einen Reconnect-Status. Es versucht standardmäßig automatisch in kurzen Intervallen (meist ca. 3 Sekunden), die Verbindung zum Server neu aufzubauen. Sobald der Server wieder läuft, verbindet sich der Browser nahtlos von selbst neu.
+   - **Bei WebSockets (socket.io)**: Die `socket.io-client`-Bibliothek fängt den Verbindungsabbruch ab und versucht fortlaufend mit einem exponentiellen Backoff-Algorithmus, den Socket neu zu verbinden. Während der Server offline ist, werden Verbindungsfehler in der Konsole geloggt (`Socket-Verbindungsfehler`). Sobald der Server wieder erreichbar ist, stellt socket.io die Verbindung im Hintergrund automatisch wieder her. Für den Nutzer ist kein manuelles Neuladen der Seite erforderlich.
+
+#  Einschätzung des Agenten:
+1. **Langfristiger Echtzeit-Nutzen (Chat):** Die Live-Chat-Komponente (`/api/community/messages`) profitiert massiv von WebSockets, da unmittelbares Feedback für eine flüssige Konversation notwendig ist. Polling würde hier entweder zu Verzögerungen führen oder bei hoher Frequenz unnötigen Traffic verursachen.
+2. **Polling als ehrlichere Lösung (Forum & Reaktionen):** Für das Community-Forum (`/api/community/posts` und `/api/community/posts/:id/reactions`) wäre Polling oder einfaches Laden beim Seitenwechsel die pragmatischere Lösung. Es ist nicht zeitkritisch, wann neue Beiträge oder Likes erscheinen; Echtzeit-Verbindungen halten hier nur unnötig Sockets offen.
+3. **Kein Echtzeit-Nutzen (Gewicht & Kalorien):** Die Kernfeatures zur Erfassung von Gewichten (`/api/weights`) und Kalorien (`/api/calories`) werden nur vom jeweiligen Besitzer gepflegt. Da keine kollaborative Bearbeitung stattfindet, ist ein klassischer Request-Response-Cycle vollkommen ausreichend; Echtzeit-Kommunikation wäre hier reine Ressourcenverschwendung.
+
+# Meine Einschätzung
+Ich stimme dieser Einschätzung vollkommen zu. Während der Live-Chat zwingend auf WebSockets angewiesen ist, um sich flüssig anzufühlen, wurde die Echtzeit-Kompatibilität für Posts und Reaktionen als Lernübung implementiert; im produktiven Einsatz wäre ein ressourcenschonenderes Polling für das Forum völlig ausreichend und die Gewichtsverwaltung benötigt keinerlei Echtzeit-Synchronisation.
+
+---
 
 ## 🏛️ Übersicht der Architekturentscheidungen nach Studio-Sessions
 

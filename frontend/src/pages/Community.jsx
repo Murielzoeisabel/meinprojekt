@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Award, Cat, MessageCircle, Send, Sparkles, ThumbsUp } from 'lucide-react';
+import { io } from 'socket.io-client';
 import AnimatedPage from '../components/AnimatedPage';
 import './Community.css';
 import {
@@ -107,6 +108,7 @@ const Community = () => {
     nowWeight: ''
   });
   const [mentionSuggestions, setMentionSuggestions] = useState([]);
+  const socketRef = useRef(null);
 
   const loadCommunityData = async () => {
     try {
@@ -155,11 +157,49 @@ const Community = () => {
     };
 
     fetchData();
-    const intervalId = setInterval(fetchData, 5000);
+
+    // WebSockets (socket.io) Connection
+    const socket = io('http://localhost:3001', {
+      withCredentials: true
+    });
+
+    socketRef.current = socket;
+
+    socket.on('connect', () => {
+      console.log('✓ Socket verbunden:', socket.id);
+    });
+
+    socket.on('new-message', (message) => {
+      setMessages((prev) => {
+        if (prev.some((m) => m.id === message.id)) return prev;
+        return [...prev, message];
+      });
+    });
+
+    socket.on('new-post', (post) => {
+      setPosts((prev) => {
+        if (prev.some((p) => p.id === post.id)) return prev;
+        return [post, ...prev];
+      });
+    });
+
+    socket.on('delete-post', ({ id }) => {
+      setPosts((prev) => prev.filter((p) => p.id !== id));
+    });
+
+    socket.on('new-reaction', (updatedPost) => {
+      setPosts((prev) =>
+        prev.map((p) => (p.id === updatedPost.id ? { ...p, ...updatedPost, gefaelltMir: updatedPost.likes, daumenHoch: updatedPost.hearts } : p))
+      );
+    });
+
+    socket.on('connect_error', (err) => {
+      console.error('Socket-Verbindungsfehler:', err);
+    });
 
     return () => {
       cancelled = true;
-      clearInterval(intervalId);
+      socket.disconnect();
     };
   }, []);
 
@@ -254,7 +294,7 @@ const Community = () => {
 
     try {
       setErrorMsg('');
-      await reactToCommunityPost(postId, type);
+      const updatedPost = await reactToCommunityPost(postId, type);
       if (type === 'like') {
         setSuperSweetReactions((prev) => (prev.includes(postId) ? prev : [...prev, postId]));
       }
@@ -262,6 +302,9 @@ const Community = () => {
         givenLikes: prev.givenLikes + (type === 'like' ? 1 : 0),
         givenThumbs: prev.givenThumbs + (type === 'thumbsUp' ? 1 : 0)
       }));
+
+      socketRef.current?.emit('new-reaction', updatedPost);
+
       await loadCommunityData();
     } catch {
       setErrorMsg('Reaktion konnte nicht gespeichert werden.');
@@ -281,13 +324,15 @@ const Community = () => {
 
     try {
       setErrorMsg('');
-      await addCommunityPost({
+      const newPost = await addCommunityPost({
         author: postDraft.author.trim(),
         text: postDraft.text.trim(),
         photo: postDraft.photo.trim(),
         beforeWeight: postDraft.beforeWeight,
         nowWeight: postDraft.nowWeight
       });
+
+      socketRef.current?.emit('new-post', newPost);
 
       setPostDraft({ author: '', text: '', photo: '', beforeWeight: '', nowWeight: '' });
       await loadCommunityData();
@@ -303,11 +348,13 @@ const Community = () => {
 
     try {
       setErrorMsg('');
-      await addCommunityMessage({
+      const newMsg = await addCommunityMessage({
         user: name.trim() || 'Du',
         avatar: profileImage || undefined,
         text
       });
+
+      socketRef.current?.emit('new-message', newMsg);
 
       setDraftMessage('');
       setMentionSuggestions([]);
