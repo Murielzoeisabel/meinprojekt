@@ -26,20 +26,27 @@ const navItems = [
 ];
 
 const Navbar = () => {
-  const [theme, setTheme] = useState(document.documentElement.getAttribute('data-theme') || 'light');
+  const [theme, setTheme] = useState(() => {
+    return localStorage.getItem('cat-slim-down-theme') || 'light';
+  });
   const [isNutritionOpen, setIsNutritionOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
 
   const toggleTheme = () => {
     const newTheme = theme === 'light' ? 'dark' : 'light';
-    setTheme(newTheme);
+    localStorage.setItem('cat-slim-down-theme', newTheme);
     document.documentElement.setAttribute('data-theme', newTheme);
+    window.dispatchEvent(new Event('theme-changed'));
   };
 
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
-  }, [theme]);
+    const handleThemeChange = () => {
+      setTheme(localStorage.getItem('cat-slim-down-theme') || 'light');
+    };
+    window.addEventListener('theme-changed', handleThemeChange);
+    return () => window.removeEventListener('theme-changed', handleThemeChange);
+  }, []);
 
   return (
     <nav className="navbar">

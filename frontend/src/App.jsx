@@ -71,6 +71,19 @@ function App() {
   }, []);
 
   useEffect(() => {
+    const savedTheme = localStorage.getItem('cat-slim-down-theme') || 'light';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+  }, []);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      import('./utils/pushRegister').then(({ registerPushNotifications }) => {
+        registerPushNotifications();
+      }).catch(err => console.error('Failed to register push:', err));
+    }
+  }, [isAuthenticated]);
+
+  useEffect(() => {
     let isMounted = true;
 
     const checkAuth = async () => {

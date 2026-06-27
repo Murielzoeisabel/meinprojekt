@@ -69,3 +69,19 @@ Für die Umstellung von Mock-Daten auf Prisma habe ich den Endpoint GET/api/cats
   "Passe den Verbindungsaufbau an, um Credentials korrekt zu übertragen. Erweitere das Event-Handling, sodass neben neuen Chat-Nachrichten (`new-message`) auch neue Posts (`new-post`), Reaktionen (`new-reaction`) und das Löschen von Beiträgen (`delete-post`) per WebSocket übertragen werden. Im Frontend sollen diese Events die lokalen States `posts` und `messages` direkt manipulieren (z. B. Filterung beim Löschen, Hinzufügen zum Array, inkrementieren der Likes), um die Datenübertragung zu minimieren."
 * **Ergebnis:**
   Die bidirektionale Kommunikation läuft fehlerfrei. Wenn ein Benutzer in Tab 1 eine Nachricht schreibt oder auf einen Beitrag reagiert, erscheint das Ergebnis in Tab 2 ohne Verzögerung und ohne zusätzlichen REST-API-Query, da das Frontend das empfangene Daten-Objekt direkt in den State einpflegt.
+
+  ## Studio Session 8: Async Messaging
+
+  ### ➡️ Iteration 1: Erste Beschreibung
+* **Prompt:**
+  > „Implementiere E-Mail-Benachrichtigungen für das Erstellen neuer Beiträge im Community-Forum. Stack: Express-Backend, Resend als Mail-API, React Email für das Template. Anforderungen: Das Template soll den Namen des Autors, den Inhalt des Beitrags und einen direkten Link zum Beitrag enthalten. Der Mailversand darf den HTTP-Request nicht blockieren. Fehlerbehandlung mit try/catch. Der API-Key kommt aus der .env-Datei.“
+* **Ergebnis:**
+  Das Template war inhaltlich zu generisch (kein direkter Link zur App oder zum Beitrag). Der Mail-Versand lief synchron im Request-Response-Zyklus des Express-Servers, wodurch die API-Antwort blockiert wurde, während der Server auf Resend wartete.
+
+### ➡️ Iteration 2: Verfeinerte Beschreibung (Präzise & Asynchron)
+* **Prompt:**
+  *„Implementiere E-Mail-Benachrichtigungen für das Erstellen neuer Beiträge im Community-Forum. Nutze Express, Resend (API-Key aus .env) und React Email für das Template. Das Template soll den Namen des Autors, den genauen Text des Beitrags und einen direkten Deep Link zur Community-Seite (`/community#post-{id}`) enthalten. Der Mailversand muss nicht-blockierend (asynchron via setImmediate/Queue) erfolgen, damit der HTTP-Request sofort mit Status 201 beantwortet werden kann. Führe sauberes Fehlerhandling mit try/catch aus.“*
+* **Ergebnis:**
+  Die E-Mail wird jetzt asynchron über `sendNewPostEmailAsync` versendet. Durch das Rendern der React-Komponente mittels `@react-email/render` in HTML und die Nutzung von `setImmediate` reagiert die API extrem performant, während der E-Mail-Versand geräuschlos im Hintergrund läuft.
+
+

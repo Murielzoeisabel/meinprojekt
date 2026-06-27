@@ -403,6 +403,47 @@ Ich habe Socket.io integriert, um eine echte bidirektionale Echtzeit-Zwei-Wege-K
 
 # Meine Einschätzung
 Ich stimme dieser Einschätzung vollkommen zu. Während der Live-Chat zwingend auf WebSockets angewiesen ist, um sich flüssig anzufühlen, wurde die Echtzeit-Kompatibilität für Posts und Reaktionen als Lernübung implementiert; im produktiven Einsatz wäre ein ressourcenschonenderes Polling für das Forum völlig ausreichend und die Gewichtsverwaltung benötigt keinerlei Echtzeit-Synchronisation.
+# Studio Session 14: Async Messaging – E-Mail & Web Push
+
+# Studio Session 8: Async Messaging – E-Mail & Web Push 
+
+# Notification-Bedarf
+
+| Event in eurer App | Notification sinnvoll? | Typ (Transactional / Product / Marketing) | Kanal (E-Mail / Push / keiner) | Begründung |
+| --- | --- | --- | --- | --- |
+| **Passwort geändert** | Ja | Transactional | E-Mail | Sicherheitsrelevant; benötigt Dokumentation und Persistenz, falls die Änderung unautorisiert war. |
+| **Neue Live-Chat-Nachricht** | Ja (falls Empfänger offline) | Product | Web Push | Zeitkritische Interaktion; E-Mails würden das Postfach überfluten und sind zu langsam für Chat-Unterhaltungen. |
+| **Neue Antwort auf Forum-Beitrag** | Ja | Product | E-Mail oder Web Push | Steigert die Community-Interaktivität, ist aber nicht so dringend wie Chat; eine gesammelte E-Mail ist hier nutzerfreundlich. |
+| **Wöchentliche Gewichts-Erinnerung** | Ja | Product | Web Push (oder E-Mail) | Unterstützt die Kernroutine des Benutzers. Eine Push-Benachrichtigung direkt auf dem Endgerät ist am effektivsten. |
+
+# Beantwortung der Leitfragen
+
+* **Gibt es Events, bei denen der Nutzer sofort reagieren muss – oder reicht eine Mail, die er später liest?**
+  Es gibt keine absolut lebenskritischen Events in der App. Passwortänderungen und Sicherheitsereignisse verlangen eine zeitnahe, aber nicht sekundenaktuelle Reaktion; hierfür ist eine E-Mail als dauerhafter Nachweis optimal. Für Live-Chat-Nachrichten reicht Web Push, um das direkte Gespräch zu erleichtern, wenn der Empfänger die App nicht geöffnet hat.
+* **Habt ihr Marketing-Content geplant, der ein explizites Opt-in braucht?**
+  Nein, für CatSlimDown ist aktuell kein Marketing-Content (z. B. Newsletter oder Futter-Werbung) vorgesehen. Falls dies in Zukunft implementiert wird, muss ein rechtssicheres Double-Opt-in-Verfahren per E-Mail aufgebaut werden.
+* **Wie viele verschiedene Events würden pro Stunde realistisch Notifications auslösen?**
+  Sehr wenige (durchschnittlich < 1 Notification pro Stunde und User). Da die App primär für die persönliche Dokumentation der Katze genutzt wird, sind Community-Interaktionen unregelmäßig und führen zu einer sehr geringen Benachrichtigungslast.
+
+# Begründete Kanalentscheidung
+
+Ich entscheide mich für die folgenden zwei Kanäle:
+1. **E-Mail für transaktionale Sicherheitsnachrichten (z. B. Passwortänderungen):** E-Mails sind plattformunabhängig, langlebig, archivierbar und ideal für formelle Sicherheitsbenachrichtigungen geeignet.
+2. **Web Push für interaktive Updates (z. B. Live-Chat-Erwähnungen & Wiege-Erinnerungen):** Web Push bietet eine sofortige, aufmerksamkeitsstarke Rückmeldung auf dem Desktop oder Mobilgerät des Nutzers, ohne das E-Mail-Postfach mit flüchtigen Chat-Fragmenten vollzuspammen.
+
+# Kritische Prüfung der Templates & Benachrichtigungen
+
+* **✅ Enthält das Template alle Infos, die der Nutzer braucht – ohne sich einloggen zu müssen?**
+  * *E-Mail:* Ja, der Name des Autors und der genaue Text des Beitrags werden direkt im Template gerendert, sodass der Empfänger die gesamte Nachricht sofort lesen kann.
+  * *Push-Notification:* Ja, der Absender und der Chat-Text werden direkt in der Benachrichtigung angezeigt.
+* **✅ Gibt es einen direkten Deep Link zur betroffenen Ansicht (nicht nur zur Startseite)?**
+  * *E-Mail:* Ja, der Button „Beitrag ansehen“ verlinkt direkt auf `/community#post-{id}`.
+  * *Push-Notification:* Ja, der Service Worker öffnet bzw. fokussiert die `/community`-Seite bei Klick auf die Benachrichtigung.
+* **✅ Ist Betreff / Notification-Titel klar, was das Event war – in unter 50 Zeichen?**
+  * *E-Mail:* Ja, der Betreff `Neuer Beitrag von [Name] im Forum` ist extrem präzise und hat bei typischen Namen ca. 30–35 Zeichen (deutlich unter 50 Zeichen).
+  * *Push-Notification:* Ja, der Titel `[Name] schreibt im Chat` hat ca. 20–25 Zeichen und informiert sofort über das Ereignis.
+* **✅ Ist der Notification-Body unter 120 Zeichen?**
+  * *Push-Notification:* Ja, typische Chatnachrichten sind extrem kurz. Sollte eine Nachricht länger sein, kürzt das Betriebssystem bzw. der Browser diese automatisch ab.
 
 ---
 

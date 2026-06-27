@@ -13,7 +13,9 @@ import {
 } from '../utils/reminder';
 
 const Settings = () => {
-  const [theme, setTheme] = useState(document.documentElement.getAttribute('data-theme') || 'light');
+  const [theme, setTheme] = useState(() => {
+    return localStorage.getItem('cat-slim-down-theme') || 'light';
+  });
   const [reminderEnabled, setReminderEnabled] = useState(() => localStorage.getItem(REMINDER_ENABLED_KEY) === 'true');
   const [reminderMessage, setReminderMessage] = useState('');
 
@@ -57,21 +59,18 @@ const Settings = () => {
 
   const toggleTheme = () => {
     const newTheme = theme === 'light' ? 'dark' : 'light';
-    setTheme(newTheme);
+    localStorage.setItem('cat-slim-down-theme', newTheme);
     document.documentElement.setAttribute('data-theme', newTheme);
+    window.dispatchEvent(new Event('theme-changed'));
   };
 
   // Watch for changes made from the Navbar while staying on this page
   useEffect(() => {
-    const observer = new MutationObserver((mutations) => {
-      mutations.forEach((mutation) => {
-        if (mutation.attributeName === 'data-theme') {
-          setTheme(document.documentElement.getAttribute('data-theme') || 'light');
-        }
-      });
-    });
-    observer.observe(document.documentElement, { attributes: true });
-    return () => observer.disconnect();
+    const handleThemeChange = () => {
+      setTheme(localStorage.getItem('cat-slim-down-theme') || 'light');
+    };
+    window.addEventListener('theme-changed', handleThemeChange);
+    return () => window.removeEventListener('theme-changed', handleThemeChange);
   }, []);
 
   useEffect(() => {

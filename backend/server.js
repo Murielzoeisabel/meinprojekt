@@ -10,6 +10,8 @@ const createCatsRouter = require('./routes/cats');
 const createAuthRouter = require('./routes/auth');
 const authenticate = require('./middleware/authenticate');
 const prisma = require('./prisma/client');
+const { sendNewPostEmailAsync } = require('./utils/mailer');
+const { subscribeUser, sendPushNotification } = require('./utils/webpush');
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3001;
@@ -619,6 +621,13 @@ app.post('/api/community/posts', async (req, res) => {
 
     broadcastEvent('new-post', createdPost);
 
+    const recipientEmail = req.user.email || 'onboarding@resend.dev';
+    sendNewPostEmailAsync(recipientEmail, {
+      author: String(author).trim(),
+      text: String(text).trim(),
+      postId: createdPost.id
+    });
+
     return res.status(201).json({
       ...createdPost,
       gefaelltMir: createdPost.likes,
@@ -740,11 +749,36 @@ app.post('/api/community/messages', async (req, res) => {
 
     broadcastEvent('new-message', messagePayload);
 
+    sendPushNotification({
+      title: `${createdMessage.userName} schreibt im Chat`,
+      body: createdMessage.text,
+      url: '/community'
+    }).catch(err => console.error('[PushTrigger ERROR] failed sending:', err));
+
     return res.status(201).json(messagePayload);
   } catch (error) {
     console.error('Fehler beim Erstellen einer Community-Nachricht:', error);
     return res.status(500).json({ error: 'Nachricht konnte nicht gesendet werden.' });
   }
+});
+
+app.post('/api/push/subscribe', authenticate, (req, res) => {
+  try {
+    const subscription = req.body;
+    if (!subscription || !subscription.endpoint) {
+      return res.status(400).json({ error: 'Ungueltige Subscription.' });
+    }
+    
+    subscribeUser(req.user.userId, subscription);
+    return res.status(201).json({ success: true });
+  } catch (error) {
+    console.error('Fehler beim Speichern der Push-Subscription:', error);
+    return res.status(500).json({ error: 'Subscription konnte nicht gespeichert werden.' });
+  }
+});
+
+app.get('/api/push/key', (req, res) => {
+  return res.json({ publicKey: process.env.VAPID_PUBLIC_KEY || '' });
 });
 
 app.use((err, req, res, next) => {
