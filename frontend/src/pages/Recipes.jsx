@@ -1,4 +1,4 @@
-import AnimatedPage from '../components/AnimatedPage';
+import AnimatedPage from '../shared/components/AnimatedPage';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft } from 'lucide-react';

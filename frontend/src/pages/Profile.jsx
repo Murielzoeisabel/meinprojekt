@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import AnimatedPage from '../components/AnimatedPage';
-import { changePassword, getCats, getCurrentUser, getWeights, updateProfile } from '../services/api';
+import AnimatedPage from '../shared/components/AnimatedPage';
+import { changePassword, getCurrentUser, updateProfile } from '../features/auth/auth.api';
+import { getCats, getWeights } from '../features/cats/cats.api';
 import { Camera } from 'lucide-react';
-import NoCatsFeedback from '../components/NoCatsFeedback';
+import NoCatsFeedback from '../features/cats/NoCatsFeedback';
 
 const PROFILE_NAME_KEY = 'cat-slim-down-profile-name';
 const PROFILE_IMAGE_KEY = 'cat-slim-down-profile-image';

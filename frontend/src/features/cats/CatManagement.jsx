@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import AnimatedPage from '../components/AnimatedPage';
+import AnimatedPage from '../../shared/components/AnimatedPage';
 import { Cat, Sparkles, ClipboardList, ArrowRight } from 'lucide-react';
 
 const CatManagement = () => {

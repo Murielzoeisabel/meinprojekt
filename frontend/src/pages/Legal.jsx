@@ -1,4 +1,4 @@
-import AnimatedPage from '../components/AnimatedPage';
+import AnimatedPage from '../shared/components/AnimatedPage';
 
 const Legal = () => {
   return (

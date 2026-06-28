@@ -1,4 +1,4 @@
-import AnimatedPage from '../components/AnimatedPage';
+import AnimatedPage from '../shared/components/AnimatedPage';
 import { useState, useEffect } from 'react';
 import {
   REMINDER_ENABLED_KEY,

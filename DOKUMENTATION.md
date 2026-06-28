@@ -486,38 +486,107 @@ CalorieEntry             Passwort-Reset           PostReaction
 # Kommunikation zwischen den Kontexten:
 * Der **Cats-Kontext** und der **Community-Kontext** fragen den **Users-Kontext** an, um die Identität und Berechtigungen eines Benutzers zu überprüfen; übergeben wird dabei ausschließlich die eindeutige `userId` (sowie der `userName` für Anzeigenzwecke).
 * Der **Community-Kontext** kommuniziert optional mit dem **Cats-Kontext**, um bei Erfolgs-Posts das aktuelle Gewicht und den Gewichtsverlauf einer Katze auszulesen und im Forum anzuzeigen, ohne jedoch Zugriff auf interne Berechnungslogiken zu erhalten.
-# Modulare Ordnerstruktur
 
-Wir haben das Express-Backend restrukturiert und unter `backend/modules/` für jeden Bounded Context ein eigenes, abgeschlossenes Verzeichnis angelegt. Die alten, globalen Pfade unter `backend/routes/` und `backend/services/` wurden komplett aufgelöst.
+
+# Modulschnittstellen
+
+### `auth.service.js`
+* **öffentlich (nach außen sichtbar):**
+  * `getUserById(userId)`: Liefert die User-ID eines bestimmten Benutzers.
+  * `getFirstUser()`: Liefert den ersten registrierten Benutzer der Datenbank.
+  * `getOrCreateDefaultUser()`: Erstellt oder holt den default Fallback-User.
+* **intern (nur für Auth-Modul):**
+  * *Bisher keine rein internen Service-Funktionen (Logik liegt primär in den Route-Hilfsfunktionen wie `parseRegisterPayload`).*
+
+### `cats.service.js`
+* **öffentlich (nach außen sichtbar):**
+  * `createCat(body, user, helpers)`: Validiert und erstellt eine neue Katze.
+  * `deleteCat(catIdStr, user, helpers)`: Validiert und löscht eine Katze.
+* **intern (nur für Cats-Modul):**
+  * `ValidationError`, `NotFoundError`, `ForbiddenError`: Interne Modulfehlerklassen zur HTTP-Code-Übersetzung.
+
+### `community.service.js`
+* **öffentlich (nach außen sichtbar):**
+  * `getAllPosts()`: Liefert alle Forumsbeiträge.
+  * `createPost(body, user, helpers)`: Erstellt einen Beitrag (inkl. Mail-Trigger).
+  * `deletePost(postId, user, helpers)`: Löscht einen eigenen Beitrag.
+  * `reactToPost(postId, type, helpers)`: Erhöht Likes/Hearts für einen Beitrag.
+  * `getAllMessages()`: Liefert Chatnachrichten.
+  * `createMessage(body, user, helpers)`: Sendet Chatnachrichten (inkl. Push-Trigger).
+* **intern (nur für Community-Modul):**
+  * `ValidationError`, `NotFoundError`, `ForbiddenError`: Modulspezifische Fehlerklassen.
+
+# Architektur-Review des Modularen Monolithen
+
+Wir haben eine statische Code- und Architektur-Analyse unserer modularisierten Monolith-Struktur durchgeführt:
+
+1. **Gibt es noch Route-Handler, die Geschäftslogik direkt enthalten statt sie an einen Service zu delegieren?**
+   * *Ja.* In `cats.routes.js` enthalten die Routen für `PUT /:id` und `POST /:id/weightentries` noch direkt Berechnungen (z. B. Body-Parsing, Datumskonvertierungen, Fallback-Idealberechnungen) und direkte Prisma-Schreibzugriffe. In `auth.routes.js` wird die gesamte Anmelde-, Registrierungs- und Passwortänderungslogik inklusive Validierung und Cookie/JWT-Verarbeitung inline abgewickelt. Diese Logik sollte für eine vollständige Entkopplung ebenfalls in Services überführt werden.
+2. **Gibt es Service-Dateien, die direkt auf Prisma-Modelle eines anderen Moduls zugreifen?**
+   * *Nein.* Durch das Auslagern der `prisma.user`-Zugriffe aus dem `cats`-Kontext in den `auth`-Service sind alle Zugriffe auf die Datenbank-Modelle streng auf die jeweiligen Bounded Contexts beschränkt.
+3. **Welches Modul hat die meisten eingehenden Abhängigkeiten – ist das ein Warnsignal?**
+   * *Das `auth`-Modul.* Sowohl das `cats`-Modul als auch das `community`-Modul hängen direkt von der Benutzeridentität ab. Dies ist jedoch kein Warnsignal, sondern ein erwartetes Verhalten, da die Benutzerverwaltung den „Shared Kernel“ bzw. die „Core Domain“ der Anwendungsautorisierung bildet.
+4. **Welches Modul wäre am einfachsten zu extrahieren, wenn man es irgendwann als eigenen Service deployen müsste?**
+   * *Das `community`-Modul.* Da das Forum und der Live-Chat funktional komplett unabhängig vom eigentlichen Katzentracking sind und nur über die `userId` bzw. das JWT-Token mit dem Auth-Kontext gekoppelt sind, lässt sich dieses Modul am einfachsten als eigenständiger Service auslagern.
+
+
+# Bonus: Frontend modularisieren
+
+Analog zum Backend haben wir das React-Frontend restrukturiert und nach Features (Bounded Contexts) unter `frontend/src/features/` gruppiert. Generische Komponenten und Bibliotheken befinden sich nun unter `frontend/src/shared/`.
 
 Die resultierende Verzeichnisstruktur sieht wie folgt aus:
 
 ```text
-backend/
-├── modules/
+frontend/src/
+├── features/
 │   ├── auth/
-│   │   ├── auth.routes.js
-│   │   └── auth.service.js
+│   │   ├── Login.jsx
+│   │   ├── Register.jsx
+│   │   ├── Auth.css
+│   │   └── auth.api.js
 │   ├── cats/
-│   │   ├── cats.routes.js
-│   │   └── cats.service.js
+│   │   ├── CatList.jsx
+│   │   ├── CatManagement.jsx
+│   │   ├── NoCatsFeedback.jsx
+│   │   ├── HealthCheck.jsx
+│   │   ├── catHealthCalculations.js
+│   │   ├── catHealthCalculations.test.js
+│   │   └── cats.api.js
 │   └── community/
-│       ├── community.routes.js
-│       └── community.service.js
-├── middleware/
-│   └── authenticate.js
-├── prisma/
-│   └── schema.prisma
-└── server.js
+│       ├── Community.jsx
+│       ├── Community.css
+│       ├── FloatingChat.jsx
+│       └── community.api.js
+├── shared/
+│   ├── components/
+│   │   ├── AnimatedPage.jsx
+│   │   ├── Navbar.jsx
+│   │   └── Navbar.css
+│   └── lib/
+│       ├── authFetch.js
+│       └── apiClient.js
+├── pages/                    ← verbleibende Routen/Ansichten (Dashboard, Ernährung, Fitness)
+├── utils/
+│   ├── formatting.js
+│   ├── formatting.test.js
+│   ├── reminder.js
+│   └── pushRegister.js
+├── App.jsx
+├── main.jsx
+└── index.css
 ```
 
-### Details zum Umbau:
-* **`modules/auth/`**: Beinhaltet `auth.routes.js` (vormals `routes/auth.js`) und eine Platzhalterdatei `auth.service.js`.
-* **`modules/cats/`**: Beinhaltet `cats.routes.js` (vormals `routes/cats.js`) und `cats.service.js` (vormals `services/cats.service.js`).
-* **`modules/community/`**: Beinhaltet `community.routes.js` und `community.service.js`. Hierin wurden alle zuvor in `server.js` verstreuten Forum- und Chat-API-Endpunkte, sowie deren Geschäftslogik (wie Mailversand und Push Notifications), sauber modularisiert.
-* **Einbindung**: In `server.js` werden die modularisierten Router sauber über `app.use('/api/[context]', ...)` geladen. Alle relative imports (Prisma, Middleware) wurden angepasst.
+### Details zum Frontend-Umbau:
+* **Feature-Ordner**:
+  * **`features/auth/`**: Beinhaltet nun alle Login- und Registrierungsformulare inklusive der auth-spezifischen API-Aufrufe (`auth.api.js`).
+  * **`features/cats/`**: Bündelt alle Kern-Tracking-Komponenten (Katzenliste, Management, den HealthCheck und die Berechnungslogik).
+  * **`features/community/`**: Beinhaltet das Community-Forum, den Chat und die Socket-API-Abfragen.
+* **Shared-Ordner**:
+  * **`shared/components/`**: Enthält UI-relevante, wiederverwendbare Layout-Elemente wie `Navbar` und `AnimatedPage`.
+  * **`shared/lib/`**: Enthält die globale `authFetch`-Funktion sowie den zentralen `apiClient`, der HTTP-Requests für alle Feature-APIs abwickelt.
+* **Referenzen & Imports**: Alle Imports in `App.jsx` und den umliegenden Seiten wurden auf die neuen modularisierten Pfade angepasst.
 
-Alle 104 Tests (67 im Frontend, 37 im Backend) laufen weiterhin fehlerfrei durch und alle Endpunkte funktionieren.
+Alle 67 Frontend-Unittests laufen in der neuen Struktur weiterhin vollständig erfolgreich.
 
 ---
 

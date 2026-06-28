@@ -2,6 +2,7 @@ const express = require('express');
 const bcrypt = require('bcrypt');
 const prisma = require('../../prisma/client');
 const catsService = require('./cats.service');
+const authService = require('../auth/auth.service');
 
 const createCatsRouter = ({
   parsePositiveInt,
@@ -31,33 +32,18 @@ const createCatsRouter = ({
         return null;
       }
 
-      const requestedUser = await prisma.user.findUnique({
-        where: { id: parsedUserId },
-        select: { id: true }
-      });
+      const requestedUser = await authService.getUserById(parsedUserId);
 
       return requestedUser ? requestedUser.id : null;
     }
 
-    const existingUser = await prisma.user.findFirst({
-      orderBy: { id: 'asc' },
-      select: { id: true }
-    });
+    const existingUser = await authService.getFirstUser();
 
     if (existingUser) {
       return existingUser.id;
     }
 
-    const fallbackUser = await prisma.user.upsert({
-      where: { email: 'default@cat-slim-down.local' },
-      update: {},
-      create: {
-        email: 'default@cat-slim-down.local',
-        name: 'Default User',
-        passwordHash: await bcrypt.hash('default-user-only', 12)
-      },
-      select: { id: true }
-    });
+    const fallbackUser = await authService.getOrCreateDefaultUser();
 
     return fallbackUser.id;
   };

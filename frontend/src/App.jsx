@@ -1,16 +1,16 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
-import Navbar from './components/Navbar';
-import { getCurrentUser, logoutUser } from './services/api';
+import Navbar from './shared/components/Navbar';
+import { getCurrentUser, logoutUser } from './features/auth/auth.api';
 import { LogOut } from 'lucide-react';
 import { checkAndTriggerReminder } from './utils/reminder';
 
 const Dashboard = lazy(() => import('./pages/Dashboard'));
-const CatList = lazy(() => import('./pages/CatList'));
+const CatList = lazy(() => import('./features/cats/CatList'));
 const Stats = lazy(() => import('./pages/Stats'));
 const Fitness = lazy(() => import('./pages/Fitness'));
 const Nutrition = lazy(() => import('./pages/Nutrition'));
-const HealthCheck = lazy(() => import('./pages/HealthCheck'));
+const HealthCheck = lazy(() => import('./features/cats/HealthCheck'));
 const Profile = lazy(() => import('./pages/Profile'));
 const Legal = lazy(() => import('./pages/Legal'));
 const Settings = lazy(() => import('./pages/Settings'));
@@ -18,9 +18,9 @@ const MealTemplates = lazy(() => import('./pages/MealTemplates'));
 const Recipes = lazy(() => import('./pages/Recipes'));
 const Calories = lazy(() => import('./pages/Calories'));
 const FoodAnalyzer = lazy(() => import('./pages/FoodAnalyzer'));
-const Community = lazy(() => import('./pages/Community'));
-const Login = lazy(() => import('./pages/Login'));
-const Register = lazy(() => import('./pages/Register'));
+const Community = lazy(() => import('./features/community/Community'));
+const Login = lazy(() => import('./features/auth/Login'));
+const Register = lazy(() => import('./features/auth/Register'));
 
 const PageLoader = () => (
   <div style={{ padding: '2rem 0', color: 'var(--text-secondary)', fontWeight: 600 }}>

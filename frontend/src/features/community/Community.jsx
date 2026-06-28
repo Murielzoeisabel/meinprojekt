@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Award, Cat, MessageCircle, Send, Sparkles, ThumbsUp } from 'lucide-react';
 import { io } from 'socket.io-client';
-import AnimatedPage from '../components/AnimatedPage';
+import AnimatedPage from '../../shared/components/AnimatedPage';
 import './Community.css';
 import {
   addCommunityMessage,
@@ -10,7 +10,7 @@ import {
   getCommunityMessages,
   getCommunityPosts,
   reactToCommunityPost
-} from '../services/api';
+} from './community.api';
 
 void motion;
 

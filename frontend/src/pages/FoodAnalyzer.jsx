@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import AnimatedPage from '../components/AnimatedPage';
+import AnimatedPage from '../shared/components/AnimatedPage';
 import { Camera, UploadCloud, AlertTriangle, CheckCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';

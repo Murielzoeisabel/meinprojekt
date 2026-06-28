@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import AnimatedPage from '../components/AnimatedPage';
-import { getCats } from '../services/api';
+import AnimatedPage from '../shared/components/AnimatedPage';
+import { getCats } from '../features/cats/cats.api';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
-import NoCatsFeedback from '../components/NoCatsFeedback';
+import NoCatsFeedback from '../features/cats/NoCatsFeedback';
 
 void motion;
 

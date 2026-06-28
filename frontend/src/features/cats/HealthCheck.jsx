@@ -1,4 +1,4 @@
-import AnimatedPage from '../components/AnimatedPage';
+import AnimatedPage from '../../shared/components/AnimatedPage';
 import { Activity, BookOpen } from 'lucide-react';
 import { motion } from 'framer-motion';
 

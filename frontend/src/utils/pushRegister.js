@@ -1,4 +1,4 @@
-import { apiFetch } from '../services/api';
+import authFetch from '../shared/lib/authFetch';
 
 function urlBase64ToUint8Array(base64String) {
   const padding = '='.repeat((4 - base64String.length % 4) % 4);
@@ -34,7 +34,7 @@ export async function registerPushNotifications() {
     }
 
     // 3. Get VAPID Public Key from backend
-    const keyRes = await apiFetch('/push/key');
+    const keyRes = await authFetch('/push/key');
     const { publicKey } = await keyRes.json();
     if (!publicKey) {
       console.warn('[PushRegister] VAPID Public Key missing on backend.');
@@ -55,8 +55,11 @@ export async function registerPushNotifications() {
     }
 
     // 6. Send subscription to backend
-    await apiFetch('/push/subscribe', {
+    await authFetch('/push/subscribe', {
       method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
       body: JSON.stringify(subscription)
     });
     console.log('[PushRegister] Subscription synchronized with backend.');

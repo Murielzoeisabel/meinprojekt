@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import AnimatedPage from '../components/AnimatedPage';
-import { getCats, getWeights, addWeight } from '../services/api';
+import AnimatedPage from '../shared/components/AnimatedPage';
+import { getCats, getWeights, addWeight } from '../features/cats/cats.api';
 import { resetWeightReminder } from '../utils/reminder';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { motion } from 'framer-motion';
-import NoCatsFeedback from '../components/NoCatsFeedback';
+import NoCatsFeedback from '../features/cats/NoCatsFeedback';
 import './DashboardStats.css';
 
 const Stats = () => {

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import AnimatedPage from '../components/AnimatedPage';
+import AnimatedPage from '../shared/components/AnimatedPage';
 import { motion } from 'framer-motion';
-import { getCats, addCalories } from '../services/api';
+import { getCats, addCalories } from '../features/cats/cats.api';
 
 void motion;
 

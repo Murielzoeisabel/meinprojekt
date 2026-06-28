@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import AnimatedPage from '../components/AnimatedPage';
+import AnimatedPage from '../shared/components/AnimatedPage';
 import { ChefHat, Flame, FileText, Camera, HeartPulse, ShieldAlert, Droplets, Scale, Clock3, Sparkles, ChevronRight, PawPrint, CheckCircle2, Search, AlertTriangle, BadgeCheck } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { recognize } from 'tesseract.js';

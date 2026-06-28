@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import AnimatedPage from '../components/AnimatedPage';
-import { getCats, getWeights } from '../services/api';
+import AnimatedPage from '../shared/components/AnimatedPage';
+import { getCats, getWeights } from '../features/cats/cats.api';
 import { motion } from 'framer-motion';
-import NoCatsFeedback from '../components/NoCatsFeedback';
+import NoCatsFeedback from '../features/cats/NoCatsFeedback';
 import './DashboardStats.css';
 
 void motion;

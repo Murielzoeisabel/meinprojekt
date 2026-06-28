@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-import AnimatedPage from '../components/AnimatedPage';
-import { getCats, getCalories, addCalories } from '../services/api';
+import AnimatedPage from '../shared/components/AnimatedPage';
+import { getCats, getCalories, addCalories } from '../features/cats/cats.api';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
-import NoCatsFeedback from '../components/NoCatsFeedback';
+import NoCatsFeedback from '../features/cats/NoCatsFeedback';
 
 const Calories = () => {
   const navigate = useNavigate();

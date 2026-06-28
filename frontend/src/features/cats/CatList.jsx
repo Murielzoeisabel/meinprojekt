@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import AnimatedPage from '../components/AnimatedPage';
-import { getCats, addCat, updateCat, deleteCat, addWeight } from '../services/api';
-import { resetWeightReminder } from '../utils/reminder';
+import AnimatedPage from '../../shared/components/AnimatedPage';
+import { getCats, addCat, updateCat, deleteCat, addWeight } from './cats.api';
+import { resetWeightReminder } from '../../utils/reminder';
 import { motion } from 'framer-motion';
 import { Trash2, Plus, Camera } from 'lucide-react';
 

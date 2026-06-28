@@ -3,7 +3,7 @@ import {
   calculateIdealWeight,
   getWeightStatus,
   getCalorieRecommendation
-} from '../utils/catHealthCalculations.js';
+} from './catHealthCalculations.js';
 
 describe('Cat Health Calculations - Veterinary Guidelines', () => {
   describe('calculateIdealWeight', () => {
@@ -237,7 +237,7 @@ describe('Cat Health Calculations - Veterinary Guidelines', () => {
       expect(result.min).toBeLessThanOrEqual(3.5); // Nicht größer als ideal
     });
 
-    it('should not allow min to exceed max even for old cats', () => {
+    it("should not allow min to exceed max even for old cats", () => {
       const result = calculateIdealWeight('mittel', 30);
       expect(result.min).toBeLessThanOrEqual(result.max);
     });
