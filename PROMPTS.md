@@ -85,3 +85,16 @@ Für die Umstellung von Mock-Daten auf Prisma habe ich den Endpoint GET/api/cats
   Die E-Mail wird jetzt asynchron über `sendNewPostEmailAsync` versendet. Durch das Rendern der React-Komponente mittels `@react-email/render` in HTML und die Nutzung von `setImmediate` reagiert die API extrem performant, während der E-Mail-Versand geräuschlos im Hintergrund läuft.
 
 
+## Studio Session 9: Modularer Monolith - Service Layer Einführung
+
+### ➡️ Iteration 1: Erste Beschreibung (Generisch)
+* **Prompt:**
+  > „Refactore meine POST und DELETE Handler für Cats. Verschiebe die Datenbankabfragen und Validierung in eine neue Datei `cats.service.js` als Funktionen `createCat(data)` und `deleteCat(id)`. Der Route-Handler soll nur noch die Parameter weiterreichen.“
+* **Ergebnis:**
+  Die Parameterübergabe war unvollständig (der authentifizierte Benutzer `req.user` für Besitzprüfungen sowie die Hilfsfunktionen `validateCatPayload` und `parsePositiveInt` wurden nicht berücksichtigt). Es gab keine klaren Fehlertypen, wodurch die HTTP-Route-Handler nicht wussten, welchen Statuscode (400, 403, 404) sie zurückgeben sollten.
+
+### ➡️ Iteration 2: Verfeinerte Beschreibung (Präzise & Fehlertypen)
+* **Prompt:**
+  > „Refactore meine `POST /` und `DELETE /:id` Handler in `backend/routes/cats.js`. Die Validierung und die Prisma-Datenbankabfragen sollen in eine neue Datei `backend/services/cats.service.js` ausgelagert werden. Erstelle dort die Funktionen `createCat(body, user, helpers)` und `deleteCat(catIdStr, user, helpers)`. Definiere eigene Fehlerklassen (`ValidationError`, `NotFoundError`, `ForbiddenError`), damit der Route-Handler im catch-Block den passenden HTTP-Statuscode (400, 403 oder 404) senden kann. Der Route-Handler selbst bleibt schlank und kümmert sich ausschließlich um HTTP-Details.“
+* **Ergebnis:**
+  Die Geschäftslogik ist sauber gekapselt. In `cats.service.js` befinden sich alle Prüfungen und Prisma-Aufrufe. Der Route-Handler in `cats.js` nimmt nur noch die HTTP-Anfrage entgegen, ruft den Service auf und übersetzt etwaige Fehlerklassen direkt in HTTP-Statuscodes.

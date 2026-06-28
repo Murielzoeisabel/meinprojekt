@@ -403,7 +403,6 @@ Ich habe Socket.io integriert, um eine echte bidirektionale Echtzeit-Zwei-Wege-K
 
 # Meine Einschätzung
 Ich stimme dieser Einschätzung vollkommen zu. Während der Live-Chat zwingend auf WebSockets angewiesen ist, um sich flüssig anzufühlen, wurde die Echtzeit-Kompatibilität für Posts und Reaktionen als Lernübung implementiert; im produktiven Einsatz wäre ein ressourcenschonenderes Polling für das Forum völlig ausreichend und die Gewichtsverwaltung benötigt keinerlei Echtzeit-Synchronisation.
-# Studio Session 14: Async Messaging – E-Mail & Web Push
 
 # Studio Session 8: Async Messaging – E-Mail & Web Push 
 
@@ -444,6 +443,81 @@ Ich entscheide mich für die folgenden zwei Kanäle:
   * *Push-Notification:* Ja, der Titel `[Name] schreibt im Chat` hat ca. 20–25 Zeichen und informiert sofort über das Ereignis.
 * **✅ Ist der Notification-Body unter 120 Zeichen?**
   * *Push-Notification:* Ja, typische Chatnachrichten sind extrem kurz. Sollte eine Nachricht länger sein, kürzt das Betriebssystem bzw. der Browser diese automatisch ab.
+
+# Studio Session 9: Modularer Monolith
+
+# Bestandsaufnahme
+
+| Datei | Wofür ist sie verantwortlich? | Greift sie auf Daten anderer Bereiche zu? |
+| --- | --- | --- |
+| **`backend/server.js`** | Haupteinstiegspunkt. Konfiguration von Express, CORS, Cookies, WebSocket (socket.io), Fehler-Middleware. Enthält direkt Inline-API-Endpunkte für Community-Nachrichten/Posts, Gewichte und Kalorien. | **Ja.** Führt direkte DB-Abfragen über Prisma auf `communityPost`, `communityMessage` und `cat` aus. |
+| **`backend/routes/auth.js`** | Benutzer-Authentifizierung (Login, Registrierung, Profilverwaltung, Passwortänderung). | **Nein.** Agiert eigenständig auf der `User`-Tabelle. |
+| **`backend/routes/cats.js`** | CRUD-Endpunkte für Katzen und der Server-Sent Events (SSE) events Stream. | **Ja.** Verwendet `resolveCatOwnerId`, um über `prisma.user` den standardmäßigen Katzenbesitzer zu ermitteln. |
+
+# Analyse der Route-Handler und Geschäftslogik
+
+Aus architektonischer Sicht gibt es in meinem aktuellen Express-Backend folgende strukturelle Probleme und Verbesserungspotenziale:
+
+* **Direkte Datenbankzugriffe und Geschäftslogik in `server.js`:**
+  Der Haupteinstiegspunkt `server.js` ist überladen. Die Routen für Community-Nachrichten (`/api/community/messages`), Community-Posts (`/api/community/posts`), Gewichte (`/api/weights`) und Kalorien (`/api/calories`) sind direkt in `server.js` definiert. Diese enthalten nicht nur HTTP-Routing, sondern auch:
+  - Direktes Prisma-Querying (Datenbankzugriff).
+  - Validierung von Request-Bodys.
+  - Geschäftslogik (z. B. asynchroner E-Mail-Versand und Versenden von Web Push Notifications).
+  *Verbesserung:* Diese sollten in dedizierte Controller/Router (z. B. `routes/community.js`, `routes/weights.js`, `routes/calories.js`) ausgelagert werden.
+* **Vermischung von Validierung und Routing in `routes/auth.js`:**
+  Die Überprüfung von Passwort-Komplexitätsregeln (mindestens 10 Zeichen, Kombination aus Buchstaben und Ziffern) geschieht inline in `auth.js` (über Hilfsfunktionen).
+  *Verbesserung:* Diese Hilfsfunktionen sollten in ein separates Validierungs-Modul (z. B. `utils/validation.js`) ausgelagert werden.
+* **Engmaschige Kopplung von Ressourcen in `routes/cats.js`:**
+  Der Katzen-Router greift über `resolveCatOwnerId` direkt auf die `User`-Tabelle zu, um den ersten User der Datenbank als Fallback-Eigentümer zu bestimmen.
+  *Verbesserung:* Die Benutzerermittlung sollte entkoppelt und über ein Benutzer-Modul/Service bereitgestellt werden, anstatt direkt in den Katzen-CRUD-Operationen verankert zu sein.
+
+# Bounded Contexts
+
+Meine Domäne lässt sich in drei klar abgegrenzte Bounded Contexts unterteilen:
+
+```text
+Cats & Core Context      Users & Auth Context     Community Context
+───────────────────      ────────────────────     ──────────────────
+Cat                      User                     CommunityPost
+WeightEntry              Session / JWT            CommunityMessage
+CalorieEntry             Passwort-Reset           PostReaction
+```
+
+# Kommunikation zwischen den Kontexten:
+* Der **Cats-Kontext** und der **Community-Kontext** fragen den **Users-Kontext** an, um die Identität und Berechtigungen eines Benutzers zu überprüfen; übergeben wird dabei ausschließlich die eindeutige `userId` (sowie der `userName` für Anzeigenzwecke).
+* Der **Community-Kontext** kommuniziert optional mit dem **Cats-Kontext**, um bei Erfolgs-Posts das aktuelle Gewicht und den Gewichtsverlauf einer Katze auszulesen und im Forum anzuzeigen, ohne jedoch Zugriff auf interne Berechnungslogiken zu erhalten.
+# Modulare Ordnerstruktur
+
+Wir haben das Express-Backend restrukturiert und unter `backend/modules/` für jeden Bounded Context ein eigenes, abgeschlossenes Verzeichnis angelegt. Die alten, globalen Pfade unter `backend/routes/` und `backend/services/` wurden komplett aufgelöst.
+
+Die resultierende Verzeichnisstruktur sieht wie folgt aus:
+
+```text
+backend/
+├── modules/
+│   ├── auth/
+│   │   ├── auth.routes.js
+│   │   └── auth.service.js
+│   ├── cats/
+│   │   ├── cats.routes.js
+│   │   └── cats.service.js
+│   └── community/
+│       ├── community.routes.js
+│       └── community.service.js
+├── middleware/
+│   └── authenticate.js
+├── prisma/
+│   └── schema.prisma
+└── server.js
+```
+
+### Details zum Umbau:
+* **`modules/auth/`**: Beinhaltet `auth.routes.js` (vormals `routes/auth.js`) und eine Platzhalterdatei `auth.service.js`.
+* **`modules/cats/`**: Beinhaltet `cats.routes.js` (vormals `routes/cats.js`) und `cats.service.js` (vormals `services/cats.service.js`).
+* **`modules/community/`**: Beinhaltet `community.routes.js` und `community.service.js`. Hierin wurden alle zuvor in `server.js` verstreuten Forum- und Chat-API-Endpunkte, sowie deren Geschäftslogik (wie Mailversand und Push Notifications), sauber modularisiert.
+* **Einbindung**: In `server.js` werden die modularisierten Router sauber über `app.use('/api/[context]', ...)` geladen. Alle relative imports (Prisma, Middleware) wurden angepasst.
+
+Alle 104 Tests (67 im Frontend, 37 im Backend) laufen weiterhin fehlerfrei durch und alle Endpunkte funktionieren.
 
 ---
 

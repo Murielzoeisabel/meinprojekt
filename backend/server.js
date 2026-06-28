@@ -6,8 +6,9 @@ const cookieParser = require('cookie-parser');
 const { Server } = require('socket.io');
 const fs = require('fs');
 const path = require('path');
-const createCatsRouter = require('./routes/cats');
-const createAuthRouter = require('./routes/auth');
+const createCatsRouter = require('./modules/cats/cats.routes');
+const createAuthRouter = require('./modules/auth/auth.routes');
+const createCommunityRouter = require('./modules/community/community.routes');
 const authenticate = require('./middleware/authenticate');
 const prisma = require('./prisma/client');
 const { sendNewPostEmailAsync } = require('./utils/mailer');
@@ -366,6 +367,12 @@ app.use('/api/cats', authenticate, createCatsRouter({
   FRONTEND_ORIGIN
 }));
 
+app.use('/api/community', authenticate, createCommunityRouter({
+  parsePositiveInt,
+  sendApiError,
+  broadcastEvent
+}));
+
 // --- API ROUTES: WEIGHTS ---
 app.use('/api/weights', authenticate);
 app.get('/api/weights/:catId', async (req, res) => {
@@ -574,193 +581,7 @@ app.post('/api/calories', async (req, res) => {
   }
 });
 
-// --- API ROUTES: COMMUNITY ---
-app.use('/api/community', authenticate);
-app.get('/api/community/posts', async (req, res) => {
-  try {
-    const posts = await prisma.communityPost.findMany({
-      orderBy: { createdAt: 'desc' }
-    });
 
-    return res.json(posts.map((post) => ({
-      ...post,
-      gefaelltMir: post.likes,
-      daumenHoch: post.hearts
-    })));
-  } catch (error) {
-    console.error('Fehler beim Laden der Community-Posts:', error);
-    return res.status(500).json({ error: 'Community-Posts konnten nicht geladen werden.' });
-  }
-});
-
-app.post('/api/community/posts', async (req, res) => {
-  try {
-    const { author, text, photo, beforeWeight, nowWeight } = req.body;
-
-    if (!author || !String(author).trim() || !text || !String(text).trim()) {
-      return res.status(400).json({ error: 'Autor und Text sind erforderlich.' });
-    }
-
-    const parsedBeforeWeight = Number.parseFloat(beforeWeight);
-    const parsedNowWeight = Number.parseFloat(nowWeight);
-
-    const createdPost = await prisma.communityPost.create({
-      data: {
-        userId: req.user.userId,
-        author: String(author).trim(),
-        text: String(text).trim(),
-        photo: photo && String(photo).trim()
-          ? String(photo).trim()
-          : 'https://images.unsplash.com/photo-1573865526739-10659fec78a5?auto=format&fit=crop&w=1200&q=80',
-        beforeWeight: Number.isNaN(parsedBeforeWeight) ? null : parsedBeforeWeight,
-        nowWeight: Number.isNaN(parsedNowWeight) ? null : parsedNowWeight,
-        likes: 0,
-        hearts: 0
-      }
-    });
-
-    broadcastEvent('new-post', createdPost);
-
-    const recipientEmail = req.user.email || 'onboarding@resend.dev';
-    sendNewPostEmailAsync(recipientEmail, {
-      author: String(author).trim(),
-      text: String(text).trim(),
-      postId: createdPost.id
-    });
-
-    return res.status(201).json({
-      ...createdPost,
-      gefaelltMir: createdPost.likes,
-      daumenHoch: createdPost.hearts
-    });
-  } catch (error) {
-    console.error('Fehler beim Erstellen eines Community-Posts:', error);
-    return res.status(500).json({ error: 'Beitrag konnte nicht erstellt werden.' });
-  }
-});
-
-app.delete('/api/community/posts/:id', async (req, res) => {
-  try {
-    const id = parsePositiveInt(req.params.id);
-    if (id === null) {
-      return res.status(400).json({ error: 'Ungueltige Post-ID.' });
-    }
-
-    const existing = await prisma.communityPost.findFirst({
-      where: { id, userId: req.user.userId },
-      select: { id: true }
-    });
-    if (!existing) {
-      return res.status(404).json({ error: 'Post nicht gefunden.' });
-    }
-
-    await prisma.communityPost.delete({ where: { id } });
-
-    broadcastEvent('delete-post', { id });
-
-    return res.json({ success: true });
-  } catch (error) {
-    console.error('Fehler beim Loeschen eines Community-Posts:', error);
-    return res.status(500).json({ error: 'Post konnte nicht geloescht werden.' });
-  }
-});
-
-app.post('/api/community/posts/:id/reactions', async (req, res) => {
-  try {
-    const id = parsePositiveInt(req.params.id);
-    const { type } = req.body;
-
-    if (id === null) {
-      return res.status(400).json({ error: 'Ungueltige Post-ID.' });
-    }
-
-    if (type !== 'like' && type !== 'thumbsUp') {
-      return res.status(400).json({ error: 'Ungültiger Reaktionstyp.' });
-    }
-
-    const existing = await prisma.communityPost.findUnique({ where: { id }, select: { id: true } });
-    if (!existing) {
-      return res.status(404).json({ error: 'Post nicht gefunden.' });
-    }
-
-    const updatedPost = await prisma.communityPost.update({
-      where: { id },
-      data: type === 'like'
-        ? { likes: { increment: 1 } }
-        : { hearts: { increment: 1 } }
-    });
-
-    broadcastEvent('new-reaction', updatedPost);
-
-    return res.json({
-      ...updatedPost,
-      gefaelltMir: updatedPost.likes,
-      daumenHoch: updatedPost.hearts
-    });
-  } catch (error) {
-    console.error('Fehler beim Speichern einer Reaktion:', error);
-    return res.status(500).json({ error: 'Reaktion konnte nicht gespeichert werden.' });
-  }
-});
-
-app.get('/api/community/messages', async (req, res) => {
-  try {
-    const messages = await prisma.communityMessage.findMany({
-      orderBy: { createdAt: 'asc' }
-    });
-
-    return res.json(messages.map((message) => ({
-      id: message.id,
-      user: message.userName,
-      avatar: message.avatar,
-      text: message.text,
-      createdAt: message.createdAt
-    })));
-  } catch (error) {
-    console.error('Fehler beim Laden der Community-Nachrichten:', error);
-    return res.status(500).json({ error: 'Nachrichten konnten nicht geladen werden.' });
-  }
-});
-
-app.post('/api/community/messages', async (req, res) => {
-  try {
-    const { user, text, avatar } = req.body;
-
-    if (!text || !String(text).trim()) {
-      return res.status(400).json({ error: 'Nachrichtentext ist erforderlich.' });
-    }
-
-    const createdMessage = await prisma.communityMessage.create({
-      data: {
-        userId: req.user.userId,
-        userName: user && String(user).trim() ? String(user).trim() : 'Du',
-        avatar: avatar && String(avatar).trim() ? String(avatar).trim() : null,
-        text: String(text).trim()
-      }
-    });
-
-    const messagePayload = {
-      id: createdMessage.id,
-      user: createdMessage.userName,
-      avatar: createdMessage.avatar,
-      text: createdMessage.text,
-      createdAt: createdMessage.createdAt
-    };
-
-    broadcastEvent('new-message', messagePayload);
-
-    sendPushNotification({
-      title: `${createdMessage.userName} schreibt im Chat`,
-      body: createdMessage.text,
-      url: '/community'
-    }).catch(err => console.error('[PushTrigger ERROR] failed sending:', err));
-
-    return res.status(201).json(messagePayload);
-  } catch (error) {
-    console.error('Fehler beim Erstellen einer Community-Nachricht:', error);
-    return res.status(500).json({ error: 'Nachricht konnte nicht gesendet werden.' });
-  }
-});
 
 app.post('/api/push/subscribe', authenticate, (req, res) => {
   try {

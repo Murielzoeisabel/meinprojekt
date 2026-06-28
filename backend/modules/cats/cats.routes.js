@@ -1,6 +1,7 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
-const prisma = require('../prisma/client');
+const prisma = require('../../prisma/client');
+const catsService = require('./cats.service');
 
 const createCatsRouter = ({
   parsePositiveInt,
@@ -146,52 +147,20 @@ const createCatsRouter = ({
 
   router.post('/', async (req, res) => {
     try {
-      const validationError = validateCatPayload(req.body);
-      if (validationError) {
-        return sendApiError(res, 400, validationError.code, validationError.message, validationError.details);
-      }
-
-      if (req.body.userId !== undefined) {
-        const parsedUserId = parsePositiveInt(req.body.userId);
-        if (parsedUserId === null) {
-          return sendApiError(res, 400, 'INVALID_USER_ID', 'Feld "userId" muss eine positive Ganzzahl sein.', { field: 'userId' });
-        }
-
-        if (parsedUserId !== req.user.userId) {
-          return sendApiError(res, 403, 'FORBIDDEN', 'Auf diesen Benutzer kann nicht zugegriffen werden.');
-        }
-      }
-
-      const normalizedBreed = req.body.breed || 'Mischling';
-      const normalizedSize = req.body.size || 'mittel';
-      const parsedIdealWeight = req.body.idealWeight === undefined || req.body.idealWeight === ''
-        ? getSuggestedIdealWeight(normalizedBreed, normalizedSize)
-        : parseFloat(req.body.idealWeight);
-      const name = req.body.name.trim();
-
-      const sizeMap = {
-        klein: 'KLEIN',
-        mittel: 'MITTEL',
-        gross: 'GROSS'
-      };
-
-      const createdCat = await prisma.cat.create({
-        data: {
-          userId: req.user.userId,
-          name,
-          age: req.body.age !== undefined ? Number(req.body.age) : null,
-          breed: normalizedBreed,
-          size: sizeMap[normalizedSize],
-          idealWeight: parsedIdealWeight,
-          photo: req.body.photo || `https://api.dicebear.com/7.x/fun-emoji/svg?seed=${name}`
-        }
+      const createdCat = await catsService.createCat(req.body, req.user, {
+        validateCatPayload,
+        parsePositiveInt,
+        getSuggestedIdealWeight
       });
 
-      return res.status(201).json({
-        ...createdCat,
-        size: normalizedSize
-      });
+      return res.status(201).json(createdCat);
     } catch (error) {
+      if (error instanceof catsService.ValidationError) {
+        return sendApiError(res, 400, error.code, error.message, error.details);
+      }
+      if (error instanceof catsService.ForbiddenError) {
+        return sendApiError(res, 403, 'FORBIDDEN', error.message);
+      }
       if (error?.code === 'P2003') {
         return sendApiError(
           res,
@@ -299,21 +268,16 @@ const createCatsRouter = ({
 
   router.delete('/:id', async (req, res) => {
     try {
-      const id = parsePositiveInt(req.params.id);
-      if (id === null) {
-        return sendApiError(res, 400, 'INVALID_CAT_ID', 'Pfadparameter "id" muss eine positive Ganzzahl sein.', { field: 'id' });
-      }
-
-      const existingCat = await prisma.cat.findFirst({
-        where: getOwnedCatWhere(id, req.user.userId)
-      });
-      if (!existingCat) {
-        return sendApiError(res, 404, 'CAT_NOT_FOUND', `Keine Cat mit id=${id} gefunden.`);
-      }
-
-      await prisma.cat.delete({ where: { id } });
+      await catsService.deleteCat(req.params.id, req.user, { parsePositiveInt });
       return res.status(204).send();
     } catch (error) {
+      if (error instanceof catsService.ValidationError) {
+        return sendApiError(res, 400, error.code, error.message, error.details);
+      }
+      if (error instanceof catsService.NotFoundError) {
+        return sendApiError(res, 404, 'CAT_NOT_FOUND', error.message);
+      }
+
       console.error('Fehler beim Loeschen der Cat aus der Datenbank:', error);
       return res.status(500).json({
         error: 'Cat konnte nicht aus der Datenbank geloescht werden.'

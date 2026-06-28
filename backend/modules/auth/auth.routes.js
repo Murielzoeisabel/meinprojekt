@@ -1,8 +1,8 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const prisma = require('../prisma/client');
-const authenticate = require('../middleware/authenticate');
+const prisma = require('../../prisma/client');
+const authenticate = require('../../middleware/authenticate');
 
 const TOKEN_COOKIE_NAME = 'auth_token';
 const TOKEN_EXPIRES_IN = '24h';
