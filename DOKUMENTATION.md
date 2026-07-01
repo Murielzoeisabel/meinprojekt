@@ -530,63 +530,18 @@ Wir haben eine statische Code- und Architektur-Analyse unserer modularisierten M
    * *Das `community`-Modul.* Da das Forum und der Live-Chat funktional komplett unabhängig vom eigentlichen Katzentracking sind und nur über die `userId` bzw. das JWT-Token mit dem Auth-Kontext gekoppelt sind, lässt sich dieses Modul am einfachsten als eigenständiger Service auslagern.
 
 
-# Bonus: Frontend modularisieren
+# Studio Session 11: Deployment – Vom localhost ins echte Web (All-in-One mit Node.js)
 
-Analog zum Backend haben wir das React-Frontend restrukturiert und nach Features (Bounded Contexts) unter `frontend/src/features/` gruppiert. Generische Komponenten und Bibliotheken befinden sich nun unter `frontend/src/shared/`.
+# Überblick
 
-Die resultierende Verzeichnisstruktur sieht wie folgt aus:
 
-```text
-frontend/src/
-├── features/
-│   ├── auth/
-│   │   ├── Login.jsx
-│   │   ├── Register.jsx
-│   │   ├── Auth.css
-│   │   └── auth.api.js
-│   ├── cats/
-│   │   ├── CatList.jsx
-│   │   ├── CatManagement.jsx
-│   │   ├── NoCatsFeedback.jsx
-│   │   ├── HealthCheck.jsx
-│   │   ├── catHealthCalculations.js
-│   │   ├── catHealthCalculations.test.js
-│   │   └── cats.api.js
-│   └── community/
-│       ├── Community.jsx
-│       ├── Community.css
-│       ├── FloatingChat.jsx
-│       └── community.api.js
-├── shared/
-│   ├── components/
-│   │   ├── AnimatedPage.jsx
-│   │   ├── Navbar.jsx
-│   │   └── Navbar.css
-│   └── lib/
-│       ├── authFetch.js
-│       └── apiClient.js
-├── pages/                    ← verbleibende Routen/Ansichten (Dashboard, Ernährung, Fitness)
-├── utils/
-│   ├── formatting.js
-│   ├── formatting.test.js
-│   ├── reminder.js
-│   └── pushRegister.js
-├── App.jsx
-├── main.jsx
-└── index.css
-```
+| Bestandteil | Läuft als | Hostname / Pfad (Beispiel) | Wird ausgeliefert von |
+| --- | --- | --- | --- |
+| **Frontend (React)** | statisches Build (`dist/`) | `catslimdown.de` | Express (`express.static`) |
+| **Backend (Express)** | Node.js-App | `catslimdown.de/api` | konsoleH Node.js |
+| **Datenbank (SQL)** | MySQL/MariaDB | `localhost` (auf dem Server) | konsoleH DB-Verwaltung |
 
-### Details zum Frontend-Umbau:
-* **Feature-Ordner**:
-  * **`features/auth/`**: Beinhaltet nun alle Login- und Registrierungsformulare inklusive der auth-spezifischen API-Aufrufe (`auth.api.js`).
-  * **`features/cats/`**: Bündelt alle Kern-Tracking-Komponenten (Katzenliste, Management, den HealthCheck und die Berechnungslogik).
-  * **`features/community/`**: Beinhaltet das Community-Forum, den Chat und die Socket-API-Abfragen.
-* **Shared-Ordner**:
-  * **`shared/components/`**: Enthält UI-relevante, wiederverwendbare Layout-Elemente wie `Navbar` und `AnimatedPage`.
-  * **`shared/lib/`**: Enthält die globale `authFetch`-Funktion sowie den zentralen `apiClient`, der HTTP-Requests für alle Feature-APIs abwickelt.
-* **Referenzen & Imports**: Alle Imports in `App.jsx` und den umliegenden Seiten wurden auf die neuen modularisierten Pfade angepasst.
-
-Alle 67 Frontend-Unittests laufen in der neuen Struktur weiterhin vollständig erfolgreich.
+*Vorteil:* Durch diese Integration teilen sich Frontend und Backend exakt dieselbe Origin (`https://catslimdown.de`), wodurch CORS-Fehler oder Cross-Origin-Cookie-Probleme für JWT-Cookies vollständig entfallen.
 
 ---
 

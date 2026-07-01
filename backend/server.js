@@ -1,4 +1,4 @@
-require('dotenv').config();
+require('dotenv').config({ path: require('path').join(__dirname, '.env') });
 
 const express = require('express');
 const cors = require('cors');
@@ -373,97 +373,7 @@ app.use('/api/community', authenticate, createCommunityRouter({
   broadcastEvent
 }));
 
-// --- API ROUTES: WEIGHTS ---
-app.use('/api/weights', authenticate);
-app.get('/api/weights/:catId', async (req, res) => {
-  try {
-    const catId = parsePositiveInt(req.params.catId);
-    if (catId === null) {
-      return res.status(400).json({ error: 'Ungueltige Cat-ID.' });
-    }
 
-    const cat = await prisma.cat.findFirst({
-      where: { id: catId, userId: req.user.userId },
-      select: { id: true }
-    });
-    if (!cat) {
-      return res.status(404).json({ error: 'Cat nicht gefunden.' });
-    }
-
-    const entries = await prisma.weightEntry.findMany({
-      where: { catId },
-      orderBy: { date: 'asc' }
-    });
-
-    return res.json(entries.map((entry) => ({
-      date: new Date(entry.date).toISOString().split('T')[0],
-      weight: entry.weight
-    })));
-  } catch (error) {
-    console.error('Fehler beim Laden der Gewichte:', error);
-    return res.status(500).json({ error: 'Gewichte konnten nicht geladen werden.' });
-  }
-});
-
-app.post('/api/weights', async (req, res) => {
-  try {
-    const { catId, weight, date } = req.body;
-    const id = parsePositiveInt(catId);
-    const parsedWeight = Number(weight);
-
-    if (id === null) {
-      return res.status(400).json({ error: 'Ungueltige Cat-ID.' });
-    }
-
-    const cat = await prisma.cat.findFirst({
-      where: { id, userId: req.user.userId },
-      select: { id: true }
-    });
-    if (!cat) {
-      return res.status(404).json({ error: 'Cat nicht gefunden.' });
-    }
-
-    if (Number.isNaN(parsedWeight) || parsedWeight <= 0 || parsedWeight > 25) {
-      return res.status(400).json({ error: 'Ungültiges Gewicht.' });
-    }
-
-    const targetDate = date || new Date().toISOString().split('T')[0];
-    const parsedDate = new Date(`${targetDate}T00:00:00.000Z`);
-    if (Number.isNaN(parsedDate.getTime())) {
-      return res.status(400).json({ error: 'Ungueltiges Datum.' });
-    }
-
-    await prisma.weightEntry.upsert({
-      where: {
-        catId_date: {
-          catId: id,
-          date: parsedDate
-        }
-      },
-      create: {
-        catId: id,
-        date: parsedDate,
-        weight: parsedWeight
-      },
-      update: {
-        weight: parsedWeight
-      }
-    });
-
-    const entries = await prisma.weightEntry.findMany({
-      where: { catId: id },
-      orderBy: { date: 'asc' }
-    });
-
-    return res.status(201).json(entries.map((entry) => ({
-      date: new Date(entry.date).toISOString().split('T')[0],
-      weight: entry.weight
-    })));
-  } catch (error) {
-    console.error('Fehler beim Speichern des Gewichts:', error);
-    return res.status(500).json({ error: 'Gewicht konnte nicht gespeichert werden.' });
-  }
-});
 
 // --- API ROUTES: CALORIES ---
 app.use('/api/calories', authenticate);
