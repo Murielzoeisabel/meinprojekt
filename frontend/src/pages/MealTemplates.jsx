@@ -65,29 +65,49 @@ const MealTemplates = () => {
         <ArrowLeft size={18} /> Zurück zur Ernährungsauswahl
       </button>
 
-      <h1>🍽️ Vorlagen: Ernährungspläne</h1>
-      <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>
-        Strukturierte Wochendiäten für verschiedene Abnehmphasen – personalisiert für deine Katze.
-      </p>
+      <div className="cat-page-hero">
+        <div>
+          <h1>Vorlagen: Ernährungspläne</h1>
+          <p className="page-subtitle">
+            Strukturierte Wochendiäten für verschiedene Abnehmphasen – personalisiert für deine Katze.
+          </p>
+        </div>
+        <div className="cat-page-hero-art" aria-hidden="true">😸🍽️</div>
+      </div>
 
       {/* Cat Selector */}
       {cats.length === 0 ? (
         <NoCatsFeedback />
       ) : (
-        <div className="card" style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <h3 style={{ margin: 0 }}>Katze auswählen:</h3>
-          <select
-            className="input-field"
-            style={{ width: '250px', margin: 0 }}
-            value={selectedCatId}
-            onChange={(e) => setSelectedCatId(e.target.value)}
-          >
-            {cats.map(cat => (
-              <option key={cat.id} value={cat.id}>
-                {cat.name} ({cat.currentWeight !== null && cat.currentWeight !== undefined ? cat.currentWeight : cat.idealWeight}kg)
-              </option>
-            ))}
-          </select>
+        <div className="cat-selector-container">
+          <h3 className="cat-selector-title">Katze auswählen:</h3>
+          <div className="cat-selector-list">
+            {cats.map(cat => {
+              const isSelected = cat.id.toString() === selectedCatId;
+              return (
+                <button
+                  key={cat.id}
+                  type="button"
+                  className={`cat-selector-item ${isSelected ? 'active' : ''}`}
+                  onClick={() => setSelectedCatId(cat.id.toString())}
+                  aria-selected={isSelected}
+                >
+                  <div className="cat-selector-avatar">
+                    {cat.photo ? (
+                      <img
+                        src={cat.photo}
+                        alt={`Foto von ${cat.name}`}
+                        className="cat-selector-avatar-image"
+                      />
+                    ) : (
+                      <span className="cat-selector-placeholder">🐱</span>
+                    )}
+                  </div>
+                  <span className="cat-selector-name">{cat.name}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
       )}
 
@@ -96,22 +116,22 @@ const MealTemplates = () => {
       {/* Nutrition Info */}
       {selectedCat && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
-          <motion.div className="card" whileHover={{ scale: 1.05 }} style={{ textAlign: 'center' }}>
+          <div className="card" style={{ textAlign: 'center' }}>
             <h4 style={{ color: 'var(--text-secondary)', margin: 0 }}>Gewicht</h4>
             <h2 style={{ margin: '0.5rem 0 0 0' }}>
               {selectedCat.currentWeight !== null && selectedCat.currentWeight !== undefined
                 ? selectedCat.currentWeight
                 : selectedCat.idealWeight} kg
             </h2>
-          </motion.div>
-          <motion.div className="card" whileHover={{ scale: 1.05 }} style={{ textAlign: 'center' }}>
+          </div>
+          <div className="card" style={{ textAlign: 'center' }}>
             <h4 style={{ color: 'var(--text-secondary)', margin: 0 }}>Grundumsatz</h4>
             <h2 style={{ margin: '0.5rem 0 0 0' }}>{basalMetabolism} kcal</h2>
-          </motion.div>
-          <motion.div className="card" whileHover={{ scale: 1.05 }} style={{ textAlign: 'center' }}>
+          </div>
+          <div className="card" style={{ textAlign: 'center' }}>
             <h4 style={{ color: 'var(--text-secondary)', margin: 0 }}>Phase 2 Ziel</h4>
             <h2 style={{ margin: '0.5rem 0 0 0', color: 'var(--accent-primary)' }}>{phase2Calories} kcal</h2>
-          </motion.div>
+          </div>
         </div>
       )}
 

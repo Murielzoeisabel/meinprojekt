@@ -91,14 +91,15 @@ const Recipes = () => {
         <ArrowLeft size={18} /> Zurück zur Ernährungsauswahl
       </button>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', justifyItems: 'center' }}>
-        <h1>Gesunde Rezepte</h1>
-        <span className="wink-cat" style={{ fontSize: '2.5rem' }}></span>
+      <div className="cat-page-hero">
+        <div>
+          <h1>Gesunde Rezepte</h1>
+          <p className="page-subtitle">
+            Erweiterte Ernährungspläne und Zubereitungstipps zum Selberkochen. Gut zum Abnehmen!
+          </p>
+        </div>
+        <div className="cat-page-hero-art" aria-hidden="true">😸🍳</div>
       </div>
-      <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>
-        Erweiterte Ernährungspläne und Zubereitungstipps zum Selberkochen. Gut zum Abnehmen!
-        <span className="wagging-tail" style={{ marginLeft: '10px', fontSize: '1.2rem' }}>🐈</span>
-      </p>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '2rem' }}>
         {recipes.map((rec, i) => (

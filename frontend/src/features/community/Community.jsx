@@ -16,6 +16,7 @@ void motion;
 
 const REACTION_STATS_KEY = 'community-reaction-stats-v1';
 const SUPER_SWEET_REACTIONS_KEY = 'community-super-sweet-reactions-v1';
+const SUPPORT_REACTIONS_KEY = 'community-support-reactions-v1';
 const PROFILE_NAME_KEY = 'cat-slim-down-profile-name';
 const PROFILE_IMAGE_KEY = 'cat-slim-down-profile-image';
 const CHAT_EMOJIS = ['😺', '😻', '🎉', '💪', '👏', '❤️', '🔥', '🥳', '🐾', '👍'];
@@ -39,6 +40,22 @@ const loadReactionStats = () => {
 const loadSuperSweetReactions = () => {
   try {
     const raw = localStorage.getItem(SUPER_SWEET_REACTIONS_KEY);
+    if (!raw) return [];
+
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+
+    return parsed
+      .map((value) => Number(value))
+      .filter((value) => Number.isInteger(value) && value > 0);
+  } catch {
+    return [];
+  }
+};
+
+const loadSupportReactions = () => {
+  try {
+    const raw = localStorage.getItem(SUPPORT_REACTIONS_KEY);
     if (!raw) return [];
 
     const parsed = JSON.parse(raw);
@@ -99,6 +116,7 @@ const Community = () => {
   const [profileImage, setProfileImage] = useState(loadProfileImage);
   const [reactionStats, setReactionStats] = useState(loadReactionStats);
   const [superSweetReactions, setSuperSweetReactions] = useState(loadSuperSweetReactions);
+  const [supportReactions, setSupportReactions] = useState(loadSupportReactions);
   const [errorMsg, setErrorMsg] = useState('');
   const [postDraft, setPostDraft] = useState({
     author: '',
@@ -128,6 +146,10 @@ const Community = () => {
   useEffect(() => {
     localStorage.setItem(SUPER_SWEET_REACTIONS_KEY, JSON.stringify(superSweetReactions));
   }, [superSweetReactions]);
+
+  useEffect(() => {
+    localStorage.setItem(SUPPORT_REACTIONS_KEY, JSON.stringify(supportReactions));
+  }, [supportReactions]);
 
   useEffect(() => {
     const syncProfileImage = () => setProfileImage(loadProfileImage());
@@ -291,12 +313,18 @@ const Community = () => {
     if (type === 'like' && superSweetReactions.includes(postId)) {
       return;
     }
+    if (type === 'thumbsUp' && supportReactions.includes(postId)) {
+      return;
+    }
 
     try {
       setErrorMsg('');
       const updatedPost = await reactToCommunityPost(postId, type);
       if (type === 'like') {
         setSuperSweetReactions((prev) => (prev.includes(postId) ? prev : [...prev, postId]));
+      }
+      if (type === 'thumbsUp') {
+        setSupportReactions((prev) => (prev.includes(postId) ? prev : [...prev, postId]));
       }
       setReactionStats((prev) => ({
         givenLikes: prev.givenLikes + (type === 'like' ? 1 : 0),
@@ -312,6 +340,7 @@ const Community = () => {
   };
 
   const isSuperSweetActive = (postId) => superSweetReactions.includes(postId);
+  const isSupportActive = (postId) => supportReactions.includes(postId);
 
   const handlePostDraftChange = (field) => (event) => {
     setPostDraft((prev) => ({ ...prev, [field]: event.target.value }));
@@ -406,9 +435,6 @@ const Community = () => {
         transition={{ duration: 0.35, ease: 'easeOut' }}
         style={{
           marginBottom: '1.5rem',
-          border: '1px solid rgba(16, 185, 129, 0.35)',
-          background:
-            'radial-gradient(circle at 85% 20%, rgba(251, 191, 36, 0.24), transparent 36%), linear-gradient(130deg, rgba(16, 185, 129, 0.16), rgba(59, 130, 246, 0.12))',
           position: 'relative',
           overflow: 'hidden'
         }}
@@ -633,8 +659,14 @@ const Community = () => {
                   </button>
                   <button
                     className="btn-secondary"
-                    style={{ padding: '0.45rem 0.9rem' }}
+                    style={{
+                      padding: '0.45rem 0.9rem',
+                      background: isSupportActive(post.id) ? 'var(--accent-primary)' : undefined,
+                      color: isSupportActive(post.id) ? 'white' : undefined,
+                      borderColor: isSupportActive(post.id) ? 'var(--accent-primary)' : undefined
+                    }}
                     onClick={() => reactToPost(post.id, 'thumbsUp')}
+                    disabled={isSupportActive(post.id)}
                   >
                     <ThumbsUp size={15} /> Abnehmweg unterstützen ({post.daumenHoch ?? post.hearts ?? 0})
                   </button>

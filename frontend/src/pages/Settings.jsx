@@ -109,11 +109,15 @@ const Settings = () => {
 
   return (
     <AnimatedPage>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', justifyItems: 'center' }}>
-        <h1>Einstellungen</h1>
-        <span className="wink-cat" style={{ fontSize: '2.5rem' }}></span>
+      <div className="cat-page-hero">
+        <div>
+          <h1>Einstellungen</h1>
+          <p className="page-subtitle">
+            Passe die App an deine Bedürfnisse an.
+          </p>
+        </div>
+        <div className="cat-page-hero-art" aria-hidden="true">😸⚙️</div>
       </div>
-      <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>Passe die App an deine Bedürfnisse an.</p>
 
       <div style={{ maxWidth: '600px', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
         <div className="card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

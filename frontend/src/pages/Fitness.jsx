@@ -522,30 +522,45 @@ const Fitness = () => {
       )}
       <div className="cat-page-hero">
         <div>
-          <h1>🎾 Fitness & Übungen</h1>
+          <h1>Fitness & Übungen</h1>
           <p className="page-subtitle">
             Entdecke verschiedene Übungen, um deine Katze fit und gesund zu halten. Fahre über eine Karte, um die Übung animiert zu sehen.
           </p>
         </div>
-        <div className="cat-page-hero-art" aria-hidden="true">🐱🏃</div>
+        <div className="cat-page-hero-art" aria-hidden="true">😸🎾</div>
       </div>
 
       {hasCats ? (
-        <div className="card" style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <h3 style={{ margin: 0 }}>Katze auswählen:</h3>
-          <select
-            className="input-field"
-            style={{ width: '250px', margin: 0 }}
-            value={selectedCatId}
-            onChange={(e) => setSelectedCatId(e.target.value)}
-          >
-            {cats.map(cat => (
-              <option key={cat.id} value={cat.id}>
-                {cat.name} ({cat.currentWeight !== null && cat.currentWeight !== undefined ? cat.currentWeight : cat.idealWeight}kg)
-              </option>
-            ))}
-          </select>
-          <p style={{ color: 'var(--text-secondary)', margin: 0 }}>
+        <div className="cat-selector-container">
+          <h3 className="cat-selector-title">Katze auswählen:</h3>
+          <div className="cat-selector-list">
+            {cats.map(cat => {
+              const isSelected = cat.id.toString() === selectedCatId;
+              return (
+                <button
+                  key={cat.id}
+                  type="button"
+                  className={`cat-selector-item ${isSelected ? 'active' : ''}`}
+                  onClick={() => setSelectedCatId(cat.id.toString())}
+                  aria-selected={isSelected}
+                >
+                  <div className="cat-selector-avatar">
+                    {cat.photo ? (
+                      <img
+                        src={cat.photo}
+                        alt={`Foto von ${cat.name}`}
+                        className="cat-selector-avatar-image"
+                      />
+                    ) : (
+                      <span className="cat-selector-placeholder">🐱</span>
+                    )}
+                  </div>
+                  <span className="cat-selector-name">{cat.name}</span>
+                </button>
+              );
+            })}
+          </div>
+          <p style={{ color: 'var(--text-secondary)', marginTop: '0.8rem', fontWeight: 600 }}>
             Wähle deine Katze aus, um den exakten Kalorienverbrauch pro Übung zu sehen.
           </p>
         </div>

@@ -349,15 +349,15 @@ const Nutrition = () => {
 
   return (
     <AnimatedPage>
-      <div className="nutrition-hero">
+      <div className="cat-page-hero">
         <div>
           <h1>Ernährung mit Herz</h1>
-          <p>
+          <p className="page-subtitle">
             Damit deine Samtpfote gesund, satt und zufrieden bleibt: hier findest du klare Grundlagen,
             alltagstaugliche Orientierung und liebevolle Hilfe für jeden Napf-Moment.
           </p>
         </div>
-        <span className="wink-cat nutrition-wink" />
+        <div className="cat-page-hero-art" aria-hidden="true">😸❤️</div>
       </div>
 
       <div className="card nutrition-quicknav">

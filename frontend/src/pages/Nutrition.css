@@ -1,34 +1,4 @@
-.nutrition-hero {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1.2rem;
-  margin-bottom: 1.2rem;
-  padding: 1.35rem 1.4rem;
-  border-radius: 22px;
-  border: 1px solid rgba(54, 199, 168, 0.36);
-  background:
-    radial-gradient(circle at 85% 20%, rgba(255, 122, 69, 0.22), transparent 42%),
-    linear-gradient(125deg, rgba(247, 255, 252, 0.9), rgba(203, 245, 233, 0.4));
-  box-shadow: 0 16px 30px rgba(22, 103, 81, 0.14);
-}
 
-.nutrition-hero h1 {
-  margin: 0 0 0.45rem;
-}
-
-.nutrition-hero p {
-  margin: 0;
-  color: var(--text-secondary);
-  max-width: 760px;
-  line-height: 1.65;
-}
-
-.nutrition-wink {
-  font-size: 2.5rem;
-  line-height: 1;
-}
 
 .nutrition-quicknav {
   margin-bottom: 1rem;

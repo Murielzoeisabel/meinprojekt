@@ -58,3 +58,7 @@
     border-radius: 18px;
   }
 }
+
+[data-theme='dark'] .auth-shell {
+  background: linear-gradient(165deg, rgba(30, 61, 52, 0.88), rgba(24, 47, 40, 0.96));
+}

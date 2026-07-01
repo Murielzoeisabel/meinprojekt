@@ -529,14 +529,17 @@ const CatList = () => {
 
   return (
     <AnimatedPage>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+      <div className="cat-page-hero">
         <div>
           <h1>Deine Katzen</h1>
-          <p style={{ color: 'var(--text-secondary)' }}>Verwalte die Profile deiner Lieblinge.</p>
+          <p className="page-subtitle">Verwalte die Profile deiner Lieblinge.</p>
         </div>
-        <button className="btn-primary" onClick={() => setShowAddForm(!showAddForm)} data-cy="add-cat-btn">
-          <Plus size={20} /> {showAddForm ? 'Abbrechen' : 'Katze hinzufügen'}
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <button className="btn-primary" onClick={() => setShowAddForm(!showAddForm)} data-cy="add-cat-btn" style={{ marginBottom: 0 }}>
+            <Plus size={20} /> {showAddForm ? 'Abbrechen' : 'Katze hinzufügen'}
+          </button>
+          <div className="cat-page-hero-art" aria-hidden="true">😸📋</div>
+        </div>
       </div>
 
       {globalFeedback && (

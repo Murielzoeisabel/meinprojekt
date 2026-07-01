@@ -385,19 +385,35 @@ const Profile = () => {
         {cats.length === 0 ? (
           <NoCatsFeedback compact />
         ) : (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
-            <label htmlFor="profile-cat-select" style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Katze:</label>
-            <select
-              id="profile-cat-select"
-              className="input-field"
-              style={{ width: '260px', marginBottom: 0 }}
-              value={selectedCatId}
-              onChange={(e) => setSelectedCatId(e.target.value)}
-            >
-              {cats.map((cat) => (
-                <option key={cat.id} value={cat.id}>{cat.name}</option>
-              ))}
-            </select>
+          <div className="cat-selector-container">
+            <h3 className="cat-selector-title">Katze auswählen:</h3>
+            <div className="cat-selector-list">
+              {cats.map(cat => {
+                const isSelected = cat.id.toString() === selectedCatId;
+                return (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    className={`cat-selector-item ${isSelected ? 'active' : ''}`}
+                    onClick={() => setSelectedCatId(cat.id.toString())}
+                    aria-selected={isSelected}
+                  >
+                    <div className="cat-selector-avatar">
+                      {cat.photo ? (
+                        <img
+                          src={cat.photo}
+                          alt={`Foto von ${cat.name}`}
+                          className="cat-selector-avatar-image"
+                        />
+                      ) : (
+                        <span className="cat-selector-placeholder">🐱</span>
+                      )}
+                    </div>
+                    <span className="cat-selector-name">{cat.name}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         )}
 

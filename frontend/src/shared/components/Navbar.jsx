@@ -1,10 +1,10 @@
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { Home, Cat, Activity, Settings as SettingsIcon, HeartPulse, User, Shield, Moon, Sun, Utensils, MessageCircle, FileText, ChefHat, Flame } from 'lucide-react';
+import { Home, Cat, Activity, Settings as SettingsIcon, HeartPulse, User, Shield, Moon, Sun, Utensils, MessageCircle, FileText, ChefHat, Flame, LogOut } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import './Navbar.css';
 
 const navItems = [
-  { path: '/', label: 'Übersicht', icon: <Home size={20} /> },
+  { path: '/dashboard', label: 'Übersicht', icon: <Home size={20} /> },
   { path: '/cats', label: 'Katzen', icon: <Cat size={20} /> },
   { path: '/stats', label: 'Statistik', icon: <Activity size={20} /> },
   { path: '/fitness', label: 'Fitness', icon: <HeartPulse size={20} /> },
@@ -25,7 +25,7 @@ const navItems = [
   { path: '/settings', label: 'Einstellungen', icon: <SettingsIcon size={20} /> },
 ];
 
-const Navbar = () => {
+const Navbar = ({ onLogout }) => {
   const [theme, setTheme] = useState(() => {
     return localStorage.getItem('cat-slim-down-theme') || 'light';
   });
@@ -118,6 +118,12 @@ const Navbar = () => {
             </div>
           );
         })}
+      </div>
+      <div className="navbar-footer">
+        <button onClick={onLogout} className="logout-nav-btn" type="button" aria-label="Abmelden">
+          <LogOut size={20} />
+          <span>Abmelden</span>
+        </button>
       </div>
     </nav>
   );

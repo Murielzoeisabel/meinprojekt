@@ -7,6 +7,8 @@ import { motion } from 'framer-motion';
 import NoCatsFeedback from '../features/cats/NoCatsFeedback';
 import './DashboardStats.css';
 
+void motion;
+
 const Stats = () => {
   const [cats, setCats] = useState([]);
   const [selectedCatId, setSelectedCatId] = useState('');
@@ -308,27 +310,34 @@ const Stats = () => {
       {cats.length === 0 ? (
         <NoCatsFeedback />
       ) : (
-        <div className="card filter-card">
-          <div className="selector-profile-preview" aria-hidden={!selectedCat?.photo}>
-            {selectedCat?.photo ? (
-              <img
-                src={selectedCat.photo}
-                alt={selectedCat.name ? `Profilbild von ${selectedCat.name}` : 'Profilbild der ausgewählten Katze'}
-                className="selector-profile-image"
-              />
-            ) : (
-              <div className="selector-profile-placeholder">🐱</div>
-            )}
-          </div>
-
-          <div className="selector-controls">
-            <select 
-              className="input-field"
-              value={selectedCatId} 
-              onChange={(e) => setSelectedCatId(e.target.value)}
-            >
-              {cats.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
-            </select>
+        <div className="cat-selector-container">
+          <h3 className="cat-selector-title">Katze auswählen:</h3>
+          <div className="cat-selector-list">
+            {cats.map(cat => {
+              const isSelected = cat.id.toString() === selectedCatId;
+              return (
+                <button
+                  key={cat.id}
+                  type="button"
+                  className={`cat-selector-item ${isSelected ? 'active' : ''}`}
+                  onClick={() => setSelectedCatId(cat.id.toString())}
+                  aria-selected={isSelected}
+                >
+                  <div className="cat-selector-avatar">
+                    {cat.photo ? (
+                      <img
+                        src={cat.photo}
+                        alt={`Foto von ${cat.name}`}
+                        className="cat-selector-avatar-image"
+                      />
+                    ) : (
+                      <span className="cat-selector-placeholder">🐱</span>
+                    )}
+                  </div>
+                  <span className="cat-selector-name">{cat.name}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
@@ -336,7 +345,7 @@ const Stats = () => {
       {cats.length > 0 && (
         <>
           <div
-            className={`card analysis-card ${
+            className={`card card-hover-lift analysis-card ${
               weightAnalysisHint.tone === 'success'
                 ? 'analysis-success'
                 : weightAnalysisHint.tone === 'warning'
@@ -352,7 +361,7 @@ const Stats = () => {
 
           <div className="two-col-layout stats-layout">
             <div className="stats-main-column">
-              <div className="card chart-card stats-chart-card">
+              <div className="card card-hover-lift chart-card stats-chart-card">
                 <h3 className="chart-title">Langzeittrend</h3>
                 <ResponsiveContainer width="100%" height={320} minWidth={0}>
                   <AreaChart data={sortedWeights} margin={{ top: 20, right: 30, left: 0, bottom: 20 }}>
@@ -392,19 +401,19 @@ const Stats = () => {
               </div>
 
               <div className="stats-mini-row">
-                <div className="card stats-mini">
+                <div className="card card-hover-lift stats-mini">
                   <h4>Allgemeiner Trend</h4>
                   <h2 style={{ color: trend.status === 'fallend' ? 'var(--accent-primary)' : (trend.status === 'steigend' ? 'var(--danger)' : 'var(--text-primary)') }}>
                     {trend.status.toUpperCase()}
                   </h2>
                 </div>
 
-                <div className="card stats-mini">
+                <div className="card card-hover-lift stats-mini">
                   <h4>Gesamtveränderung</h4>
                   <h2>{trend.direction}{trend.diff} kg</h2>
                 </div>
 
-                <div className="card stats-mini">
+                <div className="card card-hover-lift stats-mini">
                   <h4>Einträge gesamt</h4>
                   <h2>{sortedWeights.length}</h2>
                 </div>
@@ -412,7 +421,7 @@ const Stats = () => {
             </div>
 
             <div className="stats-panel">
-              <div className="card form-card">
+              <div className="card card-hover-lift form-card">
                 <h3>Gewicht eintragen</h3>
                 <form onSubmit={handleWeightSubmit}>
                   <input

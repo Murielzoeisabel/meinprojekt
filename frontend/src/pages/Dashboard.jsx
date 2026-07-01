@@ -206,7 +206,7 @@ const Dashboard = () => {
           {errorMsg}
         </div>
       )}
-      <div className="card dashboard-hero">
+      <div className="card card-hover-lift dashboard-hero">
         <div>
           <h1 className="dashboard-title">
             Cat Slim Down <span className="floating-comic">👋</span>
@@ -223,30 +223,34 @@ const Dashboard = () => {
       {cats.length === 0 ? (
         <NoCatsFeedback />
       ) : (
-        <div className="card selector-card">
-          <div className="selector-profile-preview" aria-hidden={!selectedCat?.photo}>
-            {selectedCat?.photo ? (
-              <img
-                src={selectedCat.photo}
-                alt={selectedCat.name ? `Profilbild von ${selectedCat.name}` : 'Profilbild der ausgewählten Katze'}
-                className="selector-profile-image"
-              />
-            ) : (
-              <div className="selector-profile-placeholder">🐱</div>
-            )}
-          </div>
-
-          <div className="selector-controls">
-            <h3>Katze auswählen:</h3>
-            <select 
-              className="input-field selector-input"
-              value={selectedCatId} 
-              onChange={(e) => setSelectedCatId(e.target.value)}
-            >
-              {cats.map(cat => (
-                <option key={cat.id} value={cat.id}>{cat.name}</option>
-              ))}
-            </select>
+        <div className="cat-selector-container">
+          <h3 className="cat-selector-title">Katze auswählen:</h3>
+          <div className="cat-selector-list">
+            {cats.map(cat => {
+              const isSelected = cat.id.toString() === selectedCatId;
+              return (
+                <button
+                  key={cat.id}
+                  type="button"
+                  className={`cat-selector-item ${isSelected ? 'active' : ''}`}
+                  onClick={() => setSelectedCatId(cat.id.toString())}
+                  aria-selected={isSelected}
+                >
+                  <div className="cat-selector-avatar">
+                    {cat.photo ? (
+                      <img
+                        src={cat.photo}
+                        alt={`Foto von ${cat.name}`}
+                        className="cat-selector-avatar-image"
+                      />
+                    ) : (
+                      <span className="cat-selector-placeholder">🐱</span>
+                    )}
+                  </div>
+                  <span className="cat-selector-name">{cat.name}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
@@ -255,18 +259,18 @@ const Dashboard = () => {
         <>
           {selectedCat && (
             <div className="kpi-grid">
-              <motion.div className="card card-hover-lift kpi-card" whileHover={{ scale: 1.015 }}>
+              <div className="card card-hover-lift kpi-card">
                 <h4>Aktuelles Gewicht</h4>
                 <h2>{currentWeight} kg</h2>
-              </motion.div>
-              <motion.div className="card card-hover-lift kpi-card" whileHover={{ scale: 1.015 }}>
+              </div>
+              <div className="card card-hover-lift kpi-card">
                 <h4>Zielgewicht</h4>
                 <h2>{targetWeight} kg</h2>
-              </motion.div>
-              <motion.div className="card card-hover-lift kpi-card" whileHover={{ scale: 1.015 }}>
+              </div>
+              <div className="card card-hover-lift kpi-card">
                 <h4>Durchschnitts-Gewicht</h4>
                 <h2>{avgWeight} kg</h2>
-              </motion.div>
+              </div>
             </div>
           )}
 
@@ -280,7 +284,7 @@ const Dashboard = () => {
           </div>
 
           {weightTrendTip && (
-            <div className={`card analysis-card ${weightTrendTip.variant}`}>
+            <div className={`card card-hover-lift analysis-card ${weightTrendTip.variant}`}>
               <h3>{weightTrendTip.title}</h3>
               <p>{weightTrendTip.text}</p>
             </div>
@@ -288,7 +292,7 @@ const Dashboard = () => {
 
           <div className="paw-separator" aria-hidden="true">🐾 🐾 🐾</div>
 
-          <div className="card form-card">
+          <div className="card card-hover-lift form-card">
             <Link to="/stats" className="btn-primary btn-block">Zur Statistik & Gewicht eintragen</Link>
           </div>
         </>
