@@ -231,12 +231,12 @@ const Landing = () => {
                 <span>Aktivitäten-Log</span>
               </button>
               <button 
-                onClick={() => setActiveTab('community')}
-                className={`showcase-tab-btn ${activeTab === 'community' ? 'active' : ''}`}
+                onClick={() => setActiveTab('analyzer')}
+                className={`showcase-tab-btn ${activeTab === 'analyzer' ? 'active' : ''}`}
                 type="button"
               >
-                <MessageCircle size={18} />
-                <span>Community</span>
+                <Sparkles size={18} />
+                <span>KI Futter-Scanner</span>
               </button>
             </div>
 
@@ -361,35 +361,33 @@ const Landing = () => {
                 </div>
               )}
 
-              {activeTab === 'community' && (
+              {activeTab === 'analyzer' && (
                 <div className="showcase-pane active-pane">
                   <div className="pane-info">
-                    <h3>Motivierende Gemeinschaft</h3>
+                    <h3>KI Futter-Scanner</h3>
                     <p>
-                      Der Weg zum Idealgewicht kann eine Herausforderung sein. Tausche dich in unserem integrierten Chat sicher mit Gleichgesinnten aus, teile deine Erfolge und erhalte wertvolle Tipps aus der Community.
+                      Schluss mit dem mühsamen Entziffern von Inhaltsstoffen auf der Rückseite der Futterdose. Fotografiere einfach das Etikett – unsere künstliche Intelligenz erkennt sofort, ob das Futter für eine gesunde Diät geeignet ist.
                     </p>
                     <ul className="pane-bullets">
-                      <li><CheckCircle2 size={16} className="icon-mint" /> Geschützter Austausch im Gruppen-Chat</li>
-                      <li><CheckCircle2 size={16} className="icon-mint" /> Hilfreiche Ratschläge von Katzeneltern</li>
-                      <li><CheckCircle2 size={16} className="icon-mint" /> Erfolge und Motivation teilen</li>
+                      <li><CheckCircle2 size={16} className="icon-mint" /> Sekundenschneller Foto-Upload</li>
+                      <li><CheckCircle2 size={16} className="icon-mint" /> Sofortige Bewertung für Gewichtsreduktion</li>
+                      <li><CheckCircle2 size={16} className="icon-mint" /> Erkennt versteckten Zucker & Getreide</li>
                     </ul>
                   </div>
                   <div className="pane-preview">
-                    <div className="mockup-card-community">
-                      <h4>Community Chat</h4>
-                      <div className="chat-bubbles-mock">
-                        <div className="chat-bubble received">
-                          <span className="sender">Sarah (Luna):</span>
-                          <p>Luna hat diese Woche 120g abgenommen! 😻</p>
-                        </div>
-                        <div className="chat-bubble sent">
-                          <span className="sender">Du:</span>
-                          <p>Klasse! Wie habt ihr das geschafft?</p>
-                        </div>
-                        <div className="chat-bubble received">
-                          <span className="sender">Sarah (Luna):</span>
-                          <p>Wir spielen jetzt täglich 15 Min. extra Federangel!</p>
-                        </div>
+                    <div className="mockup-card-analyzer">
+                      <div className="mockup-analyzer-header">
+                        <Sparkles size={18} className="icon-sparkle" />
+                        <h4>Scan-Ergebnis</h4>
+                      </div>
+                      <div className="mockup-analyzer-verdict danger-alert">
+                        <span className="verdict-status">⚠️ Nicht optimal</span>
+                        <p>Enthält <strong>Zucker</strong> und <strong>Getreide</strong>. Geringer Fleischanteil (4%). Für eine Gewichtsreduktion ungeeignet.</p>
+                      </div>
+                      <div className="mockup-analyzer-ingredients">
+                        <span className="mockup-tag">Getreide</span>
+                        <span className="mockup-tag">Zucker</span>
+                        <span className="mockup-tag">Zusatzstoffe</span>
                       </div>
                     </div>
                   </div>
@@ -434,10 +432,10 @@ const Landing = () => {
 
             <div className="bento-card-modern gradient-bento-4">
               <div className="bento-icon-wrapper-modern">
-                <Heart size={24} />
+                <Sparkles size={24} />
               </div>
-              <h3>Übungen & Fitness</h3>
-              <p>Steigere die Ausdauer und Spielfreude mit bewährten Bewegungstherapien und Spiele-Ideen.</p>
+              <h3>KI Futter-Analyse</h3>
+              <p>Scanne Futteretiketten per Foto. Unsere KI entlarvt ungesunde Dickmacher wie Getreide und Zucker in Sekunden.</p>
             </div>
           </div>
         </section>
@@ -492,10 +490,10 @@ const Landing = () => {
                 </div>
               </div>
               <p className="testimonial-quote">
-                "Der Austausch in der Community hat mir sehr geholfen, standhaft zu bleiben, wenn Felix am Napf gejammert hat. Absolut empfehlenswert!"
+                "Dank der KI-Futteranalyse habe ich erst bemerkt, wie viel versteckten Zucker das alte Futter enthielt. Felix hat mit dem neuen Futter fast 1 kg verloren!"
               </p>
               <div className="testimonial-badge-success">
-                <span>Erfolg: -950g (Glücklich)</span>
+                <span>Erfolg: -950g (Zuckerfrei & vital)</span>
               </div>
             </div>
           </div>

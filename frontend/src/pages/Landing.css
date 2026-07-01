@@ -499,7 +499,7 @@
 .mockup-card-profile,
 .mockup-card-nutrition,
 .mockup-card-fitness,
-.mockup-card-community {
+.mockup-card-analyzer {
   background: var(--surface-elevated);
   border: 1px solid var(--border-color);
   border-radius: 20px;
@@ -512,7 +512,7 @@
 [data-theme='dark'] .mockup-card-profile,
 [data-theme='dark'] .mockup-card-nutrition,
 [data-theme='dark'] .mockup-card-fitness,
-[data-theme='dark'] .mockup-card-community {
+[data-theme='dark'] .mockup-card-analyzer {
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
 }
 
@@ -696,49 +696,58 @@
   color: var(--accent-primary);
 }
 
-/* Mockup: Community */
-.mockup-card-community h4 {
+/* Mockup: Analyzer */
+.mockup-analyzer-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   margin-bottom: 0.85rem;
+}
+
+.mockup-analyzer-header h4 {
+  margin: 0;
   font-size: 1rem;
 }
 
-.chat-bubbles-mock {
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
+.icon-sparkle {
+  color: var(--accent-primary);
 }
 
-.chat-bubble {
-  max-width: 85%;
-  padding: 0.45rem 0.7rem;
+.mockup-analyzer-verdict {
+  padding: 0.85rem;
   border-radius: 12px;
-  font-size: 0.7rem;
-  line-height: 1.3;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  margin-bottom: 0.85rem;
+  text-align: left;
 }
 
-.chat-bubble p {
-  margin: 0;
-}
-
-.chat-bubble .sender {
-  font-weight: 800;
-  font-size: 0.6rem;
-  display: block;
-  margin-bottom: 0.15rem;
-}
-
-.chat-bubble.received {
-  align-self: flex-start;
-  background: var(--surface-soft);
+.mockup-analyzer-verdict.danger-alert {
+  background: rgba(180, 35, 24, 0.08);
+  border: 1px solid rgba(180, 35, 24, 0.2);
   color: var(--text-primary);
-  border-bottom-left-radius: 2px;
 }
 
-.chat-bubble.sent {
-  align-self: flex-end;
-  background: var(--accent-tertiary);
-  color: #123128;
-  border-bottom-right-radius: 2px;
+.verdict-status {
+  display: block;
+  font-weight: 800;
+  color: var(--danger);
+  margin-bottom: 0.25rem;
+}
+
+.mockup-analyzer-ingredients {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.mockup-tag {
+  background: var(--surface-soft);
+  color: var(--text-secondary);
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.65rem;
+  font-weight: 600;
 }
 
 /* Bento Grid Features Section */
@@ -819,7 +828,7 @@
   font-size: 2.5rem;
 }
 .gradient-bento-4::after {
-  content: '🎾';
+  content: '✨';
   position: absolute;
   right: 15px;
   bottom: 12px;
