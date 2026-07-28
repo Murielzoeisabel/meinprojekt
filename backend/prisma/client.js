@@ -39,14 +39,11 @@ if (process.env.NODE_ENV === 'test') {
   prisma = global.__prismaMock;
 } else {
   const { PrismaClient } = require('@prisma/client');
-  const { PrismaBetterSqlite3 } = require('@prisma/adapter-better-sqlite3');
+  const { PrismaMariaDb } = require('@prisma/adapter-mariadb');
 
-  const databaseUrl = process.env.DATABASE_URL || 'file:./prisma/dev.db';
-  const sqlitePath = databaseUrl.startsWith('file:') ? databaseUrl.replace(/^file:/, '') : databaseUrl;
-
-  const adapter = new PrismaBetterSqlite3({ url: sqlitePath });
-
-  prisma = new PrismaClient({ adapter });
+  prisma = new PrismaClient({
+    adapter: new PrismaMariaDb(process.env.DATABASE_URL || '')
+  });
 }
 
 module.exports = prisma;

@@ -15,8 +15,15 @@ const { sendNewPostEmailAsync } = require('./utils/mailer');
 const { subscribeUser, sendPushNotification } = require('./utils/webpush');
 
 const app = express();
-const PORT = Number(process.env.PORT) || 3001;
+const PORT = Number(process.env.PORT) || 3000;
 const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || 'http://localhost:5173';
+const FRONTEND_DIST_PATH = path.join(__dirname, 'public');
+
+if (!fs.existsSync(FRONTEND_DIST_PATH)) {
+  throw new Error('Frontend-Build nicht gefunden. Bitte den Vite-Build nach backend/public kopieren.');
+}
+
+app.set('trust proxy', 1);
 
 app.use(cors({
   origin: FRONTEND_ORIGIN,
@@ -510,6 +517,30 @@ app.post('/api/push/subscribe', authenticate, (req, res) => {
 
 app.get('/api/push/key', (req, res) => {
   return res.json({ publicKey: process.env.VAPID_PUBLIC_KEY || '' });
+});
+
+app.use('/api', (req, res) => {
+  return res.status(404).json({ error: 'Not found' });
+});
+
+// --- STATIC FRONTEND ASSETS ---
+app.use(express.static(FRONTEND_DIST_PATH, {
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith(`${path.sep}index.html`)) {
+      res.setHeader('Cache-Control', 'no-cache');
+      return;
+    }
+
+    if (filePath.includes(`${path.sep}assets${path.sep}`)) {
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    }
+  }
+}));
+
+// --- SPA FALLBACK ---
+app.use((req, res) => {
+  res.setHeader('Cache-Control', 'no-cache');
+  return res.sendFile(path.join(FRONTEND_DIST_PATH, 'index.html'));
 });
 
 app.use((err, req, res, next) => {

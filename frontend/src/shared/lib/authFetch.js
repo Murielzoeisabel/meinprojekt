@@ -1,18 +1,18 @@
-const API_BASE_URL = 'http://localhost:3001/api';
+const API_PREFIX = '/api';
 
 const buildUrl = (url) => {
   if (url.startsWith('http://') || url.startsWith('https://')) {
     return url;
   }
 
-  return `${API_BASE_URL}${url.startsWith('/') ? '' : '/'}${url}`;
+  return `${API_PREFIX}${url.startsWith('/') ? '' : '/'}${url}`;
 };
 
 const isAuthEndpoint = (url) => /\/auth\/(login|register|logout)$/.test(url);
 
 const clearAuthCookieAndRedirect = async () => {
   try {
-    await fetch(`${API_BASE_URL}/auth/logout`, {
+    await fetch(buildUrl('/auth/logout'), {
       method: 'POST',
       credentials: 'include'
     });
