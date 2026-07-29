@@ -49,16 +49,5 @@ jobs:
           password: ${{ secrets.HETZNER_SSH_PASSWORD }}
           port: 22
           debug: true
-          script: |
-            /bin/sh << 'EOF'
-            echo "=== SYSTEM DIAGNOSTICS ==="
-            pwd
-            ls -la ~/meinprojekt/backend/deploy.sh || echo "deploy.sh not found!"
-            
-            echo "=== FIXING LINE ENDINGS ==="
-            tr -d '\r' < ~/meinprojekt/backend/deploy.sh > ~/meinprojekt/backend/deploy.tmp && mv ~/meinprojekt/backend/deploy.tmp ~/meinprojekt/backend/deploy.sh
-            
-            echo "=== RUNNING DEPLOY SCRIPT ==="
-            sh ~/meinprojekt/backend/deploy.sh
-            EOF
+          script: tr -d '\r' < ~/meinprojekt/backend/deploy.sh > ~/meinprojekt/backend/deploy.tmp && mv ~/meinprojekt/backend/deploy.tmp ~/meinprojekt/backend/deploy.sh && sh ~/meinprojekt/backend/deploy.sh
 
