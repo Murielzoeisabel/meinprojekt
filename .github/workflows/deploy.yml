@@ -31,39 +31,16 @@ jobs:
           mkdir -p backend/public
           cp -r frontend/dist/* backend/public/
 
-      - name: SSH Diagnose-Verbindung (Verzeichnisstruktur & Rechte prüfen)
-        uses: appleboy/ssh-action@v1
-        with:
-          host: ${{ secrets.HETZNER_SSH_HOST }}
-          username: ${{ secrets.HETZNER_SSH_USER }}
-          password: ${{ secrets.HETZNER_SSH_PASSWORD }}
-          port: 22
-          script: |
-            set +e
-            echo "=== SSH DIAGNOSE ==="
-            echo "Aktueller Benutzer:"
-            whoami
-            echo "Aktuelles Arbeitsverzeichnis (pwd):"
-            pwd
-            echo "Inhalt des aktuellen Verzeichnisses:"
-            ls -la
-            echo "Existiert der Domain-Ordner?"
-            ls -ld ~/muriel-kleinschroth.de
-            echo "Existiert der alternative Domain-Ordner?"
-            ls -ld muriel-kleinschroth.de
-            echo "====================="
-
-
       - name: Dateien auf Hetzner Webhosting hochladen (SCP)
-        uses: appleboy/scp-action@v1
-        with:
-          host: ${{ secrets.HETZNER_SSH_HOST }}
-          username: ${{ secrets.HETZNER_SSH_USER }}
-          password: ${{ secrets.HETZNER_SSH_PASSWORD }}
-          port: 22
-          source: "backend/**"
-          target: "muriel-kleinschroth.de/"
-          strip_components: 1
+        env:
+          SSH_PASS: ${{ secrets.HETZNER_SSH_PASSWORD }}
+          SSH_USER: ${{ secrets.HETZNER_SSH_USER }}
+          SSH_HOST: ${{ secrets.HETZNER_SSH_HOST }}
+        run: |
+          sudo apt-get update && sudo apt-get install -y sshpass
+          # Kopiert den Inhalt von backend/ direkt in das Verzeichnis ~/muriel-kleinschroth.de/
+          # Dies umgeht die Einschränkung von mkdir -p im übergeordneten Verzeichnis
+          sshpass -p "$SSH_PASS" scp -o StrictHostKeyChecking=no -P 22 -r backend/. $SSH_USER@$SSH_HOST:~/muriel-kleinschroth.de/
 
       - name: Befehle auf Hetzner Server ausführen (Migration & Install)
         uses: appleboy/ssh-action@v1
@@ -73,11 +50,10 @@ jobs:
           password: ${{ secrets.HETZNER_SSH_PASSWORD }}
           port: 22
           script: |
-            cd ~/muriel-kleinschroth.de || cd .
+            cd ~/muriel-kleinschroth.de
             npm ci --omit=dev
             npx prisma generate
             npx prisma migrate deploy
-            # Hetzner Node-App neu starten (durch Touch-Trigger für Passenger/Phusion)
             mkdir -p tmp
             touch tmp/restart.txt
 
