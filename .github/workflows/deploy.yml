@@ -48,7 +48,12 @@ jobs:
           username: ${{ secrets.HETZNER_SSH_USER }}
           password: ${{ secrets.HETZNER_SSH_PASSWORD }}
           port: 22
+          debug: true
           script: |
+            # Setze Node-Version und lade Profile für den korrekten PATH
+            echo "20" > ~/.nodeversion
+            source ~/.profile || true
+            source ~/.bashrc || true
             export PATH=$PATH:/usr/local/bin:/usr/node/bin:/opt/node/bin
             
             # In das tatsächliche Arbeitsverzeichnis wechseln (mit Fallbacks und Logging)
@@ -66,6 +71,9 @@ jobs:
             pwd
             node -v || echo "node nicht gefunden"
             npm -v || echo "npm nicht gefunden"
+            which node || echo "which node nicht gefunden"
+            which npm || echo "which npm nicht gefunden"
+            echo "PATH ist: $PATH"
             
             echo "=== RUNNING NPM CI ==="
             npm ci --omit=dev
