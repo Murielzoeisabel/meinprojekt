@@ -50,54 +50,5 @@ jobs:
           port: 22
           debug: true
           script: |
-            # Setze Node-Version und lade Profile für den korrekten PATH
-            echo "20" > ~/.nodeversion
-            source ~/.profile || true
-            source ~/.bashrc || true
-            export PATH=$PATH:/usr/local/bin:/usr/node/bin:/opt/node/bin
-            
-            # In das tatsächliche Arbeitsverzeichnis wechseln (mit Fallbacks und Logging)
-            echo "=== START VERZEICHNISSE ==="
-            echo "Ursprüngliches Verzeichnis:"
-            pwd
-            cd ~/meinprojekt/backend || cd meinprojekt/backend || cd backend || cd .
-            echo "Arbeitsverzeichnis nach CD-Wechsel:"
-            pwd
-            echo "Inhalt des aktuellen Verzeichnisses:"
-            ls -la
-            echo "=========================="
-            
-            echo "=== SYSTEM INFOS ==="
-            pwd
-            node -v || echo "node nicht gefunden"
-            npm -v || echo "npm nicht gefunden"
-            which node || echo "which node nicht gefunden"
-            which npm || echo "which npm nicht gefunden"
-            echo "PATH ist: $PATH"
-            
-            echo "=== RUNNING NPM CI ==="
-            npm ci --omit=dev
-            NPM_CI_STATUS=$?
-            echo "npm ci beendet mit Status: $NPM_CI_STATUS"
-            
-            echo "=== RUNNING PRISMA GENERATE ==="
-            npx prisma generate
-            PRISMA_GEN_STATUS=$?
-            echo "prisma generate beendet mit Status: $PRISMA_GEN_STATUS"
-            
-            echo "=== RUNNING PRISMA MIGRATE ==="
-            npx prisma migrate deploy
-            PRISMA_MIG_STATUS=$?
-            echo "prisma migrate beendet mit Status: $PRISMA_MIG_STATUS"
-            
-            echo "=== RESTARTING PASSENGER ==="
-            mkdir -p tmp
-            touch tmp/restart.txt
-            
-            # Beende mit Fehler, falls ein Hauptschritt fehlgeschlagen ist
-            if [ $NPM_CI_STATUS -ne 0 ] || [ $PRISMA_GEN_STATUS -ne 0 ] || [ $PRISMA_MIG_STATUS -ne 0 ]; then
-              echo "=== DEPLOYMENT FEHLGESCHLAGEN! ==="
-              exit 1
-            fi
-            echo "=== DEPLOYMENT ERFOLGREICH! ==="
+            bash ~/meinprojekt/backend/deploy.sh
 
