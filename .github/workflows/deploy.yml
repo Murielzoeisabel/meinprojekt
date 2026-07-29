@@ -39,7 +39,7 @@ jobs:
           password: ${{ secrets.HETZNER_SSH_PASSWORD }}
           port: 22
           source: "backend/**"
-          target: "meinprojekt.de"
+          target: "muriel-kleinschroth.de/"
           strip_components: 1
 
       - name: Befehle auf Hetzner Server ausführen (Migration & Install)
@@ -50,7 +50,7 @@ jobs:
           password: ${{ secrets.HETZNER_SSH_PASSWORD }}
           port: 22
           script: |
-            cd ~/meinprojekt.de
+            cd ~/muriel-kleinschroth.de || cd .
             npm ci --omit=dev
             npx prisma generate
             npx prisma migrate deploy
