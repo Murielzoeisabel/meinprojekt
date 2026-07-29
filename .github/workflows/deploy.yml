@@ -50,13 +50,15 @@ jobs:
           port: 22
           debug: true
           script: |
+            /bin/sh << 'EOF'
             echo "=== SYSTEM DIAGNOSTICS ==="
             pwd
             ls -la ~/meinprojekt/backend/deploy.sh || echo "deploy.sh not found!"
             
             echo "=== FIXING LINE ENDINGS ==="
-            sed -i 's/\r$//' ~/meinprojekt/backend/deploy.sh || true
+            tr -d '\r' < ~/meinprojekt/backend/deploy.sh > ~/meinprojekt/backend/deploy.tmp && mv ~/meinprojekt/backend/deploy.tmp ~/meinprojekt/backend/deploy.sh
             
             echo "=== RUNNING DEPLOY SCRIPT ==="
-            bash ~/meinprojekt/backend/deploy.sh
+            sh ~/meinprojekt/backend/deploy.sh
+            EOF
 

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 # Exit immediately if a command exits with a non-zero status
 set -e
 
@@ -10,9 +10,9 @@ echo "20" > ~/.nodeversion
 
 # Load system and user profiles to initialize the environment path
 echo "Sourcing profiles..."
-source /etc/profile || true
-source ~/.profile || true
-source ~/.bashrc || true
+. /etc/profile >/dev/null 2>&1 || true
+. ~/.profile >/dev/null 2>&1 || true
+. ~/.bashrc >/dev/null 2>&1 || true
 
 # Add fallback Node/NPM paths
 export PATH=$PATH:/usr/local/bin:/usr/node/bin:/opt/node/bin
