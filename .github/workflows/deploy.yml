@@ -31,6 +31,29 @@ jobs:
           mkdir -p backend/public
           cp -r frontend/dist/* backend/public/
 
+      - name: SSH Diagnose-Verbindung (Verzeichnisstruktur & Rechte prüfen)
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.HETZNER_SSH_HOST }}
+          username: ${{ secrets.HETZNER_SSH_USER }}
+          password: ${{ secrets.HETZNER_SSH_PASSWORD }}
+          port: 22
+          script: |
+            echo "=== SSH DIAGNOSE ==="
+            echo "Aktueller Benutzer:"
+            whoami
+            echo "Aktuelles Arbeitsverzeichnis (pwd):"
+            pwd
+            echo "Inhalt des aktuellen Verzeichnisses:"
+            ls -la
+            echo "Existiert der Domain-Ordner?"
+            ls -ld ~/muriel-kleinschroth.de || echo "Ordner ~/muriel-kleinschroth.de existiert NICHT."
+            echo "Existiert der alternative Domain-Ordner?"
+            ls -ld muriel-kleinschroth.de || echo "Ordner muriel-kleinschroth.de existiert NICHT."
+            echo "Übergeordnetes Verzeichnis:"
+            ls -la ..
+            echo "====================="
+
       - name: Dateien auf Hetzner Webhosting hochladen (SCP)
         uses: appleboy/scp-action@v1
         with:
@@ -57,3 +80,4 @@ jobs:
             # Hetzner Node-App neu starten (durch Touch-Trigger für Passenger/Phusion)
             mkdir -p tmp
             touch tmp/restart.txt
+
