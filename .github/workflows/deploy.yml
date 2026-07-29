@@ -38,9 +38,8 @@ jobs:
           SSH_HOST: ${{ secrets.HETZNER_SSH_HOST }}
         run: |
           sudo apt-get update && sudo apt-get install -y sshpass
-          # Kopiert den Inhalt von backend/ direkt in das Verzeichnis ~/muriel-kleinschroth.de/
-          # Dies umgeht die Einschränkung von mkdir -p im übergeordneten Verzeichnis
-          sshpass -p "$SSH_PASS" scp -o StrictHostKeyChecking=no -P 22 -r backend/. $SSH_USER@$SSH_HOST:~/muriel-kleinschroth.de/
+          # Kopiert den Inhalt von backend/ direkt in das aktuelle Verzeichnis (.)
+          sshpass -p "$SSH_PASS" scp -o StrictHostKeyChecking=no -P 22 -r backend/. $SSH_USER@$SSH_HOST:.
 
       - name: Befehle auf Hetzner Server ausführen (Migration & Install)
         uses: appleboy/ssh-action@v1
@@ -50,7 +49,6 @@ jobs:
           password: ${{ secrets.HETZNER_SSH_PASSWORD }}
           port: 22
           script: |
-            cd ~/muriel-kleinschroth.de
             npm ci --omit=dev
             npx prisma generate
             npx prisma migrate deploy
