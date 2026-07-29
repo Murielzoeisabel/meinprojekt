@@ -51,8 +51,8 @@ jobs:
           script: |
             set -x
             # 1. Profile laden für Node/npm-Pfade
-            [ -f ~/.profile ] && source ~/.profile
-            [ -f ~/.bashrc ] && source ~/.bashrc
+            [ -f ~/.profile ] && . ~/.profile
+            [ -f ~/.bashrc ] && . ~/.bashrc
             
             # Ergänze Standardpfade, falls die Shell sie nicht lädt
             export PATH=$PATH:/usr/local/bin:/usr/node/bin:/opt/node/bin
