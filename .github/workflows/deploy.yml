@@ -39,6 +39,7 @@ jobs:
           password: ${{ secrets.HETZNER_SSH_PASSWORD }}
           port: 22
           script: |
+            set +e
             echo "=== SSH DIAGNOSE ==="
             echo "Aktueller Benutzer:"
             whoami
@@ -47,12 +48,11 @@ jobs:
             echo "Inhalt des aktuellen Verzeichnisses:"
             ls -la
             echo "Existiert der Domain-Ordner?"
-            ls -ld ~/muriel-kleinschroth.de || echo "Ordner ~/muriel-kleinschroth.de existiert NICHT."
+            ls -ld ~/muriel-kleinschroth.de
             echo "Existiert der alternative Domain-Ordner?"
-            ls -ld muriel-kleinschroth.de || echo "Ordner muriel-kleinschroth.de existiert NICHT."
-            echo "Übergeordnetes Verzeichnis:"
-            ls -la ..
+            ls -ld muriel-kleinschroth.de
             echo "====================="
+
 
       - name: Dateien auf Hetzner Webhosting hochladen (SCP)
         uses: appleboy/scp-action@v1
