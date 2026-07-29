@@ -41,7 +41,7 @@ model Cat {
   breed         String
   size          CatSize
   idealWeight   Float
-  photo         String?
+  photo         String?         @db.MediumText
   createdAt     DateTime        @default(now())
   user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   weightEntries WeightEntry[]
