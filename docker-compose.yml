@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: catslimdown-db
+    restart: always
+    environment:
+      MYSQL_DATABASE: catslimdown
+      MYSQL_ROOT_PASSWORD: root_password_here
+      MYSQL_USER: cat_user
+      MYSQL_PASSWORD: cat_password_here
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "cat_user", "-pcat_password_here"]
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: catslimdown-app
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: mysql://cat_user:cat_password_here@db:3306/catslimdown
+      JWT_SECRET: local-dev-jwt-secret-key-12345
+      NODE_ENV: production
+      PORT: 3000
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  mysql_data:
