@@ -47,7 +47,7 @@ jobs:
           host: ${{ secrets.HETZNER_SSH_HOST }}
           username: ${{ secrets.HETZNER_SSH_USER }}
           password: ${{ secrets.HETZNER_SSH_PASSWORD }}
-          port: 22
+          port: 222
           debug: true
           script: tr -d '\r' < ~/meinprojekt/backend/deploy.sh > ~/meinprojekt/backend/deploy.tmp && mv ~/meinprojekt/backend/deploy.tmp ~/meinprojekt/backend/deploy.sh && sh ~/meinprojekt/backend/deploy.sh
 
