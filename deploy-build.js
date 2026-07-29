@@ -7,6 +7,8 @@ const frontendDir = path.join(rootDir, 'frontend');
 const backendPublicDir = path.join(rootDir, 'backend', 'public');
 const frontendDistDir = path.join(frontendDir, 'dist');
 
+const getNpmCommand = () => (process.platform === 'win32' ? 'npm.cmd' : 'npm');
+
 const run = (command, cwd) => {
   execSync(command, {
     cwd,
@@ -27,7 +29,7 @@ if (!fs.existsSync(path.join(rootDir, 'backend', 'package.json'))) {
   throw new Error('backend/package.json nicht gefunden.');
 }
 
-run('npm.cmd run build', frontendDir);
+run(`${getNpmCommand()} run build`, frontendDir);
 
 if (!fs.existsSync(frontendDistDir)) {
   throw new Error('frontend/dist wurde nicht erzeugt.');
@@ -46,3 +48,5 @@ if (!fs.existsSync(indexHtmlPath)) {
 console.log('\nDeploy-Build erfolgreich.');
 console.log(`Frontend-Build: ${frontendDistDir}`);
 console.log(`Backend-Output: ${backendPublicDir}`);
+
+module.exports = { getNpmCommand };
