@@ -530,24 +530,7 @@ Wir haben eine statische Code- und Architektur-Analyse unserer modularisierten M
    * *Das `community`-Modul.* Da das Forum und der Live-Chat funktional komplett unabhängig vom eigentlichen Katzentracking sind und nur über die `userId` bzw. das JWT-Token mit dem Auth-Kontext gekoppelt sind, lässt sich dieses Modul am einfachsten als eigenständiger Service auslagern.
 
 
-# Studio Session 10: Performance & Caching
-
-# Caching-Bedarf & Strategie
-
-Da unsere Web-App viele interaktive Kernfunktionen besitzt, die auf dynamischen Daten basieren (Gewichtstracking, Kalorientracker, Chat), ist das Caching dynamischer Inhalte auf dem Server oder im Client nicht sinnvoll, da es zu Inkonsistenzen führen würde. Wir fokussieren uns daher auf das Caching von statischen Assets und Hintergrundprozessen.
-
-* **Browser-Caching für statische Assets:** 
-  Unsere Build-Pipeline (Vite) generiert gehashte JavaScript- und CSS-Dateien. Da diese Dateiinhalte an ihren Hash im Dateinamen gekoppelt sind, können sie für immer unverändert im Browser gecacht werden. In `server.js` konfigurieren wir `express.static` so, dass gehashte Assets im Ordner `/assets` mit einem langfristigen Cache-Header ausgeliefert werden:
-  `Cache-Control: public, max-age=31536000, immutable`
-* **Kein Cache für dynamische Routen und HTML:**
-  Die `index.html` und alle API-Routen unter `/api` werden explizit mit `Cache-Control: no-cache` oder `no-store` versehen, damit der Browser bei jedem Laden die neuesten Daten bzw. die aktuelle App-Version anfordert.
-* **Service Worker für Hintergrund-Tasks:**
-  Wir registrieren einen Service Worker (`sw.js`), um Push-Benachrichtigungen zu empfangen und zu steuern, selbst wenn der Nutzer die App gerade nicht geöffnet hat. Ein vollständiges Offline-Caching aller App-Dateien haben wir verworfen, da die App ohne API-Verbindung keine Kernfunktionen bereitstellen kann.
-
----
-
 # Studio Session 11: Deployment – Vom localhost ins echte Web (All-in-One mit Node.js)
-
 
 # Überblick
 
@@ -630,19 +613,7 @@ Da unsere Web-App viele interaktive Kernfunktionen besitzt, die auf dynamischen 
 
 ---
 
-### Studio Session 10: Performance & Caching
-* **Getroffene Entscheidung:**
-  Konfiguration von langfristigem Browser-Caching für alle gehashten statischen Assets im Express-Backend, während die `index.html` und alle API-Routen explizit von der Zwischenspeicherung ausgeschlossen werden. Registrierung eines Service Workers zur Ausführung von Hintergrund-Prozessen (Web Push).
-* **Warum (Alternativen & Begründung):**
-  * *Verworfen:* Caching von dynamischen Inhalten via Redis oder Offline-First Cache-All-Strategie im Service Worker.
-  * *Begründung:* Die Anwendungsdaten ändern sich häufig und sind nutzerspezifisch. Caching würde veraltete Informationen (z. B. falsches Gewicht oder Nährstoffbilanzen) anzeigen. Redis-Caching ist bei unserer aktuellen Last noch nicht notwendig. Das langfristige Caching statischer Assets reicht aus, um das Wiederkehr-Ladeverhalten extrem zu beschleunigen.
-* **Im Nachhinein anders machen:**
-  Die Einbindung von Redis für rechenintensive Berechnungen (z. B. historische Statistiken und Auswertungen) vorzubereiten, wenn die Benutzerzahlen steigen, um die DB-Last zu verringern.
-
----
-
 ### Studio Session 11: Deployment & Server-Architektur
-
 * **Getroffene Entscheidung:**
   Aufbau einer integrierten Single-Server-Architektur (All-in-One), in der der Express-Server sowohl die API (`/api/*`) bereitstellt als auch das statische React-Build ausliefert.
 * **Warum (Alternativen & Begründung):**
