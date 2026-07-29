@@ -49,7 +49,6 @@ jobs:
           password: ${{ secrets.HETZNER_SSH_PASSWORD }}
           port: 22
           script: |
-            /bin/sh << 'EOF'
             export PATH=$PATH:/usr/local/bin:/usr/node/bin:/opt/node/bin
             
             # In das tatsächliche Arbeitsverzeichnis wechseln (mit Fallbacks und Logging)
@@ -93,5 +92,4 @@ jobs:
               exit 1
             fi
             echo "=== DEPLOYMENT ERFOLGREICH! ==="
-            EOF
 
