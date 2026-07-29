@@ -1,0 +1,59 @@
+name: CI/CD Deployment to Hetzner
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Code auschecken
+        uses: actions/checkout@v4
+
+      - name: Node.js einrichten
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Installiere Root- und Frontend-Abhängigkeiten & baue Frontend
+        run: |
+          npm ci
+          npm ci --prefix frontend
+          npm run build --prefix frontend
+
+      - name: Kopiere Frontend-Build in den Backend-Public-Ordner
+        run: |
+          rm -rf backend/public
+          mkdir -p backend/public
+          cp -r frontend/dist/* backend/public/
+
+      - name: Dateien auf Hetzner Webhosting hochladen (SCP)
+        uses: appleboy/scp-action@v1.0.1
+        with:
+          host: ${{ secrets.HETZNER_SSH_HOST }}
+          username: ${{ secrets.HETZNER_SSH_USER }}
+          password: ${{ secrets.HETZNER_SSH_PASSWORD }}
+          port: 22
+          source: "backend/**"
+          target: "meinprojekt.de"
+          strip_components: 1
+
+      - name: Befehle auf Hetzner Server ausführen (Migration & Install)
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HETZNER_SSH_HOST }}
+          username: ${{ secrets.HETZNER_SSH_USER }}
+          password: ${{ secrets.HETZNER_SSH_PASSWORD }}
+          port: 22
+          script: |
+            cd ~/meinprojekt.de
+            npm ci --omit=dev
+            npx prisma generate
+            npx prisma migrate deploy
+            # Hetzner Node-App neu starten (durch Touch-Trigger für Passenger/Phusion)
+            mkdir -p tmp
+            touch tmp/restart.txt
