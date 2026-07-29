@@ -51,8 +51,16 @@ jobs:
           script: |
             export PATH=$PATH:/usr/local/bin:/usr/node/bin:/opt/node/bin
             
-            # In das tatsächliche Arbeitsverzeichnis wechseln
-            cd ~/meinprojekt/backend || exit 1
+            # In das tatsächliche Arbeitsverzeichnis wechseln (mit Fallbacks und Logging)
+            echo "=== START VERZEICHNISSE ==="
+            echo "Ursprüngliches Verzeichnis:"
+            pwd
+            cd ~/meinprojekt/backend || cd meinprojekt/backend || cd backend || cd .
+            echo "Arbeitsverzeichnis nach CD-Wechsel:"
+            pwd
+            echo "Inhalt des aktuellen Verzeichnisses:"
+            ls -la
+            echo "=========================="
             
             echo "=== SYSTEM INFOS ==="
             pwd
