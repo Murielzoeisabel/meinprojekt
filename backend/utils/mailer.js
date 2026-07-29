@@ -37,7 +37,7 @@ const sendNewPostEmailAsync = (to, { author, text, postId }) => {
       
       const postUrl = `${process.env.FRONTEND_ORIGIN || 'http://localhost:5173'}/community#post-${postId}`;
       
-      const emailHtml = render(
+      const emailHtml = await render(
         React.createElement(NewPostEmailTemplate, { author, text, postUrl })
       );
 
