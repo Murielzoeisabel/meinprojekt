@@ -532,88 +532,15 @@ Wir haben eine statische Code- und Architektur-Analyse unserer modularisierten M
 
 # Studio Session 11: Deployment – Vom localhost ins echte Web (All-in-One mit Node.js)
 
-# Überblick
-
-
 | Bestandteil | Läuft als | Hostname / Pfad (Beispiel) | Wird ausgeliefert von |
 | --- | --- | --- | --- |
-| **Frontend (React)** | statisches Build (`dist/`) | `catslimdown.de` | Express (`express.static`) |
-| **Backend (Express)** | Node.js-App | `catslimdown.de/api` | konsoleH Node.js |
+| **Frontend (React)** | statisches Build (`dist/`) | `muriel-kleinschroth.de` | Express (`express.static`) |
+| **Backend (Express)** | Node.js-App | `muriel-kleinschroth.de/api` | konsoleH Node.js |
 | **Datenbank (SQL)** | MySQL/MariaDB | `localhost` (auf dem Server) | konsoleH DB-Verwaltung |
 
-*Vorteil:* Durch diese Integration teilen sich Frontend und Backend exakt dieselbe Origin (`https://catslimdown.de`), wodurch CORS-Fehler oder Cross-Origin-Cookie-Probleme für JWT-Cookies vollständig entfallen.
+*Vorteil:* Durch diese Integration teilen sich Frontend und Backend exakt dieselbe Origin (`https://muriel-kleinschroth.de`), wodurch CORS-Fehler oder Cross-Origin-Cookie-Probleme für JWT-Cookies vollständig entfallen.
 
----
 
-## 🏛️ Übersicht der Architekturentscheidungen nach Studio-Sessions
-
-### Studio Session 1: Anwendungsarchitektur & MVP-Struktur
-* **Getroffene Entscheidung:**
-  Entwicklung einer clientseitig gerenderten Web-App (Single-Page-Application, SPA) mit einem interaktiven Dashboard zur Katzenverwaltung und Erfassung von Gewichtseinträgen.
-* **Warum (Alternativen & Begründung):**
-  * *Verworfen:* Klassische Multi-Page Application (MPA) mit serverseitig gerenderten HTML-Seiten.
-  * *Begründung:* Das ständige Neuladen der Seiten bei der Benutzerinteraktion (z. B. beim schnellen Hinzufügen von Gewichtswerten) stört den App-artigen Charakter und die Benutzererfahrung (UX). Ein Dashboard profitiert massiv von einem dynamischen, clientseitigen UI-State.
-* **Im Nachhinein anders gemacht:**
-  Wir hätten von Anfang an ein festes Datenschema entwerfen sollen, anstatt im ersten Prototyp Mock-Daten im lokalen Frontend-State zu verwalten. Dies führte beim späteren DB-Anschluss zu einigem Refactoring-Aufwand.
-
----
-
-### Studio Session 2: Technologie-Stack (Vite vs. Next.js)
-* **Getroffene Entscheidung:**
-  Bewusste Entscheidung für **React mit Vite** als Build-Tool (SPA-Ansatz) anstelle von Next.js (SSR-Ansatz).
-* **Warum (Alternativen & Begründung):**
-  * *Verworfen:* Next.js (Server-Side Rendering).
-  * *Begründung:* Next.js bietet exzellente SEO-Vorteile, da fertiges HTML an Suchmaschinen geliefert wird. Bei der Deaktivierung von JavaScript bleibt die Seite lesbar. CatSlimDown läuft jedoch als interaktive App komplett im Login-Bereich. SEO und öffentliche Indexierung sind hier irrelevant. Die Leichtgewichtigkeit und schnelle Client-Interaktion von Vite hatten Vorrang vor den Vorteilen von Next.js (siehe [README.md](file:///C:/Users/murie/Documents/Studium/4.Semester/Web-Architecture/meinprojekt/README.md#L31-L34)).
-* **Im Nachhinein anders machen:**
-  Sollten wir in Zukunft planen, die Beiträge des Community-Forums öffentlich zu indexieren (z. B. um neue User über Websuchen zu gewinnen), wäre ein hybrider Ansatz oder der Einsatz von Next.js für die Forums-Subroutes im Nachhinein sinnvoll gewesen.
-
----
-
-### Studio Session 3: REST API-Struktur (Flat vs. Nested)
-* **Getroffene Entscheidung:**
-  Implementierung eines **flachen API-Designs mit Query-Parametern** (z. B. `/api/cats?userId=123` oder `/api/weight-entries?catId=456`), kombiniert mit maximal einstufigem Nesting (z. B. `/api/cats/:id/weight-entries`), wo es der Übersicht dient.
-* **Warum (Alternativen & Begründung):**
-  * *Verworfen:* Tief verschachtelte REST-Pfade (z. B. `/api/users/:userId/cats/:catId/weight-entries/:entryId`).
-  * *Begründung:* Tief verschachtelte Endpunkte erhöhen die Komplexität im Backend-Routing (Express) massiv, führen zu unübersichtlichen Controllern und engen das Frontend bei zukünftigen Abfragen (z. B. "Hole alle Gewichtseinträge aller Katzen eines Users") unnötig ein (siehe [README.md](file:///C:/Users/murie/Documents/Studium/4.Semester/Web-Architecture/meinprojekt/README.md#L73-L87)).
-* **Im Nachhinein anders machen:**
-  Wir hätten von Beginn an einen strengen API-Standard wie JSON:API oder einheitliche HATEOAS-Strukturen durchziehen können, um das Daten-Parsing im Frontend weiter zu vereinheitlichen.
-
----
-
-### Studio Session 4: Persistenz und Datenhaltung (Prisma & SQLite)
-* **Getroffene Entscheidung:**
-  Verwendung einer relationalen SQL-Datenbank (SQLite) unter Verwendung des ORMs **Prisma** zur dauerhaften Speicherung aller strukturierten Daten (User, Cats, Gewichtseinträge, Community-Posts).
-* **Warum (Alternativen & Begründung):**
-  * *Verworfen:* Datenhaltung in lokalen JSON-Dateien (Mock-Daten-Handler) oder einer NoSQL-Datenbank (z. B. MongoDB).
-  * *Begründung:* Lokale JSON-Dateien bieten keine Transaktionssicherheit (Concurrency) und Datenverlust droht bei Fehlern. NoSQL wurde verworfen, da unsere Daten stark relational verknüpft sind ($User \rightarrow Cats \rightarrow WeightEntries$). Eine relationale DB garantiert referenzielle Integrität per Fremdschlüssel (siehe [schema.prisma](file:///C:/Users/murie/Documents/Studium/4.Semester/Web-Architecture/meinprojekt/backend/prisma/schema.prisma)).
-* **Im Nachhinein anders machen:**
-  SQLite blockiert die gesamte Datenbank bei Schreibzugriffen (Database-Locking). Im Nachhinein wäre eine robustere relationale Datenbank wie **PostgreSQL** von Anfang an besser gewesen, um für spätere Features (wie den Live-Chat oder das Community-Forum) bereit zu sein.
-
----
-
-### Studio Session 5: Sicherheit und Authentifizierung (JWT-Auth)
-* **Getroffene Entscheidung:**
-  Sicherung der Endpunkte über eine tokenbasierte Authentifizierung mittels **JWT (JSON Web Tokens)**, die in HTTPOnly-Cookies gespeichert werden, kombiniert mit einer serverseitigen Middleware ([authenticate.js](file:///C:/Users/murie/Documents/Studium/4.Semester/Web-Architecture/meinprojekt/backend/middleware/authenticate.js)) und Ownership-Prüfungen auf Daten-Ebene.
-* **Warum (Alternativen & Begründung):**
-  * *Verworfen:* Token-Speicherung im unsicheren LocalStorage (anfällig für XSS) oder rein anonyme API-Endpunkte ohne Autorisierungsprüfungen.
-  * *Begründung:* Ohne Authentifizierung und Prüfung der Ressourcen-Besitzer (z. B. darf User A nur seine eigenen Katzen löschen) wäre die API anfällig für OWASP A01 (Broken Access Control) gewesen. Die Middleware prüft die Signatur des JWT mit dem serverseitigen Secret aus der `.env` und stellt die Authentizität sicher.
-* **Im Nachhinein anders machen:**
-  Zusätzlich zum Access-Token hätten wir ein Refresh-Token-Verfahren einführen sollen. So müssen Benutzer sich nicht nach Ablauf des Access-Tokens neu anmelden, während die Token-Lebensdauer dennoch kurz und sicher bleibt.
-
----
-
-### Studio Session 6: Test-Strategie (Unit- & E2E-Tests)
-* **Getroffene Entscheidung:**
-  Aufbau einer Testsuite nach der klassischen **Test-Pyramide**: **Vitest** für schnelle Unit- und Integrationstests (Validierungen und mathematische Berechnungen im Backend/Frontend) und **Cypress** für E2E-Tests auf dem kritischen Pfad (Authentifizierung, Katzen-Erstellung und Persistenz).
-* **Warum (Alternativen & Begründung):**
-  * *Verworfen:* Rein manuelle Tests oder E2E-Tests über Selenium bzw. Playwright.
-  * *Begründung:* Manuelle Tests sind fehleranfällig und aufwendig. Cypress wurde gewählt, da es eine hervorragende Developer Experience (interaktiver Testrunner) und stabile Selektoren mittels `data-cy`-Attributen bietet. Vitest wurde wegen seiner extremen Geschwindigkeit gewählt.
-* **Im Nachhinein anders machen:**
-  Wir hätten von Beginn an eine CI/CD-Pipeline (z. B. GitHub Actions) einbinden sollen, um bei jedem Push oder Pull-Request die Tests automatisch auszuführen und fehlerhafte Builds im Haupt-Zweig direkt zu verhindern.
-
----
-
-### Studio Session 11: Deployment & Server-Architektur
 * **Getroffene Entscheidung:**
   Aufbau einer integrierten Single-Server-Architektur (All-in-One), in der der Express-Server sowohl die API (`/api/*`) bereitstellt als auch das statische React-Build ausliefert.
 * **Warum (Alternativen & Begründung):**
@@ -622,9 +549,21 @@ Wir haben eine statische Code- und Architektur-Analyse unserer modularisierten M
 * **Im Nachhinein anders machen:**
   Bei extrem hohem Traffic wäre eine Trennung über ein CDN (z. B. Cloudflare) für statische Dateien und einen getrennten API-Server skalierbarer. Für dieses Projekt ist die Single-Server-Architektur jedoch optimal und wartungsarm.
 
----
+1. Warum entfällt CORS?
+Da Frontend und API-Backend unter exakt derselben Origin (`https://meinprojekt.de`) erreichbar sind, handelt es sich um **same-origin**-Kommunikation. Der Browser muss keine Cross-Origin-Anfragen durchführen. Daher ist eine CORS-Konfiguration im Backend für den Betrieb der Anwendung im Web nicht mehr erforderlich.
 
-### Studio Session 12: Polish & Launch-Vorbereitung
+2. Cookie-Attribute für JWT & SameSite=Lax
+Für das Session-Management wird ein verschlüsselter JWT-Token in einem Cookie mit folgenden Attributen verwendet:
+* `httpOnly: true`: Verhindert, dass Client-seitige JavaScript-Skripte auf den Cookie zugreifen können (Schutz vor XSS).
+* `secure: true` (in Produktion): Stellt sicher, dass der Cookie nur über verschlüsselte HTTPS-Verbindungen übertragen wird.
+* `sameSite: 'lax'`: Ist völlig ausreichend, da alle API-Aufrufe der App same-origin sind. Es schützt vor CSRF bei Cross-Site-Anfragen von externen Seiten, verhindert aber nicht das Mitsenden des Cookies bei normalen Aktionen innerhalb der Seite. Ein schwächeres und fehleranfälliges `SameSite=None` ist nicht notwendig.
+
+3. Reverse Proxy & `trust proxy`
+Da die Node.js-App auf Hetzner hinter einem Apache-Reverse-Proxy betrieben wird (der die SSL-Verschlüsselung terminiert), wird `app.set('trust proxy', 1)` verwendet. Dadurch kann Express dem `X-Forwarded-*`-Header des Proxys vertrauen, wodurch Protokolle (HTTPS) und echte Client-IPs korrekt erkannt und ausgewertet werden (z. B. für das Login-Rate-Limiting).
+
+
+# Studio Session 12: Polish & Launch-Vorbereitung
+
 * **Getroffene Entscheidung:**
   Härtung des Express-Servers durch Deaktivierung des `X-Powered-By`-Headers und manuelles Hinzufügen von Sicherheitsheadern (CSP, HSTS, X-Frame-Options, X-Content-Type-Options) sowie Performance-Optimierung der Assets (Konvertierung des 428-KB-Hero-Images in ein 20-KB-WebP-Bild mit festen Dimensionen).
 * **Warum (Alternativen & Begründung):**

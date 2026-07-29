@@ -23,6 +23,58 @@
 
 ---
 
+## 💻 Lokales Setup & Ausführung
+
+Die Anwendung kann entweder über Docker (empfohlen) oder direkt mit Node.js gestartet werden.
+
+### Option A: Starten mit Docker Compose (Ein-Befehl-Start)
+Dies baut das Frontend und startet die gesamte Anwendung inklusive einer lokalen MySQL-Datenbank automatisch.
+
+1. Stelle sicher, dass Docker und Docker Compose auf deinem System installiert sind und laufen.
+2. Starte die Anwendung aus dem Hauptverzeichnis:
+   ```bash
+   docker compose up --build
+   ```
+3. Die App ist anschließend unter `http://localhost:3000` im Browser erreichbar.
+
+---
+
+### Option B: Manueller Start (Lokale Entwicklung)
+Stelle sicher, dass du eine `.env` Datei im Ordner `backend/` basierend auf `backend/.env.example` erstellt hast (standardmäßig für SQLite konfiguriert).
+
+1. **Abhängigkeiten installieren:**
+   ```bash
+   npm run install:all
+   ```
+2. **Datenbank-Migrationen ausführen:**
+   ```bash
+   npm run db:migrate --prefix backend
+   ```
+3. **Entwicklungsserver starten (Frontend + Backend parallel):**
+   ```bash
+   npm run dev
+   ```
+4. Die App läuft auf `http://localhost:5173` (Vite Frontend) und leitet API-Anfragen an den Express-Server auf `http://localhost:3000` weiter.
+
+---
+
+## 🧪 Tests ausführen
+
+* **Unit- und Integrationstests (Vitest + Coverage-Report):**
+  ```bash
+  npm test
+  ```
+  Dieser Befehl führt alle Backend-Tests aus und generiert den HTML-Coverage-Report im Verzeichnis `backend/coverage/index.html`.
+
+* **End-to-End-Tests (Cypress):**
+  1. Stelle sicher, dass die App im Entwicklungsmodus läuft (`npm run dev`).
+  2. Starte die Cypress-Tests:
+     ```bash
+     npm run test:e2e
+     ```
+
+---
+
 ## 🌐 Deployment & Server-Architektur (Session 11)
 
 Die Anwendung ist als eine **Single-Server-Architektur** (All-in-One Node.js) auf einem Hetzner Webhosting L Server deployt. Der Express-Server liefert dabei sowohl die API-Endpunkte unter `/api/*` als auch das statische React-Build aus.
@@ -31,14 +83,14 @@ Die Anwendung ist als eine **Single-Server-Architektur** (All-in-One Node.js) au
 
 | Bestandteil | Läuft als | Hostname / Pfad | Wird ausgeliefert von |
 | :--- | :--- | :--- | :--- |
-| **Frontend (React)** | Statisches Build (`dist/`) | `meinprojekt.de` | Express (`express.static`) |
-| **Backend (Express)** | Node.js-App | `meinprojekt.de/api` | konsoleH Node.js (Reverse Proxy) |
+| **Frontend (React)** | Statisches Build (`dist/`) | `muriel-kleinschroth.de` | Express (`express.static`) |
+| **Backend (Express)** | Node.js-App | `muriel-kleinschroth.de/api` | konsoleH Node.js (Reverse Proxy) |
 | **Datenbank (SQL)** | MySQL/MariaDB | `localhost` (auf dem Server) | konsoleH DB-Verwaltung |
 
 ### Wichtige Design-Entscheidungen
 
 #### 1. Warum entfällt CORS?
-Da Frontend und API-Backend unter exakt derselben Origin (`https://meinprojekt.de`) erreichbar sind, handelt es sich um **same-origin**-Kommunikation. Der Browser muss keine Cross-Origin-Anfragen durchführen. Daher ist eine CORS-Konfiguration im Backend für den Betrieb der Anwendung im Web nicht mehr erforderlich.
+Da Frontend und API-Backend unter exakt derselben Origin (`https://muriel-kleinschroth.de`) erreichbar sind, handelt es sich um **same-origin**-Kommunikation. Der Browser muss keine Cross-Origin-Anfragen durchführen. Daher ist eine CORS-Konfiguration im Backend für den Betrieb der Anwendung im Web nicht mehr erforderlich.
 
 #### 2. Cookie-Attribute für JWT & SameSite=Lax
 Für das Session-Management wird ein verschlüsselter JWT-Token in einem Cookie mit folgenden Attributen verwendet:
