@@ -196,7 +196,7 @@ const Calories = () => {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1.4fr)', gap: '2rem' }}>
+      <div className="two-col-calories">
         <div className="card" style={{ height: 'max-content' }}>
           <h3>Neuer Eintrag</h3>
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>

@@ -261,6 +261,18 @@ button:disabled {
   grid-template-columns: minmax(0, 3fr) minmax(0, 1fr);
 }
 
+.two-col-equal {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 2rem;
+}
+
+.two-col-calories {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+  gap: 2rem;
+}
+
 .input-field {
   width: 100%;
   min-height: var(--control-height);
@@ -351,7 +363,9 @@ select:focus-visible {
   }
 
   .two-col-layout,
-  .two-col-layout.stats-layout {
+  .two-col-layout.stats-layout,
+  .two-col-equal,
+  .two-col-calories {
     grid-template-columns: 1fr;
     gap: 1rem;
   }

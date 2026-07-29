@@ -40,7 +40,7 @@ const HealthCheck = () => {
       <h2 style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '1.5rem' }}>
         <BookOpen size={24} color="var(--accent-primary)" /> 2. Wissenschaftliche Hintergründe
       </h2>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', gap: '2rem' }}>
         <div className="card">
           <h3>Körperzusammensetzung</h3>
           <p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem' }}>Zum Erhalt ihrer Gesundheit sind Katzen auf rein tierische Beute angewiesen (strikte Karnivoren). Ihr gesamter Organismus und Verdauungstrakt ist darauf spezialisiert.</p>

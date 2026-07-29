@@ -101,7 +101,7 @@ const Recipes = () => {
         <div className="cat-page-hero-art" aria-hidden="true">😸🍳</div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '2rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 280px), 1fr))', gap: '2rem' }}>
         {recipes.map((rec, i) => (
           <motion.div 
             key={i} 

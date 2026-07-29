@@ -235,8 +235,9 @@
   }
   
   .nav-links {
+    flex: 1;
+    min-width: 0;
     flex-direction: row;
-    width: 100%;
     justify-content: space-between;
     overflow-x: auto;
     gap: 0.25rem;

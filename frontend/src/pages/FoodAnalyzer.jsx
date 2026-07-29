@@ -53,7 +53,7 @@ const FoodAnalyzer = () => {
       <h1>Futter-Scanner</h1>
       <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>Fotografiere die Inhaltsstoffe einer Dose und lass sie von der KI analysieren.</p>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: '2rem' }}>
+      <div className="two-col-equal">
         <div className="card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '300px', border: '2px dashed var(--border-color)' }}>
           <UploadCloud size={48} color="var(--text-secondary)" style={{ marginBottom: '1rem' }} />
           <h3 style={{ marginBottom: '0.5rem' }}>Foto hochladen</h3>
