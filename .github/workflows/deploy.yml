@@ -49,9 +49,28 @@ jobs:
           password: ${{ secrets.HETZNER_SSH_PASSWORD }}
           port: 22
           script: |
+            set -x
+            # 1. Profile laden für Node/npm-Pfade
+            [ -f ~/.profile ] && source ~/.profile
+            [ -f ~/.bashrc ] && source ~/.bashrc
+            
+            # Ergänze Standardpfade, falls die Shell sie nicht lädt
+            export PATH=$PATH:/usr/local/bin:/usr/node/bin:/opt/node/bin
+            
+            echo "=== NODE & NPM VERSION ==="
+            node -v || echo "node nicht gefunden"
+            npm -v || echo "npm nicht gefunden"
+            
+            # 2. Abhängigkeiten installieren
             npm ci --omit=dev
+            
+            # 3. Prisma-Client generieren
             npx prisma generate
+            
+            # 4. Datenbank-Migrationen ausführen
             npx prisma migrate deploy
+            
+            # 5. App-Restart triggern
             mkdir -p tmp
             touch tmp/restart.txt
 
