@@ -38,8 +38,8 @@ jobs:
           SSH_HOST: ${{ secrets.HETZNER_SSH_HOST }}
         run: |
           sudo apt-get update && sudo apt-get install -y sshpass
-          # Kopiert den Inhalt von backend/ direkt in das aktuelle Verzeichnis (.)
-          sshpass -p "$SSH_PASS" scp -o StrictHostKeyChecking=no -P 22 -r backend/. $SSH_USER@$SSH_HOST:.
+          # Kopiert den Inhalt von backend/ direkt in das tatsächliche Arbeitsverzeichnis auf dem Server
+          sshpass -p "$SSH_PASS" scp -o StrictHostKeyChecking=no -P 22 -r backend/. $SSH_USER@$SSH_HOST:~/meinprojekt/backend/
 
       - name: Befehle auf Hetzner Server ausführen (Migration & Install)
         uses: appleboy/ssh-action@v1
@@ -50,6 +50,9 @@ jobs:
           port: 22
           script: |
             export PATH=$PATH:/usr/local/bin:/usr/node/bin:/opt/node/bin
+            
+            # In das tatsächliche Arbeitsverzeichnis wechseln
+            cd ~/meinprojekt/backend || exit 1
             
             echo "=== SYSTEM INFOS ==="
             pwd
