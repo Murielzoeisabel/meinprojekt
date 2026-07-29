@@ -76,9 +76,9 @@ const Landing = () => {
               <span>Die #1 App für fitte Katzen</span>
             </div>
             <h1 className="hero-gradient-title">Cat Slim Down</h1>
-            <h2>Das fitte Abenteuer für deinen Stubentiger</h2>
+            <h2>Bringe deine Katze spielerisch zurück zum Idealgewicht</h2>
             <p className="hero-description">
-              Hilf deiner Katze auf liebevolle, wissenschaftliche und spielerische Weise, ihr Idealgewicht zu erreichen. Berechne den genauen Nährstoffbedarf, tracke Aktivitäten und teile eure Erfolge.
+              Wissenschaftliche Diätpläne, Aktivitäts-Tracking und ein KI-gestützter Futter-Scanner helfen dir, das Gewicht deines Lieblings gesund zu reduzieren. Einfach zu bedienen, von Tierärzten inspiriert.
             </p>
             <div className="landing-hero-actions">
               <Link to="/register" className="btn-primary landing-btn-hero">
@@ -93,9 +93,12 @@ const Landing = () => {
           <div className="landing-hero-visual-modern">
             <div className="hero-image-wrapper">
               <img 
-                src="/images/hero-cat.png" 
+                src="/images/hero-cat.webp" 
                 alt="Fit und glückliche Katze" 
                 className="hero-cat-image" 
+                loading="lazy"
+                width="600"
+                height="600"
               />
               {/* Floating micro dashboard widgets */}
               <div className="floating-widget widget-weight floating-comic">

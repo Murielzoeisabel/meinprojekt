@@ -48,3 +48,22 @@ Für das Session-Management wird ein verschlüsselter JWT-Token in einem Cookie 
 
 #### 3. Reverse Proxy & `trust proxy`
 Da die Node.js-App auf Hetzner hinter einem Apache-Reverse-Proxy betrieben wird (der die SSL-Verschlüsselung terminiert), wird `app.set('trust proxy', 1)` verwendet. Dadurch kann Express dem `X-Forwarded-*`-Header des Proxys vertrauen, wodurch Protokolle (HTTPS) und echte Client-IPs korrekt erkannt und ausgewertet werden (z. B. für das Login-Rate-Limiting).
+
+---
+
+## ⚡ Performance- & Sicherheits-Optimierung (Session 12)
+
+### 1. Automatisierter Sicherheits-Scan (Findings & Härtung)
+Wir haben einen externen Sicherheits-Scan durchgeführt und folgende Härtungen im Express-Backend ([server.js](file:///c:/Users/murie/Documents/Studium/4.Semester/Web-Architecture/meinprojekt/backend/server.js)) vorgenommen:
+* **MIME-Sniffing-Prävention**: Setzen des Headers `X-Content-Type-Options: nosniff`.
+* **Clickjacking-Schutz**: Setzen des Headers `X-Frame-Options: DENY`.
+* **XSS-Schutz**: Setzen des Headers `X-XSS-Protection: 1; mode=block`.
+* **Content Security Policy (CSP)**: Einschränkung erlaubter Ressourcen (z. B. Skripte, Styles, Fonts, Bilder) auf vertrauenswürdige Domänen.
+* **Server-Fingerprinting verhindern**: Der `X-Powered-By`-Header wurde deaktiviert (`app.disable('x-powered-by')`), um Framework-Informationen vor Angreifern zu verschleiern.
+
+### 2. Lighthouse-Audit & Bilder-Optimierung
+* **Baseline (Vorher)**: Performance-Score lag bei **85**. Hauptursache war das unkomprimierte Hero-Image `hero-cat.png` (**428.68 KB**), das zu einer Verzögerung des Largest Contentful Paint (LCP) führte. Zudem fehlten feste Breite- und Höhe-Attribute auf dem Bildelement, was zu Layout-Verschiebungen (CLS) führte.
+* **Optimierung**: 
+  * Das Bild wurde mit `sharp` auf **600x600px** herunterskaliert und in das moderne **WebP-Format** konvertiert (**19.71 KB**, **95.40% Ersparnis**).
+  * Im React-Code ([Landing.jsx](file:///c:/Users/murie/Documents/Studium/4.Semester/Web-Architecture/meinprojekt/frontend/src/pages/Landing.jsx)) wurden feste Dimensionen (`width="600"`, `height="600"`) und `loading="lazy"` gesetzt.
+* **Ergebnis (Nachher)**: Performance-Score stieg auf **98-100**. Die Ladezeit des Hero-Assets hat sich drastisch verringert und der CLS-Wert sank auf **0**.

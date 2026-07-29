@@ -23,14 +23,46 @@ if (!fs.existsSync(FRONTEND_DIST_PATH)) {
   throw new Error('Frontend-Build nicht gefunden. Bitte den Vite-Build nach backend/public kopieren.');
 }
 
+// Disable X-Powered-By header to prevent fingerprinting
+app.disable('x-powered-by');
+
 app.set('trust proxy', 1);
 
+// Configure CORS
 app.use(cors({
   origin: FRONTEND_ORIGIN,
   credentials: true
 }));
+
+// Apply basic security headers middleware (clickjacking, MIME sniffing, HSTS, CSP)
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('Referrer-Policy', 'no-referrer-when-downgrade');
+  
+  // Content Security Policy
+  res.setHeader('Content-Security-Policy', 
+    "default-src 'self'; " +
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+    "font-src 'self' https://fonts.gstatic.com; " +
+    "img-src 'self' data: https://images.unsplash.com; " +
+    "connect-src 'self' ws: wss:; " +
+    "frame-ancestors 'none';"
+  );
+
+  // Strict-Transport-Security (HSTS) only in production
+  if (process.env.NODE_ENV === 'production') {
+    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
+  }
+  
+  next();
+});
+
 app.use(cookieParser());
 app.use(express.json({ limit: '8mb' }));
+
 
 // --- SERVER-SENT EVENTS (SSE) SETUP ---
 const sseClients = new Set();

@@ -610,3 +610,26 @@ Wir haben eine statische Code- und Architektur-Analyse unserer modularisierten M
   * *Begründung:* Manuelle Tests sind fehleranfällig und aufwendig. Cypress wurde gewählt, da es eine hervorragende Developer Experience (interaktiver Testrunner) und stabile Selektoren mittels `data-cy`-Attributen bietet. Vitest wurde wegen seiner extremen Geschwindigkeit gewählt.
 * **Im Nachhinein anders machen:**
   Wir hätten von Beginn an eine CI/CD-Pipeline (z. B. GitHub Actions) einbinden sollen, um bei jedem Push oder Pull-Request die Tests automatisch auszuführen und fehlerhafte Builds im Haupt-Zweig direkt zu verhindern.
+
+---
+
+### Studio Session 11: Deployment & Server-Architektur
+* **Getroffene Entscheidung:**
+  Aufbau einer integrierten Single-Server-Architektur (All-in-One), in der der Express-Server sowohl die API (`/api/*`) bereitstellt als auch das statische React-Build ausliefert.
+* **Warum (Alternativen & Begründung):**
+  * *Verworfen:* Klassische Trennung (Frontend auf statischem Webspace/Apache, Backend als eigene API-Subdomain).
+  * *Begründung:* Die All-in-One-Architektur eliminiert CORS-Probleme vollständig (same-origin). Zudem vereinfacht es das Cookie-Handling für die JWT-Authentifizierung. Es wird kein `SameSite=None` benötigt; `SameSite=Lax` reicht aus.
+* **Im Nachhinein anders machen:**
+  Bei extrem hohem Traffic wäre eine Trennung über ein CDN (z. B. Cloudflare) für statische Dateien und einen getrennten API-Server skalierbarer. Für dieses Projekt ist die Single-Server-Architektur jedoch optimal und wartungsarm.
+
+---
+
+### Studio Session 12: Polish & Launch-Vorbereitung
+* **Getroffene Entscheidung:**
+  Härtung des Express-Servers durch Deaktivierung des `X-Powered-By`-Headers und manuelles Hinzufügen von Sicherheitsheadern (CSP, HSTS, X-Frame-Options, X-Content-Type-Options) sowie Performance-Optimierung der Assets (Konvertierung des 428-KB-Hero-Images in ein 20-KB-WebP-Bild mit festen Dimensionen).
+* **Warum (Alternativen & Begründung):**
+  * *Verworfen:* Unkomprimierte PNG-Bilder ohne Breiten-/Höhenangaben und Betrieb ohne Sicherheits-Header.
+  * *Begründung:* Unoptimierte Bilder führen zu schlechten Lighthouse-Scores und verzögertem Page Load (LCP). Fehlende Bilddimensionen verursachen Layout-Verschiebungen (CLS). Ohne Sicherheits-Header ist die Anwendung anfällig für Clickjacking und MIME-Sniffing.
+* **Im Nachhinein anders machen:**
+  Die automatische Bildkonvertierung direkt in die Build-Pipeline (Vite) integrieren, um neue Bilder künftig vollautomatisch zu optimieren.
+

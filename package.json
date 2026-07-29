@@ -11,6 +11,7 @@
     "test:e2e": "npx cypress run --project ./frontend"
   },
   "devDependencies": {
-    "concurrently": "^8.2.2"
+    "concurrently": "^8.2.2",
+    "sharp": "^0.35.3"
   }
 }
