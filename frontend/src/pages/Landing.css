@@ -1116,6 +1116,15 @@
   }
 
   .landing-hero-actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.8rem;
+    width: 100%;
+  }
+
+  .landing-btn-hero,
+  .landing-btn-hero-sec {
+    width: 100%;
     justify-content: center;
   }
 
@@ -1153,6 +1162,10 @@
     padding: 1.5rem;
   }
 
+  .quick-calc-results {
+    padding: 1.25rem;
+  }
+
   .showcase-tabs {
     grid-template-columns: repeat(2, 1fr);
     border-radius: 16px;
@@ -1161,6 +1174,11 @@
   .showcase-tab-btn {
     padding: 0.75rem 0.5rem;
     font-size: 0.85rem;
+  }
+
+  .showcase-content {
+    padding: 1.25rem;
+    min-height: auto;
   }
 
   .showcase-pane {
@@ -1174,6 +1192,10 @@
 
   .testimonials-grid {
     grid-template-columns: 1fr;
+  }
+
+  .testimonial-card {
+    padding: 1.25rem;
   }
 
   .landing-health-modern {
