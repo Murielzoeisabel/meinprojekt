@@ -1143,6 +1143,10 @@
     bottom: 5%;
   }
 
+  .landing-bento-grid-modern {
+    grid-template-columns: 1fr;
+  }
+
   .quick-calc-container {
     grid-template-columns: 1fr;
     gap: 2rem;
