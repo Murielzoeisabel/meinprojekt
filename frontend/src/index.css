@@ -335,10 +335,15 @@ select:focus-visible {
   align-items: stretch;
   position: relative;
   isolation: isolate;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 .main-content {
   flex: 1;
+  width: 100%;
+  min-width: 0;
   padding: 2.2rem;
   max-width: 1240px;
   margin: 0 auto;
@@ -353,6 +358,8 @@ select:focus-visible {
   }
 
   .main-content {
+    width: 100%;
+    min-width: 0;
     padding: 1rem;
     padding-bottom: 80px;
   }
